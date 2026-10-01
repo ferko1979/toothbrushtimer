@@ -1,0 +1,7 @@
+# Personal audio recordings stay local (privacy)
+analysis/recordings/
+analysis/out/
+analysis/synthetic/
+__pycache__/
+.venv/
+*.pyc

@@ -1,0 +1,8 @@
+numpy
+scipy
+matplotlib
+soundfile
+pytest
+# Optional, only for --yamnet:
+# tensorflow
+# tensorflow-hub
