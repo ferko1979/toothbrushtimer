@@ -44,7 +44,7 @@ def test_long_silence_splits_sessions():
 
 
 def test_learned_model_roundtrip(tmp_path):
-    from brushdetect.learned import LinearModel, causal_smooth, fit, window_features
+    from brushdetect.learned import causal_smooth, fit, load_heads, save_heads, window_features
 
     rng = np.random.default_rng(2)
     feats, labels = [], []
@@ -56,8 +56,8 @@ def test_learned_model_roundtrip(tmp_path):
         labels.append(y)
     model = fit(np.vstack(feats), np.concatenate(labels))
     path = tmp_path / "m.json"
-    model.save(str(path))
-    loaded = LinearModel.load(str(path))
+    save_heads(str(path), {"brush": model})
+    loaded = load_heads(str(path))["brush"]
 
     # Unseen realisation of the same conditions. (Generalising to other
     # distances needs training data recorded at those distances.)

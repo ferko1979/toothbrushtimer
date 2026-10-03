@@ -1,15 +1,17 @@
-"""Train the learned brushing detector from labelled recordings.
+"""Train the learned detectors (brushing + running water) from labelled recordings.
 
     python train.py --labels recordings/labels.csv --out model.json
 
-labels.csv columns: file,brush_type,start_s,end_s
-  * one row per brushing interval (a file may have several rows)
-  * a row with empty start_s/end_s marks a file with no brushing (negative example)
+labels.csv columns: file,kind,brush_type,start_s,end_s
+  * kind: "brush" or "water"; one row per interval (a file may have several rows)
+  * a row with empty start_s/end_s marks a file without such intervals (negative example)
+  * brushing starts when the wetting water stops and ends when the rinse water starts
   * file paths are relative to the CSV's folder
 
-Before fitting the final model it runs leave-one-recording-out validation:
-each recording is scored by a model trained on all the others, which is
-the honest estimate of how well it works on a recording it has never seen.
+Before fitting the final models it runs leave-one-recording-out validation:
+each recording is scored by models trained on all the others and run
+through the full session logic (water cue -> brushing -> rinse), which is
+the honest estimate of how it works on a recording it has never seen.
 """
 
 from __future__ import annotations
@@ -21,20 +23,26 @@ from collections import defaultdict
 
 import numpy as np
 
-from brushdetect import TimerConfig, load_audio, run_timer
-from brushdetect.learned import HOP, FRAME_HOP, causal_smooth, fit, window_features
-from brushdetect.features import SR
+from brushdetect import load_audio
+from brushdetect.learned import fit, save_heads, water_features, window_features
+from brushdetect.pipeline import score_recording
+from brushdetect.session import run_sessions
+
+KINDS = ("brush", "water")
 
 
 def read_labels(path: str) -> dict[str, dict]:
     base = os.path.dirname(os.path.abspath(path))
-    out: dict[str, dict] = defaultdict(lambda: {"type": "", "intervals": []})
+    out: dict[str, dict] = defaultdict(lambda: {"type": "", "brush": [], "water": []})
     with open(path) as f:
         for row in csv.DictReader(f):
             p = os.path.join(base, row["file"].strip())
-            out[p]["type"] = row.get("brush_type", "").strip()
+            kind = (row.get("kind") or "brush").strip()
+            if kind not in KINDS:
+                raise ValueError(f"{path}: unknown kind {kind!r}")
+            out[p]["type"] = (row.get("brush_type") or "").strip() or out[p]["type"]
             if row["start_s"].strip():
-                out[p]["intervals"].append((float(row["start_s"]), float(row["end_s"])))
+                out[p][kind].append((float(row["start_s"]), float(row["end_s"])))
     return dict(out)
 
 
@@ -50,41 +58,59 @@ def main(argv=None):
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--labels", default="recordings/labels.csv")
     ap.add_argument("--out", default="model.json")
+    ap.add_argument("--verbose", action="store_true", help="print session events")
     ap.add_argument("--c", type=float, default=0.1, help="inverse regularisation strength")
     args = ap.parse_args(argv)
 
     from sklearn.metrics import roc_auc_score
 
     labels = read_labels(args.labels)
-    data = {}
+    audio, data = {}, {}
     for path, info in labels.items():
-        t, feats = window_features(load_audio(path))
-        data[path] = (t, feats, label_windows(t, info["intervals"]))
-        print(f"{os.path.basename(path):<50} {len(t):4d} ablak, ebből fogmosás {int(data[path][2].sum()):4d}")
+        audio[path] = x = load_audio(path)
+        data[path] = {}
+        for k, featfn in (("brush", window_features), ("water", water_features)):
+            t, feats = featfn(x)
+            data[path][k] = (t, feats, label_windows(t, info[k]))
+        print(f"{os.path.basename(path):<50} fogmosás {int(data[path]['brush'][2].sum()):4d} / "
+              f"{len(data[path]['brush'][0])} ablak, víz {int(data[path]['water'][2].sum()):4d} / "
+              f"{len(data[path]['water'][0])} ablak")
 
-    dt = HOP * FRAME_HOP / SR
+    def fit_heads(paths, meta=None):
+        heads = {}
+        for k in KINDS:
+            ys = np.concatenate([data[p][k][2] for p in paths])
+            if ys.min() == ys.max():
+                return None
+            heads[k] = fit(np.vstack([data[p][k][1] for p in paths]), ys, args.c, meta)
+        return heads
+
     if len(data) > 1:
         print("\nKihagyásos validáció (a modell az adott felvételt nem látta):")
         for held in data:
-            rest = [p for p in data if p != held]
-            ys = np.concatenate([data[p][2] for p in rest])
-            if ys.min() == ys.max():
+            heads = fit_heads([p for p in data if p != held])
+            if heads is None:
                 print(f"  {os.path.basename(held)}: kihagyva (a többiben nincs mindkét osztály)")
                 continue
-            model = fit(np.vstack([data[p][1] for p in rest]), ys, args.c)
-            t, feats, y = data[held]
-            p = causal_smooth(model.predict(feats))
-            sessions = run_timer(t, p, dt, TimerConfig())
-            est = sum(s.active_s for s in sessions)
-            truth = sum(b - a for a, b in labels[held]["intervals"])
-            auc = f"AUC={roc_auc_score(y, p):.3f}" if 0 < y.sum() < len(y) else "AUC=  -  "
-            spans = ", ".join(f"{s.start:.1f}–{s.end:.1f}" for s in sessions) or "—"
-            print(f"  {os.path.basename(held):<50} {auc}  becsült {est:5.1f} s / címke {truth:5.1f} s  [{spans}]")
+            sc = score_recording(audio[held], heads)
+            prob = {"brush": sc.brush, "water": sc.water}
+            y = {k: label_windows(sc.t, labels[held][k]) for k in KINDS}
+            aucs = " ".join(
+                f"{k}-AUC={roc_auc_score(y[k], prob[k]):.3f}" if 0 < y[k].sum() < len(y[k]) else f"{k}-AUC=  -  "
+                for k in KINDS)
+            sessions, events = run_sessions(sc.t, sc.water, sc.brush, sc.sonic, sc.hop_s)
+            truth = labels[held]["brush"]
+            truth_txt = ", ".join(f"{a:.1f}–{b:.1f}" for a, b in truth) or "—"
+            found = ", ".join(f"{s.start:.1f}–{s.end:.1f} ({s.duration_s:.0f} s, víz {s.water_running_s:.0f} s)"
+                              for s in sessions) or "—"
+            print(f"  {os.path.basename(held):<50} {aucs}\n      címke: {truth_txt}   észlelt: {found}")
+            if args.verbose:
+                print("      események: " + ", ".join(f"{a:.1f} {e}" for a, e in events))
 
-    model = fit(np.vstack([d[1] for d in data.values()]),
-                np.concatenate([d[2] for d in data.values()]), args.c,
-                meta={"trained_on": [os.path.basename(p) for p in data]})
-    model.save(args.out)
+    heads = fit_heads(list(data), meta={"trained_on": [os.path.basename(p) for p in data]})
+    if heads is None:
+        raise SystemExit("A címkékben mindkét osztályra (van / nincs) kell példa, fogmosásra és vízre is.")
+    save_heads(args.out, heads)
     print(f"\nModell mentve: {args.out}")
 
 

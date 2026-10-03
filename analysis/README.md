@@ -40,13 +40,17 @@ szorzatösszeg, így az iOS-, watchOS-, Android- és Wear OS-kódba könnyen
 Ehhez címkefájl kell: `recordings/labels.csv`.
 
 ```csv
-file,brush_type,start_s,end_s
-record_1_electric_brush.m4a,electric,8,66
-csak_viz.m4a,,,
+file,kind,brush_type,start_s,end_s
+record_1_electric_brush.m4a,water,electric,1.6,2.6
+record_1_electric_brush.m4a,brush,electric,2.6,67.1
+record_1_electric_brush.m4a,water,electric,67.1,78.8
+csak_beszed.m4a,brush,,,
 ```
 
-Egy sor egy fogmosási szakasz. Ha egy fájlhoz üres időpontokat adsz meg, az
-azt jelenti, hogy abban nincs fogmosás (negatív példa).
+Egy sor egy szakaszt jelöl. A `kind` értéke lehet `brush` (fogmosás) vagy
+`water` (víz). A fogmosás a nedvesítő víz elzárásától az öblítés kezdetéig
+tart. Ha egy fájlhoz üres időpontokat adsz meg, az azt jelenti, hogy abban
+nincs ilyen szakasz (negatív példa).
 
 ```bash
 python train.py --labels recordings/labels.csv --out model.json
@@ -60,6 +64,50 @@ modellel értékel, amely azt a felvételt nem látta. Ez a becslés mutatja meg
 **Ismert korlát:** a modell csak olyan távolságra és zajszintre általánosít,
 amilyet a tanítóadatban látott. Ezért érdemes több távolságból és többféle
 háttérzajjal is felvenni.
+
+## Teljes munkamenet: víz → fogmosás → öblítés
+
+Fő szabály (`brushdetect/session.py`). A telefon a mosdó mellett fekszik,
+és folyamatosan figyel:
+
+1. **Vízcsobogás** (a fogkefe benedvesítése): az app felkészül.
+2. **A víz elhallgat, utána súrolás vagy szónikus zúgás hallatszik:** az app
+   jelzi, hogy *„fogmosás észlelve”*. Az időmérés **a víz elzárásának
+   pillanatától** indul.
+3. **Újra folyik a víz (öblítés):** itt ér véget a fogmosás. Az öblítés vize
+   nem számít pazarlásnak.
+4. **Ha a csap fogmosás közben is folyik:** 5 s után megjelenik a pazarlás
+   ikon, a végén pedig egyértelmű figyelmeztetés jön. Ebben szerepel, hány
+   liter (gallon) víz folyt el, mennyibe került, hány pohárnak felel meg,
+   a napi fogyasztás hány százaléka, és mennyi ez egy év alatt.
+5. **Ha nincs víz, de 6 s-on át fogmosás hallatszik,** az is elindítja a
+   mérést (például ha valaki pohárból nedvesíti a fogkefét).
+
+Három detektor dolgozik együtt (`brushdetect/pipeline.py`):
+
+- **víz:** tanult modell, 1 s-os ablakkal, hogy a rövid csobogás is
+  meglegyen,
+- **fogmosás:** tanult modell, 3 s-os ablakkal, a súrolási ritmus és a
+  hangszín alapján,
+- **szónikus zúgás** (`brushdetect/sonic.py`): egy új, stabil, keskeny hang
+  150–400 Hz között, a kétszeres felharmonikusával. Egy Sonicare 256 Hz-en
+  zúg, ez kb. 31 000 mozdulat/perc. Kézi fogkefénél ezt a jelet figyelmen
+  kívül hagyjuk, mert akkor a zúgás valaki másé.
+
+```bash
+python train.py --labels recordings/labels.csv --out model.json --verbose
+python analyze.py recordings/* --out out/ --model model.json --labels recordings/labels.csv
+python analyze.py recordings/* --out out/ --model model.json --brush-type electric --locale us
+```
+
+A víz becsült mennyisége és ára (`brushdetect/water_report.py`, a források a
+fájlban vannak):
+
+| | Magyarország | USA |
+|---|---|---|
+| csap | 8 l/perc | 2,2 gal/perc (szövetségi felső határ) |
+| ár (víz és csatorna) | kb. 653 Ft/m³ (Budapest 2025/26) | kb. 0,0125 $/gal |
+| napi fogyasztás/fő | kb. 105 l | kb. 82 gal (EPA) |
 
 ## Telepítés
 

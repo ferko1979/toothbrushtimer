@@ -4,8 +4,9 @@
     python analyze.py recordings/*.wav --out out/ --yamnet
     python analyze.py recordings/*.m4a --out out/ --model model.json
 
-With --model (see train.py) the learned detector drives the timer; without
-it the hand-written rule-based scores are used.
+With --model (see train.py) the full session logic runs: water cue ->
+brushing (scrubbing or sonic hum) -> rinse, with a water-waste report at the
+end (--locale hu|us). Without it the hand-written rule-based scores are used.
 
 For every input file a PNG is written to --out, plus summary.csv for all
 files. If a file name contains `__truth<N>s` (e.g. `kezi_1m__truth120s.m4a`)
@@ -30,7 +31,7 @@ def parse_truth(path: str) -> float | None:
     return float(m.group(1)) if m else None
 
 
-def plot(path, x, feats, sessions, tcfg, yam, out_png, learned=None):
+def plot(path, x, feats, sessions, tcfg, yam, out_png):
     import matplotlib
 
     matplotlib.use("Agg")
@@ -74,8 +75,6 @@ def plot(path, x, feats, sessions, tcfg, yam, out_png, learned=None):
     ax.plot(feats.t, feats.manual_score, label="kézi fogkefe")
     ax.plot(feats.t, feats.electric_score, label="elektromos fogkefe")
     ax.plot(feats.t, feats.water_score, alpha=0.6, label="víz (kísérleti)")
-    if learned is not None:
-        ax.plot(learned[0], learned[1], color="k", lw=1.6, label="tanult modell")
     if yam is not None:
         yt, groups, _ = yam
         for g, s in groups.items():
@@ -98,6 +97,89 @@ def plot(path, x, feats, sessions, tcfg, yam, out_png, learned=None):
     plt.close(fig)
 
 
+def plot_session(path, x, sc, sessions, events, out_png):
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(2, 1, figsize=(14, 7), sharex=True,
+                             gridspec_kw={"height_ratios": [2, 1.3]})
+    axes[0].specgram(x + 1e-9, NFFT=512, Fs=SR, noverlap=256, cmap="magma", vmin=-120)
+    axes[0].set_ylabel("Hz")
+    ax = axes[1]
+    ax.plot(sc.t, sc.water, color="C0", label="víz")
+    ax.plot(sc.t, sc.brush, color="C2", label="fogmosás (tanult)")
+    ax.plot(sc.t, sc.sonic, color="C1", lw=0.8, label="szónikus zúgás")
+    for s in sessions:
+        for axx in axes:
+            axx.axvspan(s.start, s.end, color="green", alpha=0.12)
+    for t, e in events:
+        if e in ("water_start", "water_stop", "brushing_detected", "rinse_start", "waste_icon_on"):
+            ax.axvline(t, color="red" if e == "waste_icon_on" else "gray", lw=0.7, ls="--")
+            ax.text(t, 1.02, e, rotation=90, fontsize=7, va="bottom")
+    ax.set_ylim(-0.05, 1.05)
+    ax.set_xlabel("idő (s)  —  zöld sáv = mért fogmosás")
+    ax.legend(loc="center right", fontsize=8)
+    title = ", ".join(f"{s.start:.1f}–{s.end:.1f} s ({s.duration_s:.0f} s, víz {s.water_running_s:.0f} s)"
+                      for s in sessions) or "nincs fogmosás"
+    fig.suptitle(f"{os.path.basename(path)}   {title}")
+    fig.tight_layout()
+    fig.savefig(out_png, dpi=110)
+    plt.close(fig)
+
+
+def run_session_mode(args) -> list[dict]:
+    from brushdetect.learned import load_heads
+    from brushdetect.pipeline import score_recording
+    from brushdetect.session import run_sessions
+    from brushdetect.sonic import describe_tone
+    from brushdetect.water_report import LOCALES, format_report
+
+    heads = load_heads(args.model)
+    loc = LOCALES[args.locale]
+    types = {}
+    if args.labels:
+        from train import read_labels
+
+        types = {os.path.abspath(p): info["type"] for p, info in read_labels(args.labels).items()}
+    rows = []
+    for path in args.files:
+        x = load_audio(path)
+        sc = score_recording(x, heads)
+        brush_type = types.get(os.path.abspath(path)) or args.brush_type
+        # The app asks the user for the brush type. With a manual brush a
+        # sonic hum belongs to someone/something else, so it must not count.
+        sonic = np.zeros_like(sc.sonic) if brush_type == "manual" else sc.sonic
+        sessions, events = run_sessions(sc.t, sc.water, sc.brush, sonic, sc.hop_s)
+        print(f"\n=== {os.path.basename(path)} (fogkefe: {brush_type}) ===")
+        print("  események: " + ", ".join(f"{t:.1f}s {e}" for t, e in events))
+        for s in sessions:
+            in_s = (sc.t >= s.start) & (sc.t <= s.end) & (sonic > 0.5)
+            tone = describe_tone(float(np.median(sc.sonic_f0[in_s]))) if in_s.sum() >= 4 else ""
+            if brush_type == "manual":
+                kind = "kézi fogkefe (súrolás alapján)"
+            elif brush_type == "electric":
+                kind = tone or "elektromos fogkefe (stabil motorhangot nem hallottam, súrolás alapján mérve)"
+            else:
+                kind = tone or "valószínűleg kézi fogkefe (nincs stabil motorhang)"
+            print(f"  fogmosás: {s.start:.1f}–{s.end:.1f} s  (indítás: "
+                  f"{'víz elzárása' if s.cue == 'water' else 'víz nélkül'})")
+            print(f"  hang alapján: {kind}")
+            print("  " + format_report(s.duration_s, s.water_running_s, loc).replace("\n", "\n  "))
+            rows.append({"file": os.path.basename(path), "start_s": round(s.start, 1),
+                         "end_s": round(s.end, 1), "duration_s": round(s.duration_s, 1),
+                         "water_running_s": round(s.water_running_s, 1),
+                         "wasted_water": s.wasted_water, "brush": kind})
+        if not sessions:
+            print("  nem észleltem fogmosást")
+            rows.append({"file": os.path.basename(path)})
+        if not args.no_plot:
+            png = os.path.join(args.out, os.path.splitext(os.path.basename(path))[0] + ".png")
+            plot_session(path, x, sc, sessions, events, png)
+    return rows
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -105,29 +187,26 @@ def main(argv=None):
     ap.add_argument("--out", default="out")
     ap.add_argument("--yamnet", action="store_true", help="also run YAMNet (needs tensorflow)")
     ap.add_argument("--model", help="learned model JSON from train.py")
+    ap.add_argument("--brush-type", choices=["auto", "manual", "electric"], default="auto",
+                    help="what the user said they brush with (the app asks this)")
+    ap.add_argument("--labels", help="labels.csv; its brush_type column overrides --brush-type per file")
+    ap.add_argument("--locale", choices=["hu", "us"], default="hu",
+                    help="units, prices and language of the water report")
     ap.add_argument("--no-plot", action="store_true")
     args = ap.parse_args(argv)
 
     os.makedirs(args.out, exist_ok=True)
-    tcfg = TimerConfig()
-    model = None
     if args.model:
-        from brushdetect.learned import LinearModel
+        rows = run_session_mode(args)
+        _write_summary(args.out, rows)
+        return rows
 
-        model = LinearModel.load(args.model)
+    tcfg = TimerConfig()
     rows = []
     for path in args.files:
         x = load_audio(path)
         feats = compute_features(x)
-        learned = None
-        if model is not None:
-            from brushdetect.learned import causal_smooth, window_features
-
-            lt, lf = window_features(x)
-            learned = (lt, causal_smooth(model.predict(lf)))
-            sessions = run_timer(learned[0], learned[1], feats.hop_s, tcfg)
-        else:
-            sessions = run_timer(feats.t, feats.score, feats.hop_s, tcfg)
+        sessions = run_timer(feats.t, feats.score, feats.hop_s, tcfg)
         total = sum(s.active_s for s in sessions)
         truth = parse_truth(path)
 
@@ -166,15 +245,19 @@ def main(argv=None):
 
         if not args.no_plot:
             png = os.path.join(args.out, os.path.splitext(row["file"])[0] + ".png")
-            plot(path, x, feats, sessions, tcfg, yam, png, learned)
+            plot(path, x, feats, sessions, tcfg, yam, png)
 
+    _write_summary(args.out, rows)
+    return rows
+
+
+def _write_summary(out_dir, rows):
     keys = list(dict.fromkeys(k for r in rows for k in r))
-    with open(os.path.join(args.out, "summary.csv"), "w", newline="") as f:
+    with open(os.path.join(out_dir, "summary.csv"), "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=keys)
         w.writeheader()
         w.writerows(rows)
-    print(f"\nÖsszesítés: {os.path.join(args.out, 'summary.csv')}")
-    return rows
+    print(f"\nÖsszesítés: {os.path.join(out_dir, 'summary.csv')}")
 
 
 if __name__ == "__main__":

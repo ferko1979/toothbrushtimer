@@ -24,7 +24,8 @@ from .features import SR
 N_MELS = 32
 NFFT = 1024
 FRAME_HOP = 160  # 10 ms
-WIN = 300  # frames = 3 s
+WIN = 300  # frames = 3 s (brushing: needs several strokes for the rhythm)
+WATER_WIN = 100  # frames = 1 s (water: short wetting bursts must not be diluted)
 HOP = 50  # frames = 0.5 s
 FEATURE_VERSION = 1
 
@@ -51,19 +52,19 @@ def log_mel(x: np.ndarray) -> np.ndarray:
     return np.log(_FB @ (np.abs(z) ** 2) + 1e-10).T
 
 
-def window_features(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Return (window centre times, feature matrix)."""
+def window_features(x: np.ndarray, win: int = WIN) -> tuple[np.ndarray, np.ndarray]:
+    """Return (window centre times, feature matrix) for windows of `win` frames."""
     m = log_mel(x)
     fm = np.fft.rfftfreq(1024, FRAME_HOP / SR)
-    hann = np.hanning(WIN)
+    hann = np.hanning(win)
     band = (fm >= 3.0) & (fm <= 6.5)
     ref = (fm >= 1.5) & (fm <= 15.0)
     tol = int(round(0.4 / fm[1]))
 
     rows, times = [], []
     floor = None
-    for s in range(0, len(m) - WIN + 1, HOP):
-        w = m[s : s + WIN]
+    for s in range(0, len(m) - win + 1, HOP):
+        w = m[s : s + win]
         mu = w.mean(axis=0)
         # Adaptive floor per band: follows quieter levels, rises slowly.
         floor = mu.copy() if floor is None else np.minimum(floor + 0.01, mu)
@@ -76,7 +77,7 @@ def window_features(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         comb = np.log10(p[c] + 1e-12) + np.log10(p[c2 - tol : c2 + tol + 1].max() + 1e-12)
 
         rows.append(np.r_[mu - mu.mean(), w.std(axis=0), (mu - floor).mean(), comb])
-        times.append((s + WIN / 2) * FRAME_HOP / SR)
+        times.append((s + win / 2) * FRAME_HOP / SR)
     return np.array(times), np.array(rows)
 
 
@@ -92,22 +93,28 @@ class LinearModel:
         z = ((feats - self.mean) / self.scale) @ self.coef + self.intercept
         return 1.0 / (1.0 + np.exp(-z))
 
-    def save(self, path: str) -> None:
-        with open(path, "w") as f:
-            json.dump({
-                "feature_version": FEATURE_VERSION,
-                "mean": self.mean.tolist(), "scale": self.scale.tolist(),
-                "coef": self.coef.tolist(), "intercept": self.intercept,
-                "meta": self.meta,
-            }, f, indent=1)
+    def to_dict(self) -> dict:
+        return {"mean": self.mean.tolist(), "scale": self.scale.tolist(),
+                "coef": self.coef.tolist(), "intercept": self.intercept, "meta": self.meta}
 
     @classmethod
-    def load(cls, path: str) -> "LinearModel":
-        with open(path) as f:
-            d = json.load(f)
-        if d.get("feature_version") != FEATURE_VERSION:
-            raise ValueError(f"{path}: feature version {d.get('feature_version')} != {FEATURE_VERSION}")
+    def from_dict(cls, d: dict) -> "LinearModel":
         return cls(d["mean"], d["scale"], d["coef"], d["intercept"], d.get("meta"))
+
+
+def save_heads(path: str, heads: dict[str, LinearModel]) -> None:
+    """Save several detectors sharing the same features (e.g. brush, water)."""
+    with open(path, "w") as f:
+        json.dump({"feature_version": FEATURE_VERSION,
+                   "heads": {k: m.to_dict() for k, m in heads.items()}}, f, indent=1)
+
+
+def load_heads(path: str) -> dict[str, LinearModel]:
+    with open(path) as f:
+        d = json.load(f)
+    if d.get("feature_version") != FEATURE_VERSION:
+        raise ValueError(f"{path}: feature version {d.get('feature_version')} != {FEATURE_VERSION}")
+    return {k: LinearModel.from_dict(v) for k, v in d["heads"].items()}
 
 
 def fit(feats: np.ndarray, labels: np.ndarray, c: float = 0.1, meta=None) -> LinearModel:
@@ -117,6 +124,10 @@ def fit(feats: np.ndarray, labels: np.ndarray, c: float = 0.1, meta=None) -> Lin
     sc = StandardScaler().fit(feats)
     clf = LogisticRegression(C=c, max_iter=5000).fit(sc.transform(feats), labels)
     return LinearModel(sc.mean_, sc.scale_, clf.coef_[0], clf.intercept_[0], meta)
+
+
+def water_features(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    return window_features(x, WATER_WIN)
 
 
 def causal_smooth(p: np.ndarray, n: int = 5) -> np.ndarray:
