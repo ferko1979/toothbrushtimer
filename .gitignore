@@ -5,3 +5,4 @@ analysis/synthetic/
 __pycache__/
 .venv/
 *.pyc
+analysis/model.json

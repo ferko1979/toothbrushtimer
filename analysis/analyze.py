@@ -2,6 +2,10 @@
 
     python analyze.py recordings/*.m4a --out out/
     python analyze.py recordings/*.wav --out out/ --yamnet
+    python analyze.py recordings/*.m4a --out out/ --model model.json
+
+With --model (see train.py) the learned detector drives the timer; without
+it the hand-written rule-based scores are used.
 
 For every input file a PNG is written to --out, plus summary.csv for all
 files. If a file name contains `__truth<N>s` (e.g. `kezi_1m__truth120s.m4a`)
@@ -26,7 +30,7 @@ def parse_truth(path: str) -> float | None:
     return float(m.group(1)) if m else None
 
 
-def plot(path, x, feats, sessions, tcfg, yam, out_png):
+def plot(path, x, feats, sessions, tcfg, yam, out_png, learned=None):
     import matplotlib
 
     matplotlib.use("Agg")
@@ -70,6 +74,8 @@ def plot(path, x, feats, sessions, tcfg, yam, out_png):
     ax.plot(feats.t, feats.manual_score, label="kézi fogkefe")
     ax.plot(feats.t, feats.electric_score, label="elektromos fogkefe")
     ax.plot(feats.t, feats.water_score, alpha=0.6, label="víz (kísérleti)")
+    if learned is not None:
+        ax.plot(learned[0], learned[1], color="k", lw=1.6, label="tanult modell")
     if yam is not None:
         yt, groups, _ = yam
         for g, s in groups.items():
@@ -98,16 +104,30 @@ def main(argv=None):
     ap.add_argument("files", nargs="+")
     ap.add_argument("--out", default="out")
     ap.add_argument("--yamnet", action="store_true", help="also run YAMNet (needs tensorflow)")
+    ap.add_argument("--model", help="learned model JSON from train.py")
     ap.add_argument("--no-plot", action="store_true")
     args = ap.parse_args(argv)
 
     os.makedirs(args.out, exist_ok=True)
     tcfg = TimerConfig()
+    model = None
+    if args.model:
+        from brushdetect.learned import LinearModel
+
+        model = LinearModel.load(args.model)
     rows = []
     for path in args.files:
         x = load_audio(path)
         feats = compute_features(x)
-        sessions = run_timer(feats.t, feats.score, feats.hop_s, tcfg)
+        learned = None
+        if model is not None:
+            from brushdetect.learned import causal_smooth, window_features
+
+            lt, lf = window_features(x)
+            learned = (lt, causal_smooth(model.predict(lf)))
+            sessions = run_timer(learned[0], learned[1], feats.hop_s, tcfg)
+        else:
+            sessions = run_timer(feats.t, feats.score, feats.hop_s, tcfg)
         total = sum(s.active_s for s in sessions)
         truth = parse_truth(path)
 
@@ -146,7 +166,7 @@ def main(argv=None):
 
         if not args.no_plot:
             png = os.path.join(args.out, os.path.splitext(row["file"])[0] + ".png")
-            plot(path, x, feats, sessions, tcfg, yam, png)
+            plot(path, x, feats, sessions, tcfg, yam, png, learned)
 
     keys = list(dict.fromkeys(k for r in rows for k in r))
     with open(os.path.join(args.out, "summary.csv"), "w", newline="") as f:

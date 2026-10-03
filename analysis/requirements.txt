@@ -6,3 +6,4 @@ pytest
 # Optional, only for --yamnet:
 # tensorflow
 # tensorflow-hub
+scikit-learn

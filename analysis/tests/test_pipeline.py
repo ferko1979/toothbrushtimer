@@ -41,3 +41,29 @@ def test_long_silence_splits_sessions():
     for i, s in enumerate(pattern):
         timer.update((i + 1) * dt, s, dt)
     assert len(timer.finish()) == 2
+
+
+def test_learned_model_roundtrip(tmp_path):
+    from brushdetect.learned import LinearModel, causal_smooth, fit, window_features
+
+    rng = np.random.default_rng(2)
+    feats, labels = [], []
+    for name in ["manual_close", "water_only", "silence_fan"]:
+        x, truth = scenario(name, rng)
+        t, f = window_features(x.astype(np.float32))
+        y = ((t > 12) & (t < 130)).astype(float) if truth else np.zeros(len(t))
+        feats.append(f)
+        labels.append(y)
+    model = fit(np.vstack(feats), np.concatenate(labels))
+    path = tmp_path / "m.json"
+    model.save(str(path))
+    loaded = LinearModel.load(str(path))
+
+    # Unseen realisation of the same conditions. (Generalising to other
+    # distances needs training data recorded at those distances.)
+    x, _ = scenario("manual_close", np.random.default_rng(99))
+    t, f = window_features(x.astype(np.float32))
+    p = causal_smooth(loaded.predict(f))
+    assert np.allclose(p, causal_smooth(model.predict(f)))
+    assert p[(t > 30) & (t < 120)].mean() > 0.8
+    assert p[t < 5].mean() < 0.2

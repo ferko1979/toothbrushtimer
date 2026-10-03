@@ -21,6 +21,46 @@ A pontszámokból egy **állapotgép** számolja az időt (`brushdetect/timer.py
 
 Ugyanez a logika kerül majd át 1:1-ben az appokba.
 
+## Tanult detektor (ajánlott)
+
+A valódi felvételeken a kézzel írt szabályok gyengének bizonyultak. A súrolás
+ritmusa ugyan látszik, de sok más hang is hasonló. Ezért van egy kis tanuló
+modell is (`brushdetect/learned.py`), amely a következőkből dolgozik:
+
+- **hangszín:** 32 mel-sáv átlaga, hangerőtől függetlenül,
+- **hangszín-ingadozás:** sávonkénti szórás,
+- **szint a zajküszöb felett,**
+- **súrolási ritmus:** a burkológörbe 3–6,5 Hz-es csúcsa és a kétszeres
+  frekvenciájú felharmonikusa. Az oda-vissza mozdulat így látszik a hangban.
+
+A modell egy logisztikus regresszió. Az appban ez ablakonként egyetlen
+szorzatösszeg, így az iOS-, watchOS-, Android- és Wear OS-kódba könnyen
+átvihető.
+
+Ehhez címkefájl kell: `recordings/labels.csv`.
+
+```csv
+file,brush_type,start_s,end_s
+record_1_electric_brush.m4a,electric,8,66
+csak_viz.m4a,,,
+```
+
+Egy sor egy fogmosási szakasz. Ha egy fájlhoz üres időpontokat adsz meg, az
+azt jelenti, hogy abban nincs fogmosás (negatív példa).
+
+```bash
+python train.py --labels recordings/labels.csv --out model.json
+python analyze.py recordings/* --out out/ --model model.json
+```
+
+A `train.py` kihagyásos validációt is futtat: minden felvételt egy olyan
+modellel értékel, amely azt a felvételt nem látta. Ez a becslés mutatja meg
+őszintén, mennyire működik a modell egy új felvételen.
+
+**Ismert korlát:** a modell csak olyan távolságra és zajszintre általánosít,
+amilyet a tanítóadatban látott. Ezért érdemes több távolságból és többféle
+háttérzajjal is felvenni.
+
 ## Telepítés
 
 ```bash
