@@ -136,8 +136,15 @@ def run_session_mode(args) -> list[dict]:
     from brushdetect.sonic import describe_tone
     from brushdetect.water_report import LOCALES, format_report
 
+    from datetime import datetime
+
+    from brushdetect.coach import BrushRecord, Goals, session_feedback
+
     heads = load_heads(args.model)
     loc = LOCALES[args.locale]
+    goals = Goals(per_day=args.per_day, target_s=args.target_s)
+    for w in goals.warnings():
+        print(f"! {w}")
     types = {}
     if args.labels:
         from train import read_labels
@@ -166,6 +173,7 @@ def run_session_mode(args) -> list[dict]:
             print(f"  fogmosás: {s.start:.1f}–{s.end:.1f} s  (indítás: "
                   f"{'víz elzárása' if s.cue == 'water' else 'víz nélkül'})")
             print(f"  hang alapján: {kind}")
+            print("  " + session_feedback(BrushRecord(datetime.now(), s.duration_s, s.water_running_s), goals))
             print("  " + format_report(s.duration_s, s.water_running_s, loc).replace("\n", "\n  "))
             rows.append({"file": os.path.basename(path), "start_s": round(s.start, 1),
                          "end_s": round(s.end, 1), "duration_s": round(s.duration_s, 1),
@@ -190,6 +198,9 @@ def main(argv=None):
     ap.add_argument("--brush-type", choices=["auto", "manual", "electric"], default="auto",
                     help="what the user said they brush with (the app asks this)")
     ap.add_argument("--labels", help="labels.csv; its brush_type column overrides --brush-type per file")
+    ap.add_argument("--target-s", type=float, default=120.0,
+                    help="brushing time goal in seconds (dentists recommend 120)")
+    ap.add_argument("--per-day", type=int, default=2, help="brushings per day goal (recommended 2)")
     ap.add_argument("--locale", choices=["hu", "us"], default="hu",
                     help="units, prices and language of the water report")
     ap.add_argument("--no-plot", action="store_true")

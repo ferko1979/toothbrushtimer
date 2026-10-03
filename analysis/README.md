@@ -109,6 +109,32 @@ fájlban vannak):
 | ár (víz és csatorna) | kb. 653 Ft/m³ (Budapest 2025/26) | kb. 0,0125 $/gal |
 | napi fogyasztás/fő | kb. 105 l | kb. 82 gal (EPA) |
 
+## Célok, visszajelzés, kitüntetések
+
+A `brushdetect/coach.py` a mért fogmosásokból dolgozik, és ugyanez a logika
+kerül majd az appokba.
+
+- **Beállítható cél:** napi fogmosásszám (1–4) és célidő (30–300 s).
+  Az alapértelmezés a fogorvosi ajánlás: **naponta 2×, 2 perc** (ADA). Ha
+  a felhasználó ennél kevesebbet állít be, az app figyelmeztet.
+- **Visszajelzés minden fogmosás után:**
+  - ha elérte a célt, dicséret,
+  - ha nem, megmondja, hány másodperc hiányzott,
+  - összeveti az átlagemberrel (kb. 45 s), és emlékeztet, hogy a 2 perces
+    fogmosás kb. 26%-kal több lepedéket távolít el,
+  - tippet ad: 30 s jusson minden fogsornegyedre.
+- **Napi és heti összesítő:** a mai haladás, a sorozat (hány tökéletes nap
+  egymás után), és a heti átlag a múlt héthez képest.
+- **Kitüntetések:**
+  - Első lépés, Átlag felett, Célba értél,
+  - Tökéletes nap, 3, 7 és 30 napos sorozat,
+  - Víztakarékos (10 fogmosás elzárt csappal), Vízőr (50),
+  - Fejlődés (a heti átlag legalább 15 s-mal jobb az előző hétnél).
+
+```bash
+python analyze.py recordings/* --out out/ --model model.json --target-s 120 --per-day 2
+```
+
 ## Telepítés
 
 ```bash
