@@ -135,6 +135,23 @@ kerül majd az appokba.
 python analyze.py recordings/* --out out/ --model model.json --target-s 120 --per-day 2
 ```
 
+## App-funkciók logikája
+
+Mind tiszta függvény, a mentett fogmosás-rekordokon dolgozik, így 1:1-ben
+átvihető az appokba. Bemutató egy hónapnyi szimulált adattal:
+`python coach_demo.py`.
+
+| # | Funkció | Modul |
+|---|---|---|
+| 1 | Rezgés: indításkor, minden fogsornegyed-váltásnál (30/60/90 s), és egy „kész” minta a célidőnél; kör alakú haladásjelző | `cues.py` |
+| 2 | Emlékeztetők: reggel, este, és lefekvés előtti figyelmeztetés, ha az esti fogmosás hiányzik | `reminders.py` |
+| 3 | Fogkefe- vagy fogkefefej-csere: 90 nap után (ADA: 3–4 hónap), egy héttel előtte előjelzés, betegség után azonnal | `brush_head.py` |
+| 4 | Családi profilok: gyerekbarát szövegek és kitüntetésnevek, matricák (tökéletes naponként) és figurák (7 matricánként), szülői áttekintő | `profiles.py` |
+| 5 | Apple Health: `HKCategoryTypeIdentifierToothbrushingEvent` minták. A Health Connectben nincs fogmosás-adattípus, ezért Androidon CSV/JSON export | `health_export.py` |
+| 6 | Havi összefoglaló a fogorvosnak: darabszám, átlagidő, célarány, sorozat, reggel/este, megtakarított és elfolyt víz | `monthly.py` |
+| 7 | Rossz szokások: kapkodás (< 30 s), túl hosszú súrolás (> 4 perc), kimaradó reggelek vagy esték, folyó csap, hétvégi visszaesés, romló trend, mindegyikhez célzott tipp | `habits.py` |
+| 8 | Adatvédelem: a hang csak a készüléken, memóriában dolgozódik fel, felvétel nem készül | [`../PRIVACY.md`](../PRIVACY.md) |
+
 ## Telepítés
 
 ```bash

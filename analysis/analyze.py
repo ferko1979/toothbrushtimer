@@ -139,6 +139,7 @@ def run_session_mode(args) -> list[dict]:
     from datetime import datetime
 
     from brushdetect.coach import BrushRecord, Goals, session_feedback
+    from brushdetect.cues import cue_schedule
 
     heads = load_heads(args.model)
     loc = LOCALES[args.locale]
@@ -173,6 +174,8 @@ def run_session_mode(args) -> list[dict]:
             print(f"  fogmosás: {s.start:.1f}–{s.end:.1f} s  (indítás: "
                   f"{'víz elzárása' if s.cue == 'water' else 'víz nélkül'})")
             print(f"  hang alapján: {kind}")
+            cues = [c for c in cue_schedule(goals.target_s) if c.at_s <= s.duration_s]
+            print("  jelzések: " + ", ".join(f"{s.start + c.at_s:.0f}s {c.haptic}" for c in cues))
             print("  " + session_feedback(BrushRecord(datetime.now(), s.duration_s, s.water_running_s), goals))
             print("  " + format_report(s.duration_s, s.water_running_s, loc).replace("\n", "\n  "))
             rows.append({"file": os.path.basename(path), "start_s": round(s.start, 1),
