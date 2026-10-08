@@ -17,7 +17,9 @@ from brushdetect.cues import CueTracker, progress
 from brushdetect.habits import detect_habits
 from brushdetect.health_export import to_healthkit_samples
 from brushdetect.monthly import format_monthly, monthly_report
-from brushdetect.profiles import Profile, child_feedback, family_overview
+from brushdetect.avatars import avatar_image
+from brushdetect.onboarding import Onboarding, profile_picker
+from brushdetect.profiles import Profile, child_feedback, family_overview, feedback_for
 from brushdetect.reminders import ReminderSettings, due_reminders
 
 TODAY = date(2026, 10, 31)
@@ -39,7 +41,29 @@ def simulate(seed: int, base_s: float, gain_s: float, skip_evening: float, tap_o
     return out
 
 
+def onboarding_demo():
+    print("== 0. Első indítás ==")
+    flow = Onboarding(adult_name="Anna")
+    answers = iter(["family", "Bence", 4, "no", "dino", "yes", "Lili", 10, "unicorn", "no"])
+    while (q := flow.next_question()) is not None:
+        a = next(answers)
+        if q.kind == "avatar":
+            grid = " ".join(avatar_image(o) for o in q.options)
+            shown = "[csak képek]" if q.picture_only else q.text
+            print(f"  {shown}  {grid}  -> {avatar_image(a)}")
+        else:
+            print(f"  {q.text}  -> {a}")
+        flow.answer(a)
+    profiles = flow.profiles()
+    print("  Ki mos most fogat? " + "  ".join(
+        f"{avatar_image(i.avatar) if i.avatar else '🧑'} {i.label or ''}".strip() for i in profile_picker(profiles)))
+    fb = feedback_for(profiles[1], 130)
+    print(f"  Bence (nem olvas) visszajelzése: {fb.icons}  + felolvasva: „{fb.text}”")
+    print()
+
+
 def main():
+    onboarding_demo()
     anna = Profile("anna", "Anna")
     bence = Profile("bence", "Bence", child=True)
     records = {

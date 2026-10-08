@@ -22,6 +22,9 @@ class Profile:
     child: bool = False
     goals: Goals = field(default_factory=Goals)  # ADA: 2x2 min for children too
     brush_type: str = "manual"
+    age: int | None = None
+    can_read: bool = True  # False -> picture-only UI and spoken feedback
+    avatar: str | None = None  # avatar id from avatars.AVATARS
 
 
 # Kid-friendly names for the same achievements.
@@ -51,6 +54,26 @@ def child_feedback(duration_s: float, goals: Goals) -> str:
     if duration_s >= goals.target_s / 2:
         return "Ügyes vagy, már több mint félúton jártál! Legközelebb a végéig, és jár a matrica!"
     return "Jó kezdés! A cukorkaszörnyek még bújkálnak. Holnap mosd tovább, amíg a kör be nem telik!"
+
+
+@dataclass(frozen=True)
+class Feedback:
+    text: str
+    icons: str  # shown big; for non-readers this *is* the message
+    speak: bool  # read the text aloud (text-to-speech)
+
+
+def feedback_for(profile: Profile, duration_s: float) -> Feedback:
+    """Feedback adapted to the person: adults text, kids playful, non-readers icons + voice."""
+    from .coach import BrushRecord, session_feedback
+    from datetime import datetime
+
+    g = profile.goals
+    if not profile.child:
+        return Feedback(session_feedback(BrushRecord(datetime.now(), duration_s), g), "", False)
+    stars = 3 if duration_s >= g.target_s else 2 if duration_s >= g.target_s / 2 else 1
+    icons = "⭐" * stars + ("🏅" if stars == 3 else "")
+    return Feedback(child_feedback(duration_s, g), icons, speak=not profile.can_read)
 
 
 def stickers(records: list[BrushRecord], goals: Goals) -> tuple[int, int]:

@@ -150,6 +150,7 @@ Mind tiszta függvény, a mentett fogmosás-rekordokon dolgozik, így 1:1-ben
 | 5 | Apple Health: `HKCategoryTypeIdentifierToothbrushingEvent` minták. A Health Connectben nincs fogmosás-adattípus, ezért Androidon CSV/JSON export | `health_export.py` |
 | 6 | Havi összefoglaló a fogorvosnak: darabszám, átlagidő, célarány, sorozat, reggel/este, megtakarított és elfolyt víz | `monthly.py` |
 | 7 | Rossz szokások: kapkodás (< 30 s), túl hosszú súrolás (> 4 perc), kimaradó reggelek vagy esték, folyó csap, hétvégi visszaesés, romló trend, mindegyikhez célzott tipp | `habits.py` |
+| 9 | Első indítás: „Egyedül vagy a gyerekeidnek is?” Gyerekenként név, életkor, és „Tud már olvasni?” (6 év alatt alapértelmezés: nem; 9 évtől nem kérdezi). A gyerek állatos avatart választ, testvérenként különbözőt. Aki nem olvas, annál csak képek jelennek meg, és a visszajelzés csillagokkal és felolvasva érkezik | `onboarding.py`, `avatars.py` |
 | 8 | Adatvédelem: a hang csak a készüléken, memóriában dolgozódik fel, felvétel nem készül | [`../PRIVACY.md`](../PRIVACY.md) |
 
 ## Telepítés
