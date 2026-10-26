@@ -13,7 +13,7 @@ from brushdetect.habits import detect_habits  # noqa: E402
 from brushdetect.health_export import HK_TYPE, to_csv, to_healthkit_samples, to_json  # noqa: E402
 from brushdetect.monthly import format_monthly, monthly_report  # noqa: E402
 from brushdetect.profiles import Profile, achievement_title, child_feedback, family_overview, stickers  # noqa: E402
-from brushdetect.reminders import ReminderSettings, due_reminders  # noqa: E402
+from brushdetect.reminders import ReminderSettings, due_reminders, on_first_unlock  # noqa: E402
 
 TODAY = date(2026, 10, 31)  # a Saturday
 G = Goals()
@@ -40,18 +40,42 @@ def test_cue_schedule_and_tracker():
 
 
 # 2. reminders
-def test_reminders():
+def test_reminders_morning_bedtime_followup():
+    s = ReminderSettings()  # wake 7:00, bedtime 22:30 (-15 min), follow-up after 20 min
+    early = datetime.combine(TODAY, time(6, 30))
+    assert due_reminders(early, [], G, s, {}) == []
+    morning = datetime.combine(TODAY, time(7, 5))
+    assert [r.key for r in due_reminders(morning, [], G, s, {})] == ["morning"]
+    assert due_reminders(morning, [at(0, 7)], G, s, {}) == []  # already brushed
+    sent = {"morning": morning}
+    assert due_reminders(datetime.combine(TODAY, time(7, 15)), [], G, s, sent) == []
+    fu = due_reminders(datetime.combine(TODAY, time(7, 26)), [], G, s, sent)
+    assert [r.key for r in fu] == ["morning_followup1"]
+    sent["morning_followup1"] = datetime.combine(TODAY, time(7, 26))
+    assert due_reminders(datetime.combine(TODAY, time(8, 30)), [], G, s, sent) == []  # max 1 follow-up
+    # brushed after the reminder -> no follow-up
+    assert due_reminders(datetime.combine(TODAY, time(7, 30)), [at(0, 7, minute=10)], G, s,
+                         {"morning": morning}) == []
+
+    # bedtime reminder 15 min before 22:30, default on; no "evening" reminder by default
+    assert due_reminders(datetime.combine(TODAY, time(21, 0)), [at(0, 7)], G, s, {}) == []
+    bt = due_reminders(datetime.combine(TODAY, time(22, 15)), [at(0, 7)], G, s, {})
+    assert [r.key for r in bt] == ["bedtime"] and bt[0].arm_listening
+    assert due_reminders(datetime.combine(TODAY, time(22, 15)), [at(0, 7), at(0, 21)], G, s, {}) == []
+    assert due_reminders(morning, [], G, ReminderSettings(enabled=False), {}) == []
+    assert due_reminders(morning, [], G, ReminderSettings(morning_enabled=False), {}) == []
+    custom = ReminderSettings(bedtime=time(23, 0), bedtime_lead_min=30, evening_enabled=True)
+    assert [r.key for r in due_reminders(datetime.combine(TODAY, time(20, 10)), [at(0, 7)], G, custom, {})] \
+        == ["evening"]
+
+
+def test_first_unlock_morning():
     s = ReminderSettings()
-    morning = datetime.combine(TODAY, time(8, 0))
-    assert [r.key for r in due_reminders(morning, [], G, s, set())] == ["morning"]
-    assert due_reminders(morning, [at(0, 7)], G, s, set()) == []
-    assert due_reminders(morning, [], G, s, {"morning"}) == []
-    evening = datetime.combine(TODAY, time(21, 15))
-    assert [r.key for r in due_reminders(evening, [at(0, 7)], G, s, set())] == ["evening"]
-    late = datetime.combine(TODAY, time(22, 10))
-    assert [r.key for r in due_reminders(late, [at(0, 7)], G, s, set())] == ["bedtime_nudge"]
-    assert due_reminders(late, [at(0, 7), at(0, 21)], G, s, set()) == []
-    assert due_reminders(late, [], G, ReminderSettings(enabled=False), set()) == []
+    r = on_first_unlock(datetime.combine(TODAY, time(7, 40)), [], G, s, {})
+    assert r is not None and r.key == "morning"
+    assert on_first_unlock(datetime.combine(TODAY, time(6, 40)), [], G, s, {}) is None
+    assert on_first_unlock(datetime.combine(TODAY, time(7, 40)), [], G, s,
+                           {"morning": datetime.combine(TODAY, time(7, 0))}) is None
 
 
 # 3. brush head

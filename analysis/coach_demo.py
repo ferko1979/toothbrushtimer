@@ -79,10 +79,13 @@ def main():
             p = progress(sec, g.target_s)
             print(f"  {sec:3d} s  [{c.haptic:7s}] {c.text}   (kör: {p.fraction:.0%})")
 
-    print("\n== 2. Emlékeztetők (Anna, ma este 22:05, még nincs esti fogmosás) ==")
-    now = datetime.combine(TODAY, time(22, 5))
-    for r in due_reminders(now, records["anna"], g, ReminderSettings(), set()):
-        print(f"  [{r.key}] {r.text}")
+    print("\n== 2. Emlékeztetők (Anna, lefekvés 22:30, még nincs esti fogmosás) ==")
+    sent = {}
+    for hh, mm in ((22, 15), (22, 35)):
+        now = datetime.combine(TODAY, time(hh, mm))
+        for r in due_reminders(now, records["anna"], g, ReminderSettings(), sent):
+            sent[r.key] = now
+            print(f"  {hh}:{mm:02d} [{r.key}] {r.text}  (megnyitva: az app fogmosásra vár)")
 
     print("\n== 3. Fogkefe ==")
     print("  " + head_status(BrushHead(TODAY - timedelta(days=95)), records["anna"], TODAY).message)
