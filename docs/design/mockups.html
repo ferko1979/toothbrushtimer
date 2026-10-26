@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fogmosás látványterv</title>
+<style>
+:root {
+  --bg: #eef3f6; --ink: #13232f; --muted: #5b6d79; --card: #ffffff;
+  --brand: #1e9bb8; --brand-2: #57c5b6; --warn: #e8833a; --danger: #d9534f; --ok: #2e9e6a;
+  --kid: #ffcf4a; --kid-2: #ff8fab; --line: #dde6ec;
+  --font: -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); }
+h1 { font-size: 28px; margin: 32px 32px 4px; }
+h2 { font-size: 20px; margin: 36px 32px 6px; }
+p.lead { margin: 0 32px 8px; color: var(--muted); max-width: 900px; }
+.row { display: flex; flex-wrap: wrap; gap: 36px; padding: 18px 32px 8px; align-items: flex-start; }
+.cap { text-align: center; color: var(--muted); font-size: 13px; margin-top: 10px; max-width: 300px; }
+
+/* ---------- iPhone ---------- */
+.iphone { width: 300px; height: 630px; border-radius: 46px; background: #0d1419; padding: 11px; box-shadow: 0 18px 40px rgba(19,35,47,.25); }
+.iphone .scr { width: 100%; height: 100%; border-radius: 36px; background: #f7fafc; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+.island { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 92px; height: 26px; background: #0d1419; border-radius: 14px; z-index: 3; }
+.status { height: 44px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 26px 4px; font-size: 12px; font-weight: 600; }
+.body { flex: 1; padding: 10px 18px 14px; display: flex; flex-direction: column; gap: 12px; }
+.title { font-size: 24px; font-weight: 800; letter-spacing: -.3px; }
+.sub { color: var(--muted); font-size: 13px; }
+.card { background: var(--card); border-radius: 18px; padding: 14px; box-shadow: 0 2px 8px rgba(19,35,47,.06); }
+.btn { background: var(--brand); color: #fff; text-align: center; border-radius: 16px; padding: 15px; font-weight: 700; font-size: 16px; }
+.btn.alt { background: #fff; color: var(--brand); border: 2px solid var(--brand); }
+.btn.big { padding: 22px; font-size: 19px; border-radius: 22px; background: linear-gradient(135deg, var(--brand), var(--brand-2)); }
+.choice { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 16px; padding: 16px; border: 2px solid var(--line); font-weight: 600; }
+.choice.sel { border-color: var(--brand); background: #e8f6fa; }
+.choice .ico { font-size: 28px; }
+.avatars { display: flex; gap: 10px; }
+.av { width: 54px; height: 54px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 30px; border: 3px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+.av.sel { border-color: var(--brand); }
+.avlabel { text-align: center; font-size: 11px; color: var(--muted); margin-top: 3px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; justify-items: center; }
+.grid3 .av { width: 72px; height: 72px; font-size: 42px; }
+.stat { display: flex; justify-content: space-between; align-items: center; }
+.big { font-size: 26px; font-weight: 800; }
+.pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.pill.ok { background: #e3f5ec; color: var(--ok); }
+.pill.warn { background: #fdeee2; color: var(--warn); }
+.pill.info { background: #e6f4f8; color: var(--brand); }
+.tip { border-left: 4px solid var(--warn); }
+.ring { width: 210px; height: 210px; border-radius: 50%; margin: 6px auto 0; display: grid; place-items: center; position: relative; }
+.ring .inner { width: 172px; height: 172px; border-radius: 50%; background: #f7fafc; display: grid; place-items: center; text-align: center; }
+.ring .time { font-size: 44px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.quad { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 120px; margin: 0 auto; }
+.quad div { height: 30px; border-radius: 8px; background: #dfe9ef; font-size: 10px; display: grid; place-items: center; color: var(--muted); font-weight: 700; }
+.quad .done { background: var(--brand-2); color: #fff; }
+.quad .now { background: var(--brand); color: #fff; }
+.banner { display: flex; gap: 10px; align-items: center; border-radius: 14px; padding: 10px 12px; font-size: 13px; font-weight: 600; }
+.banner.water { background: #fdecea; color: var(--danger); }
+.banner.ok { background: #e3f5ec; color: var(--ok); }
+.toggle { width: 42px; height: 26px; border-radius: 13px; background: var(--ok); position: relative; flex: none; }
+.toggle::after { content: ""; position: absolute; right: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; }
+.toggle.off { background: #cfd8de; }
+.toggle.off::after { left: 3px; right: auto; }
+.set { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; gap: 10px; }
+.set:last-child { border-bottom: 0; }
+.set small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; }
+.grp { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); font-weight: 700; margin: 2px 4px -6px; }
+.tabbar { display: flex; justify-content: space-around; border-top: 1px solid var(--line); padding: 8px 0 18px; background: #fff; font-size: 10px; color: var(--muted); text-align: center; }
+.tabbar .on { color: var(--brand); font-weight: 700; }
+.tabbar span { display: block; font-size: 20px; }
+.lock { background: linear-gradient(160deg, #20374a, #0f1d28); color: #fff; }
+.notif { background: rgba(255,255,255,.88); color: var(--ink); border-radius: 18px; padding: 12px 14px; font-size: 13px; }
+.notif b { display: block; margin-bottom: 2px; }
+.liveact { background: rgba(20,30,38,.85); color: #fff; border-radius: 22px; padding: 14px; display: flex; gap: 12px; align-items: center; }
+.minibar { flex: 1; height: 8px; border-radius: 4px; background: #3b4b57; overflow: hidden; }
+.minibar i { display: block; height: 100%; width: 62%; background: var(--brand-2); }
+.kid { background: linear-gradient(180deg, #fff6d6, #ffe3ec); }
+.stars { font-size: 34px; text-align: center; letter-spacing: 4px; }
+.sticker { display: flex; gap: 6px; justify-content: center; font-size: 22px; }
+
+/* ---------- Apple Watch ---------- */
+.watch { width: 190px; height: 232px; border-radius: 52px; background: #0d1419; padding: 12px; box-shadow: 0 14px 30px rgba(19,35,47,.25); position: relative; }
+.watch::after { content: ""; position: absolute; right: -7px; top: 62px; width: 9px; height: 34px; border-radius: 4px; background: #2a343b; }
+.watch .scr { width: 100%; height: 100%; border-radius: 40px; background: #000; color: #fff; overflow: hidden; padding: 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.watch .wt { display: flex; justify-content: space-between; font-size: 11px; color: #9fb3bf; }
+.watch .wbtn { background: var(--brand); border-radius: 18px; text-align: center; padding: 11px; font-weight: 700; font-size: 14px; }
+.wring { width: 128px; height: 128px; border-radius: 50%; margin: 0 auto; display: grid; place-items: center; }
+.wring .inner { width: 106px; height: 106px; border-radius: 50%; background: #000; display: grid; place-items: center; text-align: center; }
+
+/* ---------- Android ---------- */
+.android { width: 300px; height: 630px; border-radius: 34px; background: #1c2227; padding: 9px; box-shadow: 0 18px 40px rgba(19,35,47,.25); }
+.android .scr { width: 100%; height: 100%; border-radius: 26px; background: #f5fbfb; overflow: hidden; display: flex; flex-direction: column; position: relative; }
+.android .punch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 50%; background: #1c2227; }
+.android .status { height: 34px; align-items: center; padding: 0 18px; }
+.m3top { padding: 6px 18px 4px; font-size: 22px; font-weight: 500; }
+.m3card { background: #e3f2f1; border-radius: 22px; padding: 14px; }
+.fab { background: #c9ece9; color: #00403c; border-radius: 18px; padding: 18px; font-weight: 600; text-align: center; font-size: 16px; }
+.navbar { display: flex; justify-content: space-around; padding: 10px 0 16px; background: #e8f3f2; font-size: 11px; text-align: center; color: #3f4948; }
+.navbar .on span { background: #c9ece9; border-radius: 16px; padding: 2px 16px; }
+.navbar span { display: block; font-size: 18px; margin-bottom: 2px; }
+.notif-and { background: #fff; border-radius: 20px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(0,0,0,.08); font-size: 13px; }
+
+/* ---------- Wear OS ---------- */
+.wear { width: 210px; height: 210px; border-radius: 50%; background: #1c2227; padding: 10px; box-shadow: 0 14px 30px rgba(19,35,47,.25); }
+.wear .scr { width: 100%; height: 100%; border-radius: 50%; background: #000; color: #fff; display: grid; place-items: center; text-align: center; overflow: hidden; position: relative; }
+</style>
+</head>
+<body>
+
+<h1>Fogmosás-időzítő – látványterv</h1>
+<p class="lead">Az iPhone-, Apple Watch-, Android- és Wear OS-képernyők vázlata. A színek, ikonok és a szövegek véglegesítése még hátravan; az avatarok helyére saját rajzolt figurák kerülnek.</p>
+
+<!-- ====================== iPhone ====================== -->
+<h2>iPhone</h2>
+<div class="row" id="iphone-1">
+  <!-- 1. onboarding -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div style="font-size:54px;text-align:center;margin-top:10px">🪥</div>
+        <div class="title" style="text-align:center">Üdv!</div>
+        <div class="sub" style="text-align:center">Egyedül használod az appot, vagy a gyerekeid fogmosását is mérnéd?</div>
+        <div class="choice"><span class="ico">🧑</span>Csak magamnak</div>
+        <div class="choice sel"><span class="ico">👨‍👧‍👦</span>A gyerekeimnek is</div>
+        <div style="flex:1"></div>
+        <div class="btn">Tovább</div>
+      </div>
+    </div></div>
+    <div class="cap">1. Első indítás: egyedül vagy családdal</div>
+  </div>
+
+  <!-- 2. reading check -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div class="sub">2/3 · Gyerek hozzáadása</div>
+        <div class="title">Bence, 4 éves</div>
+        <div class="card"><b>Tud már Bence önállóan olvasni?</b>
+          <div class="sub" style="margin-top:4px">Ha még nem, az app neki csak képeket mutat, és felolvassa az üzeneteket.</div>
+        </div>
+        <div class="choice">Igen</div>
+        <div class="choice sel">Még nem</div>
+        <div style="flex:1"></div>
+        <div class="btn">Tovább</div>
+      </div>
+    </div></div>
+    <div class="cap">2. Olvasás-ellenőrzés (6 év alatt „Még nem” az előválasztás)</div>
+  </div>
+
+  <!-- 3. avatar picker -->
+  <div>
+    <div class="iphone"><div class="scr kid"><div class="island"></div>
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div style="text-align:center;font-size:30px;margin-top:6px">👆 🙂</div>
+        <div class="grid3" style="margin-top:8px">
+          <div class="av">🦁</div><div class="av">🐻</div><div class="av">🐰</div>
+          <div class="av">🦄</div><div class="av">🐶</div><div class="av">🐱</div>
+          <div class="av">🦊</div><div class="av">🐼</div><div class="av">🐸</div>
+          <div class="av">🐧</div><div class="av sel">🦖</div><div class="av">🐙</div>
+        </div>
+        <div style="flex:1"></div>
+        <div class="btn" style="background:var(--kid-2);font-size:26px">✔︎</div>
+      </div>
+    </div></div>
+    <div class="cap">3. Avatarválasztás olvasni még nem tudó gyereknek: csak képek</div>
+  </div>
+</div>
+
+<div class="row" id="iphone-2">
+  <!-- 4. home -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>21:58</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div class="title">Jó estét, Anna!</div>
+        <div>
+          <div class="sub" style="margin-bottom:6px">Ki mos most fogat?</div>
+          <div class="avatars">
+            <div><div class="av sel">🧑</div><div class="avlabel">Anna</div></div>
+            <div><div class="av">🦖</div><div class="avlabel">&nbsp;</div></div>
+            <div><div class="av">🦄</div><div class="avlabel">Lili</div></div>
+          </div>
+        </div>
+        <div class="btn big">🪥 Fogmosás indítása</div>
+        <div class="card stat"><div><div class="sub">Ma</div><div class="big">1 / 2</div></div>
+          <div style="text-align:right"><div class="sub">Sorozat</div><div class="big">🔥 6 nap</div></div></div>
+        <div class="card tip"><b style="font-size:13px">Tipp</b><div class="sub">Az elmúlt héten 3 este kimaradt a fogmosás. Az esti a legfontosabb!</div></div>
+        <div class="card stat"><div class="sub">🪥 Fogkefe: 78 napos</div><span class="pill warn">csere 12 nap múlva</span></div>
+      </div>
+      <div class="tabbar"><div class="on"><span>🏠</span>Főoldal</div><div><span>📊</span>Statisztika</div><div><span>🏅</span>Kitüntetések</div><div><span>⚙️</span>Beállítások</div></div>
+    </div></div>
+    <div class="cap">4. Főoldal: profilválasztó, indítás, mai haladás, tippek</div>
+  </div>
+
+  <!-- 5. brushing -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>22:01</span><span>●●● ▮</span></div>
+      <div class="body" style="gap:14px">
+        <div class="banner ok">✅ Fogmosás észlelve · a víz elzárásától mérve</div>
+        <div class="ring" style="background:conic-gradient(var(--brand) 0 58%, #dfe9ef 58% 100%)">
+          <div class="inner"><div><div class="time">1:10</div><div class="sub">cél: 2:00</div></div></div>
+        </div>
+        <div style="text-align:center;font-weight:700">Most: bal alsó negyed</div>
+        <div class="quad"><div class="done">jobb felső</div><div class="done">bal felső</div><div class="now">bal alsó</div><div>jobb alsó</div></div>
+        <div class="sub" style="text-align:center">🔊 Szónikus fogkefe · 256 Hz</div>
+        <div style="flex:1"></div>
+        <div class="btn alt">Kész</div>
+      </div>
+    </div></div>
+    <div class="cap">5. Fogmosás közben: gyűrű, fogsornegyed, rezgés 30 s-onként</div>
+  </div>
+
+  <!-- 6. water waste -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>7:12</span><span>●●● ▮</span></div>
+      <div class="body" style="gap:14px">
+        <div class="banner water">🚰 Folyik a csap! Zárd el, amíg fogat mosol.</div>
+        <div class="ring" style="background:conic-gradient(var(--warn) 0 30%, #dfe9ef 30% 100%)">
+          <div class="inner"><div><div class="time">0:36</div><div class="sub">cél: 2:00</div></div></div>
+        </div>
+        <div style="text-align:center;font-weight:700">Most: bal felső negyed</div>
+        <div class="quad"><div class="done">jobb felső</div><div class="now">bal felső</div><div>bal alsó</div><div>jobb alsó</div></div>
+        <div class="card" style="text-align:center"><div class="sub">Eddig elfolyt</div><div class="big" style="color:var(--danger)">≈ 4,1 l</div></div>
+        <div style="flex:1"></div>
+        <div class="btn alt">Kész</div>
+      </div>
+    </div></div>
+    <div class="cap">6. Pazarlás-ikon, ha a csap fogmosás közben is folyik</div>
+  </div>
+</div>
+
+<div class="row" id="iphone-3">
+  <!-- 7. result -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>22:03</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div style="text-align:center;font-size:48px;margin-top:4px">🎉</div>
+        <div class="title" style="text-align:center">2:06 – szuper!</div>
+        <div class="sub" style="text-align:center">Elérted a 2 perces célt. Ez 26%-kal több lepedéket távolít el, mint az átlagos 45 másodperc.</div>
+        <div class="card"><div class="stat"><b>💧 Elzártad a csapot</b><span class="pill ok">+ 8,4 l</span></div>
+          <div class="sub" style="margin-top:4px">Ennyi víz folyt volna el feleslegesen (~34 pohár).</div></div>
+        <div class="card"><div class="stat"><b>🏅 Új kitüntetés</b><span class="pill info">Egy hét fegyelem</span></div>
+          <div class="sub" style="margin-top:4px">7 tökéletes nap egymás után.</div></div>
+        <div class="card"><b style="font-size:13px">Fogselyem ma?</b><div style="display:flex;gap:8px;margin-top:8px"><div class="btn" style="flex:1;padding:10px">✔︎ Igen</div><div class="btn alt" style="flex:1;padding:10px">Most nem</div></div></div>
+      </div>
+    </div></div>
+    <div class="cap">7. Eredmény: visszajelzés, víz, kitüntetés, fogselyem (ha be van kapcsolva)</div>
+  </div>
+
+  <!-- 8. kid result -->
+  <div>
+    <div class="iphone"><div class="scr kid"><div class="island"></div>
+      <div class="status"><span>19:40</span><span>●●● ▮</span></div>
+      <div class="body" style="align-items:center;gap:16px">
+        <div class="av" style="width:110px;height:110px;font-size:70px;margin-top:20px">🦖</div>
+        <div class="stars">⭐⭐⭐</div>
+        <div style="font-size:60px">🏅</div>
+        <div class="card" style="width:100%"><div class="sticker">🟡🟡🟡🟡🟡⚪⚪</div><div class="sub" style="text-align:center;margin-top:6px">még 2 matrica a következő figuráig</div></div>
+        <div style="font-size:34px">🔊</div>
+      </div>
+    </div></div>
+    <div class="cap">8. Gyerek eredménye: csillagok, matricák, felolvasott dicséret</div>
+  </div>
+
+  <!-- 9. settings -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="body" style="gap:10px">
+        <div class="title">Beállítások</div>
+        <div class="grp">Cél</div>
+        <div class="card" style="padding:4px 14px">
+          <div class="set">Naponta<b>2×</b></div>
+          <div class="set">Célidő<b>2:00</b></div>
+        </div>
+        <div class="grp">Értesítések</div>
+        <div class="card" style="padding:4px 14px">
+          <div class="set"><span>Reggel, ébredés után<small>7:00-tól, az első kézbevételkor</small></span><div class="toggle"></div></div>
+          <div class="set"><span>Lefekvés előtt<small>15 perccel 22:30 előtt</small></span><div class="toggle"></div></div>
+          <div class="set"><span>Ismétlés, ha elmaradt<small>20 perc múlva</small></span><div class="toggle"></div></div>
+        </div>
+        <div class="grp">Funkciók</div>
+        <div class="card" style="padding:4px 14px">
+          <div class="set">Rezgés a negyedeknél<div class="toggle"></div></div>
+          <div class="set">Fogselyem követése<div class="toggle off"></div></div>
+          <div class="set">Mentés az Egészség appba<div class="toggle off"></div></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="cap">9. Beállítások: minden funkció ki-be kapcsolható</div>
+  </div>
+</div>
+
+<div class="row" id="iphone-4">
+  <!-- 10. lock screen -->
+  <div>
+    <div class="iphone"><div class="scr lock"><div class="island"></div>
+      <div class="status" style="color:#fff"><span></span><span>●●● ▮</span></div>
+      <div class="body" style="gap:12px">
+        <div style="text-align:center;font-size:15px;margin-top:6px;opacity:.8">kedd, október 27.</div>
+        <div style="text-align:center;font-size:72px;font-weight:300;line-height:1">22:15</div>
+        <div style="flex:1"></div>
+        <div class="notif"><b>🪥 Fogmosás</b>Hamarosan lefekvés: még hiányzik az esti fogmosás. Koppints, és indulhat.</div>
+        <div class="liveact"><span style="font-size:26px">🪥</span><div style="flex:1"><div style="font-size:13px;font-weight:700">1:14 · bal alsó negyed</div><div class="minibar" style="margin-top:6px"><i></i></div></div></div>
+      </div>
+    </div></div>
+    <div class="cap">10. Lefekvés előtti értesítés és élő kijelzés a lezárt képernyőn</div>
+  </div>
+
+  <!-- 11. stats -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div class="title">Statisztika</div>
+        <div class="card"><div class="sub">Heti átlag</div><div class="big">1:52</div><div class="sub">+25 s a múlt héthez képest</div>
+          <div style="display:flex;align-items:flex-end;gap:8px;height:90px;margin-top:10px">
+            <div style="flex:1;height:55%;background:var(--brand-2);border-radius:6px"></div>
+            <div style="flex:1;height:70%;background:var(--brand-2);border-radius:6px"></div>
+            <div style="flex:1;height:45%;background:var(--warn);border-radius:6px"></div>
+            <div style="flex:1;height:85%;background:var(--brand-2);border-radius:6px"></div>
+            <div style="flex:1;height:100%;background:var(--brand);border-radius:6px"></div>
+            <div style="flex:1;height:90%;background:var(--brand);border-radius:6px"></div>
+            <div style="flex:1;height:95%;background:var(--brand);border-radius:6px"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px"><span>H</span><span>K</span><span>Sz</span><span>Cs</span><span>P</span><span>Sz</span><span>V</span></div>
+        </div>
+        <div class="card stat"><span>💧 Megtakarított víz (október)</span><b>656 l</b></div>
+        <div class="card stat"><span>📄 Havi összefoglaló a fogorvosnak</span><span class="pill info">Megosztás</span></div>
+      </div>
+      <div class="tabbar"><div><span>🏠</span>Főoldal</div><div class="on"><span>📊</span>Statisztika</div><div><span>🏅</span>Kitüntetések</div><div><span>⚙️</span>Beállítások</div></div>
+    </div></div>
+    <div class="cap">11. Statisztika és havi összefoglaló</div>
+  </div>
+</div>
+
+<!-- ====================== Apple Watch ====================== -->
+<h2>Apple Watch</h2>
+<div class="row" id="watch">
+  <div>
+    <div class="watch"><div class="scr">
+      <div class="wt"><span>Fogmosás</span><span>21:58</span></div>
+      <div style="text-align:center;font-size:40px">🪥</div>
+      <div style="text-align:center;font-size:12px;color:#9fb3bf">Ma 1/2 · 🔥 6 nap</div>
+      <div style="flex:1"></div>
+      <div class="wbtn">Indítás</div>
+    </div></div>
+    <div class="cap">Indítás</div>
+  </div>
+  <div>
+    <div class="watch"><div class="scr">
+      <div class="wt"><span style="color:var(--brand-2)">● figyel</span><span>22:00</span></div>
+      <div style="text-align:center;font-size:30px;margin-top:14px">🚰 → 🪥</div>
+      <div style="text-align:center;font-size:12px;color:#9fb3bf">Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted.</div>
+    </div></div>
+    <div class="cap">Várakozás a vízre</div>
+  </div>
+  <div>
+    <div class="watch"><div class="scr">
+      <div class="wt"><span>bal alsó</span><span>22:01</span></div>
+      <div class="wring" style="background:conic-gradient(var(--brand-2) 0 58%, #26323a 58% 100%)"><div class="inner"><div><div style="font-size:30px;font-weight:700">1:10</div><div style="font-size:10px;color:#9fb3bf">cél 2:00</div></div></div></div>
+    </div></div>
+    <div class="cap">Gyűrű és fogsornegyed, koppintásos rezgés</div>
+  </div>
+  <div>
+    <div class="watch"><div class="scr">
+      <div class="wt"><span></span><span>22:03</span></div>
+      <div style="text-align:center;font-size:34px">🎉</div>
+      <div style="text-align:center;font-size:18px;font-weight:700">2:06</div>
+      <div style="text-align:center;font-size:11px;color:#9fb3bf">Cél elérve · 💧 elzárt csap</div>
+      <div style="flex:1"></div>
+      <div class="wbtn" style="background:#26323a">Kész</div>
+    </div></div>
+    <div class="cap">Eredmény</div>
+  </div>
+  <div>
+    <div class="watch"><div class="scr" style="padding:18px 14px">
+      <div style="font-size:11px;color:#9fb3bf;text-align:center">Kedd 27</div>
+      <div style="font-size:44px;font-weight:600;text-align:center;line-height:1.1">22:04</div>
+      <div style="display:flex;justify-content:center;gap:10px;margin-top:10px">
+        <div style="width:46px;height:46px;border-radius:50%;background:conic-gradient(var(--brand-2) 0 100%, #26323a 0);display:grid;place-items:center"><div style="width:36px;height:36px;border-radius:50%;background:#000;display:grid;place-items:center;font-size:16px">🪥</div></div>
+        <div style="width:46px;height:46px;border-radius:50%;background:#1a242b;display:grid;place-items:center;font-size:12px;font-weight:700">🔥7</div>
+      </div>
+    </div></div>
+    <div class="cap">Számlapelem: mai haladás és sorozat</div>
+  </div>
+</div>
+
+<!-- ====================== Android ====================== -->
+<h2>Android telefon</h2>
+<div class="row" id="android">
+  <div>
+    <div class="android"><div class="scr"><div class="punch"></div>
+      <div class="status"><span>21:58</span><span>▾ ▮</span></div>
+      <div class="m3top">Jó estét, Anna!</div>
+      <div class="body">
+        <div class="avatars">
+          <div><div class="av sel">🧑</div><div class="avlabel">Anna</div></div>
+          <div><div class="av">🦖</div><div class="avlabel">&nbsp;</div></div>
+          <div><div class="av">🦄</div><div class="avlabel">Lili</div></div>
+        </div>
+        <div class="fab">🪥 Fogmosás indítása</div>
+        <div class="m3card stat"><div><div class="sub">Ma</div><div class="big">1 / 2</div></div><div style="text-align:right"><div class="sub">Sorozat</div><div class="big">🔥 6</div></div></div>
+        <div class="m3card"><b style="font-size:13px">Tipp</b><div class="sub">Hétvégén 40 másodperccel rövidebben mosol fogat. A fogaidnak nincs hétvégéjük. 😉</div></div>
+      </div>
+      <div class="navbar"><div class="on"><span>🏠</span>Főoldal</div><div><span>📊</span>Statisztika</div><div><span>🏅</span>Kitüntetések</div><div><span>⚙️</span>Beállítások</div></div>
+    </div></div>
+    <div class="cap">Főoldal (Material 3)</div>
+  </div>
+  <div>
+    <div class="android"><div class="scr"><div class="punch"></div>
+      <div class="status"><span>22:01</span><span>▾ ▮</span></div>
+      <div class="body" style="gap:14px">
+        <div class="banner ok">✅ Fogmosás észlelve</div>
+        <div class="ring" style="background:conic-gradient(#00897b 0 58%, #d4e6e4 58% 100%)">
+          <div class="inner" style="background:#f5fbfb"><div><div class="time">1:10</div><div class="sub">cél: 2:00</div></div></div>
+        </div>
+        <div style="text-align:center;font-weight:600">Most: bal alsó negyed</div>
+        <div class="quad"><div class="done">jobb felső</div><div class="done">bal felső</div><div class="now" style="background:#00897b">bal alsó</div><div>jobb alsó</div></div>
+        <div style="flex:1"></div>
+        <div class="fab">Kész</div>
+      </div>
+    </div></div>
+    <div class="cap">Fogmosás közben</div>
+  </div>
+  <div>
+    <div class="android"><div class="scr" style="background:#dfe9ec"><div class="punch"></div>
+      <div class="status"><span>7:05</span><span>▾ ▮</span></div>
+      <div class="body" style="gap:10px">
+        <div class="notif-and"><b>🪥 Fogmosás · most</b><div style="margin-top:3px">Jó reggelt! Kezdd a napot 2 perc fogmosással.</div></div>
+        <div class="notif-and"><b>🪥 Fogmosás folyamatban</b><div style="margin-top:3px">1:14 · bal alsó negyed</div><div class="minibar" style="margin-top:8px;background:#d4e6e4"><i style="background:#00897b"></i></div></div>
+      </div>
+    </div></div>
+    <div class="cap">Reggeli értesítés az első feloldáskor és folyamatos értesítés</div>
+  </div>
+</div>
+
+<!-- ====================== Wear OS ====================== -->
+<h2>Wear OS óra</h2>
+<div class="row" id="wear">
+  <div>
+    <div class="wear"><div class="scr"><div>
+      <div style="font-size:36px">🪥</div>
+      <div style="font-size:12px;color:#9fb3bf;margin:4px 0 10px">Ma 1/2 · 🔥 6</div>
+      <div style="background:#00897b;border-radius:20px;padding:9px 26px;font-weight:600;font-size:14px">Indítás</div>
+    </div></div></div>
+    <div class="cap">Indítás (csempe is)</div>
+  </div>
+  <div>
+    <div class="wear"><div class="scr" style="background:conic-gradient(#4db6ac 0 58%, #26323a 58% 100%)">
+      <div style="width:172px;height:172px;border-radius:50%;background:#000;display:grid;place-items:center"><div>
+        <div style="font-size:11px;color:#9fb3bf">bal alsó</div>
+        <div style="font-size:34px;font-weight:600">1:10</div>
+        <div style="font-size:10px;color:#9fb3bf">cél 2:00</div>
+      </div></div>
+    </div></div>
+    <div class="cap">A gyűrű a kijelző szélén fut körbe</div>
+  </div>
+  <div>
+    <div class="wear"><div class="scr"><div>
+      <div style="font-size:30px">🎉</div>
+      <div style="font-size:20px;font-weight:600">2:06</div>
+      <div style="font-size:11px;color:#9fb3bf;margin-top:2px">Cél elérve<br>💧 elzárt csap</div>
+    </div></div></div>
+    <div class="cap">Eredmény</div>
+  </div>
+</div>
+
+</body>
+</html>
