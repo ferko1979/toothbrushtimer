@@ -1,0 +1,9 @@
+ToothbrushTimer.xcodeproj/
+App/Info.plist
+Watch/Info.plist
+App/ToothbrushTimer.entitlements
+.bootstrap.env
+BrushCore/.build/
+BrushCore/.swiftpm/
+DerivedData/
+xcuserdata/

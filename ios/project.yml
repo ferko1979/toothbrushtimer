@@ -1,0 +1,88 @@
+# Xcode project definition (XcodeGen). Generate with ./bootstrap.sh
+name: ToothbrushTimer
+options:
+  bundleIdPrefix: ${BUNDLE_PREFIX}
+  deploymentTarget:
+    iOS: "17.0"
+    watchOS: "10.0"
+  createIntermediateGroups: true
+  developmentLanguage: hu
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ${DEVELOPMENT_TEAM}
+    CODE_SIGN_STYLE: Automatic
+packages:
+  BrushCore:
+    path: BrushCore
+targets:
+  ToothbrushTimer:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Shared
+    dependencies:
+      - package: BrushCore
+      - target: ToothbrushTimerWatch
+    entitlements:
+      path: App/ToothbrushTimer.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Fogmosás
+        CFBundleDevelopmentRegion: hu
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIBackgroundModes: [audio]
+        NSMicrophoneUsageDescription: "A fogmosás felismeréséhez figyeli a hangot (víz, súrolás, fogkefe zúgása). Hangfelvétel nem készül, minden a telefonon marad."
+        NSMotionUsageDescription: "Annak felismeréséhez, hogy a telefon le van-e téve, így a képernyő lezárása után is mérhet."
+        NSHealthShareUsageDescription: "A fogmosások megjelenítéséhez az Egészség appban."
+        NSHealthUpdateUsageDescription: "A fogmosások mentéséhez az Egészség appba (Fogmosás)."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.toothbrushtimer
+        TARGETED_DEVICE_FAMILY: "1"
+
+  ToothbrushTimerWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - Watch
+      - Shared
+    dependencies:
+      - package: BrushCore
+    info:
+      path: Watch/Info.plist
+      properties:
+        CFBundleDisplayName: Fogmosás
+        CFBundleDevelopmentRegion: hu
+        WKApplication: true
+        WKCompanionAppBundleIdentifier: ${BUNDLE_PREFIX}.toothbrushtimer
+        WKBackgroundModes: [self-care]
+        NSMicrophoneUsageDescription: "A fogmosás felismeréséhez figyeli a hangot. Hangfelvétel nem készül."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ${BUNDLE_PREFIX}.toothbrushtimer.watchkitapp
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+
+schemes:
+  ToothbrushTimer:
+    build:
+      targets:
+        ToothbrushTimer: all
+        ToothbrushTimerWatch: all
+    run:
+      config: Debug
+  ToothbrushTimerWatch:
+    build:
+      targets:
+        ToothbrushTimerWatch: all
+    run:
+      config: Debug
