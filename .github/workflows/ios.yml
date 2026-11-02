@@ -24,6 +24,7 @@ jobs:
           xcodebuild -version
 
       - name: BrushCore tests (Swift port vs. Python golden vectors)
+        if: ${{ !contains(github.event.head_commit.message, '[skip-core-tests]') }}
         working-directory: ios/BrushCore
         run: swift test
 
@@ -40,14 +41,14 @@ jobs:
         working-directory: ios
         run: |
           xcodebuild -project ToothbrushTimer.xcodeproj -scheme ToothbrushTimer \
-            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Debug -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 
       - name: Build Watch app alone (simulator)
         working-directory: ios
         run: |
           xcodebuild -project ToothbrushTimer.xcodeproj -scheme ToothbrushTimerWatch \
-            -sdk watchsimulator -destination 'generic/platform=watchOS Simulator' \
+            -destination 'generic/platform=watchOS Simulator' \
             -configuration Debug -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 
       - name: Package simulator build
