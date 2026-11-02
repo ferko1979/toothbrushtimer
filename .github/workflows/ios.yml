@@ -6,6 +6,9 @@ on:
     paths: ["ios/**", ".github/workflows/ios.yml"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: ios-${{ github.ref }}
   cancel-in-progress: true
@@ -55,8 +58,44 @@ jobs:
         working-directory: ios/build/Build/Products/Debug-iphonesimulator
         run: zip -qry "$GITHUB_WORKSPACE/ToothbrushTimer-simulator.zip" ToothbrushTimer.app
 
+      - name: Build device app (unsigned, for sideloading)
+        working-directory: ios
+        run: |
+          xcodebuild -project ToothbrushTimer.xcodeproj -scheme ToothbrushTimer \
+            -destination 'generic/platform=iOS' -configuration Release -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} build
+
+      - name: Package IPA
+        working-directory: ios/build/Build/Products/Release-iphoneos
+        run: |
+          rm -rf Payload && mkdir Payload
+          cp -R ToothbrushTimer.app Payload/
+          echo "Embedded watch app:"; ls Payload/ToothbrushTimer.app/Watch 2>/dev/null || echo "(none)"
+          zip -qry "$GITHUB_WORKSPACE/Fogmosas-iOS-AppleWatch.ipa" Payload
+
       - uses: actions/upload-artifact@v4
         with:
-          name: ToothbrushTimer-iOS-simulator
-          path: ToothbrushTimer-simulator.zip
+          name: Fogmosas-iOS
+          path: |
+            ToothbrushTimer-simulator.zip
+            Fogmosas-iOS-AppleWatch.ipa
           retention-days: 30
+
+      - name: Publish test release (stable download link)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete ios-latest --cleanup-tag -y || true
+          git push origin :refs/tags/ios-latest || true
+          cat > notes.md <<NOTES
+          **Teszt build #${{ github.run_number }}** (commit ${GITHUB_SHA::7})
+
+          - **Fogmosas-iOS-AppleWatch.ipa**: iPhone-app, benne az Apple Watch-appal. Aláíratlan:
+            Sideloadly-vel vagy AltStore-ral telepíthető ingyenes Apple ID-val (7 napig érvényes, utána újra kell telepíteni).
+          - **ToothbrushTimer-simulator.zip**: Mac-es iOS-szimulátorhoz.
+
+          Részletes leírás: ios/README.md. TestFlighthoz Apple Developer-tagság kell.
+          NOTES
+          gh release create ios-latest Fogmosas-iOS-AppleWatch.ipa ToothbrushTimer-simulator.zip --prerelease \
+            --target "$GITHUB_SHA" --title "iPhone + Apple Watch teszt (#${{ github.run_number }})" --notes-file notes.md

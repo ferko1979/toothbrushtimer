@@ -1,5 +1,21 @@
 # Fogmosás-időzítő – iPhone és Apple Watch
 
+## Letölthető teszt-verzió fizetős fiók nélkül (Sideloadly / AltStore)
+
+Letöltés: https://github.com/ferko1979/toothbrushtimer/releases/tag/ios-latest, a `Fogmosas-iOS-AppleWatch.ipa` fájl.
+
+1. Telepítsd a számítógépre a **Sideloadly**-t (https://sideloadly.io, Windows és Mac). Windowson az iTunes és az iCloud
+   asztali változata is kell hozzá (a Sideloadly felajánlja).
+2. Csatlakoztasd USB-n az iPhone-t, és indítsd el a Sideloadly-t.
+3. Húzd bele az `.ipa` fájlt, írd be az Apple ID-dat, és nyomd meg a **Start** gombot.
+   A Sideloadly a te Apple ID-ddal aláírja az appot.
+4. Az iPhone-on: **Beállítások → Általános → VPN és eszközkezelés** → a te Apple ID-d → **Megbízom**.
+   iOS 16-tól a **Fejlesztői módot** is be kell kapcsolni (Adatvédelem és biztonság → Fejlesztői mód).
+5. Az Apple Watch-app az iPhone **Watch** appjában, az *Elérhető appok* között telepíthető.
+
+Ingyenes Apple ID-val az aláírás **7 napig érvényes**, utána a Sideloadly-vel újra kell telepíteni
+(az adatok megmaradnak). Ingyenes fiókkal egyszerre legfeljebb 3 saját app lehet a telefonon.
+
 ## Letölthető teszt-verzió: TestFlight
 
 Az iPhone-os és az órás app letölthető teszt-verzióját az Apple csak
