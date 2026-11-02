@@ -1,0 +1,61 @@
+name: iOS + watchOS
+
+on:
+  push:
+    branches: [claude/relaxed-cori-ezyw1b, main]
+    paths: ["ios/**", ".github/workflows/ios.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode
+        run: |
+          ls -d /Applications/Xcode*.app
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)"
+          xcodebuild -version
+
+      - name: BrushCore tests (Swift port vs. Python golden vectors)
+        working-directory: ios/BrushCore
+        run: swift test
+
+      - name: Generate Xcode project
+        working-directory: ios
+        env:
+          BUNDLE_PREFIX: hu.fogmosas.ci
+          DEVELOPMENT_TEAM: ""
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build iPhone + Watch app (simulator, unsigned)
+        working-directory: ios
+        run: |
+          xcodebuild -project ToothbrushTimer.xcodeproj -scheme ToothbrushTimer \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -configuration Debug -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+
+      - name: Build Watch app alone (simulator)
+        working-directory: ios
+        run: |
+          xcodebuild -project ToothbrushTimer.xcodeproj -scheme ToothbrushTimerWatch \
+            -sdk watchsimulator -destination 'generic/platform=watchOS Simulator' \
+            -configuration Debug -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+
+      - name: Package simulator build
+        working-directory: ios/build/Build/Products/Debug-iphonesimulator
+        run: zip -qry "$GITHUB_WORKSPACE/ToothbrushTimer-simulator.zip" ToothbrushTimer.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ToothbrushTimer-iOS-simulator
+          path: ToothbrushTimer-simulator.zip
+          retention-days: 30
