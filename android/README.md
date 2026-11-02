@@ -56,6 +56,10 @@ Helyi build: `cd android && ./gradlew :brushcore:test :app:assembleDebug :wear:a
 - **Fogorvosi kontroll** (félévente) és fogkőeltávolítás (évente) emlékeztető, **PDF-jelentés** a fogorvosnak (Statisztika → PDF).
 - **Fogszabályzós mód**, **jutalom matricákért** a gyerekeknek, **családi áttekintés** a szülőnek.
 - **Zárolás ujjlenyomattal / arcfelismeréssel**, külön **szülői zár** a beállításokra.
+- **Az órán is:** fogmosás után gyors jelölés (🧵 fogselyem, 🩸 ínyvérzés, ⚡ érzékenység), a telefonra kerül; **csempe** a mai haladással.
+- **Élő kijelzés:** fogmosás közben futó idő és haladássáv az értesítésben, a lezárt képernyőn is.
+- **Gyorsindítás:** hosszan nyomd meg az app ikonját → „Fogmosás indítása”. Hanggal: „Hé Google, nyisd meg a Fogmosást”.
+- **Bemutató:** „Mit tud az app?” első indításkor és a Beállításokban.
 - **Megnézem a weben:** Statisztika → QR-kód beolvasása (a Google kódolvasóját használja, kameraengedély nem kell). Lásd [web/README.md](../web/README.md).
 
 ## Ismert korlátok (teszt-verzió)
@@ -63,4 +67,5 @@ Helyi build: `cd android && ./gradlew :brushcore:test :app:assembleDebug :wear:a
 - Az Android nem jelzi az appnak az első feloldást, ha az app nem fut. Ezért a reggeli emlékeztető az ébredés idejére van időzítve, ugyanúgy, mint iPhone-on.
 - A Health Connectben nincs fogmosás-adattípus; az adatok CSV-ben exportálhatók (Statisztika → CSV).
 - Az órán a fogmosás alatt bekapcsolva marad a kijelző.
-- „Hamarosan” jelölésű funkciók: élő kijelzés, számlapelem (csempe), hangvezérlés, családi szinkron, adatfelajánlás.
+- „Hamarosan” jelölésű funkciók: családi szinkron, adatfelajánlás (mindkettőhöz szerver kell).
+- A „Hé Google, fogmosás indítása” típusú közvetlen parancshoz (App Actions) Google Play-kiadás kell; addig a gyorsindító és az app megnyitása hanggal működik.

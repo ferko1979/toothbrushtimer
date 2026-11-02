@@ -107,7 +107,7 @@ ios/
 | Apple Health (Fogmosás) | ✅ (bekapcsolható) | a telefon menti |
 | Siri / Parancsok: „Start brushing with Fogmosás” | ✅ | – |
 | Fogselyem, szájvíz, fogköztisztító, nyelvtisztítás (napló, sorozat, statisztika) | ✅ (bekapcsolható) | – |
-| Tünetnapló fogmosás után: érzékenység, ínyvérzés; figyelmeztetés, ha tartós | ✅ (gyerekeknek képekkel) | – |
+| Tünetnapló fogmosás után: érzékenység, ínyvérzés; figyelmeztetés, ha tartós | ✅ (gyerekeknek képekkel) | ✅ gyors jelölés (🧵 🩸 ⚡), a telefonra kerül |
 | Fogkrém nyilvántartása, „segít-e az érzékeny fogra való fogkrém” | ✅ (bekapcsolható) | – |
 | Fogorvosi kontroll (félévente) és fogkőeltávolítás (évente) emlékeztető | ✅ | – |
 | Jelentés a fogorvosnak PDF-ben (30/90 nap) | ✅ | – |
@@ -115,12 +115,17 @@ ios/
 | Gyerekeknek jutalom matricákért, szülőnek családi áttekintés | ✅ | – |
 | Zárolás Face ID-val / Touch ID-val, szülői zár | ✅ (bekapcsolható) | – |
 | Megnézem a weben: QR-kód beolvasása, titkosított átküldés | ✅ | – |
+| Élő kijelzés a lezárt képernyőn és a Dynamic Islanden | ✅ (widget-bővítmény) | – |
+| Számlapelem: mai fogmosások és sorozat | – | ✅ (kör, sarok, sor, téglalap) |
+| Bemutató: „Mit tud az app?” | ✅ (első indításkor és a Beállításokban) | – |
+
+A számlapelem az órás app és a bővítmény közös App Group-ján keresztül kapja az adatot
+(`group.<BUNDLE_PREFIX>.toothbrushtimer`). Sideloadly-val ingyenes Apple ID-val is működik;
+az app a bővítményekkel együtt 4 alkalmazásazonosítót foglal (ingyenes fióknál hetente legfeljebb 10).
 
 **Még nincs kész** (a beállításokban „hamarosan” felirattal szerepel):
-- élő kijelzés a lezárt képernyőn és a Dynamic Islanden (külön widget-bővítmény kell hozzá),
-- számlapelem az órán,
-- családi szinkron,
-- adatfelajánlás.
+- családi szinkron (iCloud-megosztás, fizetős fejlesztői fiók kell hozzá),
+- adatfelajánlás (szerver és külön hozzájárulás kell hozzá).
 
 ## Ha valami nem fordul le
 
