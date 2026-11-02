@@ -1,0 +1,11 @@
+# Render Blueprint: one free web service running the Fogmosás relay + dashboard.
+# https://render.com/deploy?repo=https://github.com/ferko1979/toothbrushtimer
+services:
+  - type: web
+    name: fogmosas-web
+    runtime: docker
+    rootDir: web
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: true

@@ -34,10 +34,13 @@ final class WatchModel: ObservableObject {
             records = s.records
         }
         Connectivity.shared.onContext = { [weak self] goals, owner in
-            self?.goals = goals
-            self?.ownerName = owner
+            guard let self = self else { return }
+            self.goals = goals
+            self.ownerName = owner
+            WatchSummary.publish(records: self.records, goals: goals, coach: self.coach)
         }
         Connectivity.shared.activate()
+        WatchSummary.publish(records: records, goals: goals, coach: coach)
     }
 
     private func save() {
@@ -52,5 +55,22 @@ final class WatchModel: ObservableObject {
                               source: "watch", brushF0: r.brushF0)
         records.append(rec)
         Connectivity.shared.send(record: rec)
+        WatchSummary.publish(records: records, goals: goals, coach: coach)
+    }
+
+    func addCare(floss: Bool, bleeding: Bool, sensitive: Bool) {
+        guard floss || bleeding || sensitive else { return }
+        Connectivity.shared.send(care: CareEntry(profileId: "me", date: Date(), sensitivity: sensitive ? 1 : 0,
+                                                 bleeding: bleeding, floss: floss))
+    }
+}
+
+/// Publishes today's progress for the complication.
+enum WatchSummary {
+    static func publish(records: [BrushRecord], goals: Goals, coach: Coach) {
+        let now = Date()
+        WatchSummaryStore.save(WatchSummaryData(day: now, todayCount: coach.todayCount(records, today: now), perDay: goals.perDay,
+                                                streak: coach.perfectStreak(records, goals: goals, today: now),
+                                                lastDurationS: records.max(by: { $0.start < $1.start })?.durationS))
     }
 }

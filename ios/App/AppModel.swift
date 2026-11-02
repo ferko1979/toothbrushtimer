@@ -41,6 +41,13 @@ final class AppModel: ObservableObject {
             data = decoded
         }
         Connectivity.shared.onRecord = { [weak self] rec in self?.add(record: rec) }
+        Connectivity.shared.onCare = { [weak self] e in
+            // Journal entry from the watch: it belongs to the main profile.
+            guard let self = self, !self.data.care.contains(where: { $0.id == e.id }) else { return }
+            var entry = e
+            entry.profileId = "me"
+            self.data.care.append(entry)
+        }
         pushContextToWatch()
     }
 

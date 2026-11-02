@@ -72,6 +72,8 @@ object BrushingEngine {
     private var cueTracker: CueTracker? = null
     private var cuesOn = true
     private var targetS = 120.0
+    /** Goal of the running brushing (for the ongoing notification). */
+    val currentTargetS get() = targetS
     private val f0s = ArrayList<Double>()
     private var listenStartMs = 0L
     private var manualStartMs: Long? = null

@@ -45,4 +45,8 @@ dependencies {
     implementation("androidx.wear.compose:compose-foundation:1.4.0")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation("androidx.wear.tiles:tiles:1.4.1")
+    implementation("androidx.wear.protolayout:protolayout:1.2.1")
+    implementation("androidx.concurrent:concurrent-futures:1.2.0")
+    implementation("com.google.guava:listenablefuture:1.0")
 }

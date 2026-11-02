@@ -31,6 +31,9 @@ struct WatchBrushingView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var controller = BrushingController()
     @State private var runtime = ExtendedSession()
+    @State private var floss = false
+    @State private var bleed = false
+    @State private var sens = false
 
     var body: some View {
         Group {
@@ -76,14 +79,31 @@ struct WatchBrushingView: View {
     }
 
     private func result(_ r: BrushingController.Result) -> some View {
-        VStack(spacing: 6) {
+        ScrollView { VStack(spacing: 6) {
             Text(r.durationS >= model.goals.targetS ? "🎉" : "💪").font(.system(size: 34))
             Text(formatClock(r.durationS)).font(.title3.bold())
             Text(r.durationS >= model.goals.targetS ? "Cél elérve" : "Még \(Int(model.goals.targetS - r.durationS)) s hiányzott")
                 .font(.caption2).foregroundStyle(.secondary)
             Text(r.waterRunningS >= 5 ? "🚰 folyt a csap" : "💧 elzárt csap").font(.caption2)
-            Button("Kész") { dismiss() }
-        }
+            // Quick journal: floss, bleeding gums, sensitivity (saved on the phone).
+            HStack(spacing: 4) {
+                toggle("🧵", $floss, "Fogselyem")
+                toggle("🩸", $bleed, "Vérzett az íny")
+                toggle("⚡", $sens, "Érzékeny fog")
+            }
+            Button("Kész") {
+                model.addCare(floss: floss, bleeding: bleed, sensitive: sens)
+                dismiss()
+            }
+        } }
+    }
+
+    private func toggle(_ icon: String, _ on: Binding<Bool>, _ label: String) -> some View {
+        Button { on.wrappedValue.toggle() } label: { Text(icon) }
+            .tint(on.wrappedValue ? brand : .gray)
+            .buttonStyle(.borderedProminent)
+            .accessibilityLabel(label)
+            .accessibilityAddTraits(on.wrappedValue ? .isSelected : [])
     }
 
     private func begin() {

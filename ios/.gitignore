@@ -7,3 +7,7 @@ BrushCore/.build/
 BrushCore/.swiftpm/
 DerivedData/
 xcuserdata/
+Widgets/Info.plist
+WatchWidgets/Info.plist
+Watch/ToothbrushTimerWatch.entitlements
+WatchWidgets/ToothbrushTimerWatchWidgets.entitlements

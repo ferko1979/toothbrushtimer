@@ -51,35 +51,54 @@ class BrushingService : Service(), SensorEventListener {
                 sm.getDefaultSensor(Sensor.TYPE_GRAVITY)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
             }
         }
+        val live = AppStore.get(this).data.value.settings.isOn("live_activity", "android")
         scope.launch {
+            var lastKey = ""
             BrushingEngine.state.collect { s ->
                 if (!s.active) {
                     stopSelf()
                     return@collect
                 }
+                val brushing = s.phase == BrushingEngine.Phase.BRUSHING || s.phase == BrushingEngine.Phase.RINSING
                 val text = when (s.phase) {
-                    BrushingEngine.Phase.BRUSHING -> "${Formatting.clock(s.elapsedS)} · fogmosás" + if (s.wasteIcon) " · 🚰 folyik a csap!" else ""
+                    BrushingEngine.Phase.BRUSHING -> (if (live) "Fogmosás" else "${Formatting.clock(s.elapsedS)} · fogmosás") + if (s.wasteIcon) " · 🚰 folyik a csap!" else ""
                     BrushingEngine.Phase.RINSING -> "Öblítés…"
-                    BrushingEngine.Phase.WATER -> "Víz…"
+                    BrushingEngine.Phase.WATER -> "Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot."
+                    BrushingEngine.Phase.ARMED -> "Várom a fogmosást…"
                     else -> "Figyelek…"
                 }
-                nm.notify(ID, build(text))
+                // Live mode: the system chronometer counts; refresh only on change and once a second for the bar.
+                val key = "${s.phase}|${s.wasteIcon}|${if (live && brushing) s.elapsedS.toInt() else if (live) 0 else (s.elapsedS * 2).toInt()}"
+                if (key == lastKey) return@collect
+                lastKey = key
+                nm.notify(ID, build(text, if (live && brushing) s.elapsedS else null))
             }
         }
         return START_NOT_STICKY
     }
 
-    private fun build(text: String): Notification {
+    /** elapsedS != null: live mode with a running chronometer and a progress bar towards the goal. */
+    private fun build(text: String, elapsedS: Double? = null): Notification {
         val launch = packageManager.getLaunchIntentForPackage(packageName)
         val pi = launch?.let { PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT) }
-        return NotificationCompat.Builder(this, CHANNEL)
+        val b = NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_brush)
             .setContentTitle("🪥 Fogmosás")
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
             .setContentIntent(pi)
-            .build()
+        if (elapsedS != null) {
+            val target = BrushingEngine.currentTargetS
+            b.setUsesChronometer(true)
+                .setWhen(System.currentTimeMillis() - (elapsedS * 1000).toLong())
+                .setShowWhen(true)
+                .setProgress(target.toInt(), minOf(elapsedS, target).toInt(), false)
+                .setSubText("cél ${Formatting.clock(target)}")
+        }
+        return b.build()
     }
 
     override fun onSensorChanged(event: SensorEvent) {

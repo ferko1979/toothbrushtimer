@@ -25,6 +25,17 @@ A telefonos appok csak **https** címet fogadnak el (helyi fejlesztéskor `http:
 
 ## Közzététel
 
+**Legegyszerűbb: Render (ingyenes csomag).** Jelentkezz be a [render.com](https://render.com)-ra a GitHub-fiókoddal,
+majd nyisd meg ezt a linket: <https://render.com/deploy?repo=https://github.com/ferko1979/toothbrushtimer>.
+A Render a repó gyökerében lévő `render.yaml` alapján magától felépíti és elindítja a szolgáltatást,
+https-címet ad (pl. `https://fogmosas-web.onrender.com`), és minden feltöltés után frissít.
+Saját domain a Render beállításaiban köthető hozzá. (Az ingyenes csomag 15 perc tétlenség után
+elalszik; az első megnyitás ilyenkor kb. fél percig tart.)
+
+**Fly.io:** `cd web && fly launch --copy-config --no-deploy && fly deploy` (a `fly.toml` kész).
+
+**Docker-kép:** a `main` ágra feltöltve a GitHub elkészíti a `ghcr.io/ferko1979/fogmosas-web:latest` képet.
+
 Bármilyen Node- vagy Docker-tárhelyen fut (pl. Render, Fly.io, Railway, saját szerver), egyetlen
 folyamatként; adatbázis és tárhely nem kell.
 

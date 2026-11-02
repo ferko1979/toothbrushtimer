@@ -7,6 +7,7 @@ final class Connectivity: NSObject, WCSessionDelegate {
     static let shared = Connectivity()
 
     var onRecord: ((BrushRecord) -> Void)?
+    var onCare: ((CareEntry) -> Void)?
     var onContext: ((Goals, String) -> Void)?   // goals, owner profile name
 
     func activate() {
@@ -20,6 +21,11 @@ final class Connectivity: NSObject, WCSessionDelegate {
         WCSession.default.transferUserInfo(["record": data])
     }
 
+    func send(care: CareEntry) {
+        guard WCSession.isSupported(), let data = try? JSONEncoder().encode(care) else { return }
+        WCSession.default.transferUserInfo(["care": data])
+    }
+
     func pushContext(goals: Goals, ownerName: String) {
         guard WCSession.isSupported(), WCSession.default.activationState == .activated,
               let data = try? JSONEncoder().encode(goals) else { return }
@@ -29,6 +35,10 @@ final class Connectivity: NSObject, WCSessionDelegate {
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
 
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        if let data = userInfo["care"] as? Data, let e = try? JSONDecoder().decode(CareEntry.self, from: data) {
+            DispatchQueue.main.async { self.onCare?(e) }
+            return
+        }
         guard let data = userInfo["record"] as? Data,
               let rec = try? JSONDecoder().decode(BrushRecord.self, from: data) else { return }
         DispatchQueue.main.async { self.onRecord?(rec) }

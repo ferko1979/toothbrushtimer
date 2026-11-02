@@ -48,7 +48,8 @@ class MainActivity : FragmentActivity() {
     }
 
     private fun handleIntent(i: Intent?) {
-        if (i?.getBooleanExtra(EXTRA_ARM, false) == true) armRequest.value = true
+        // Reminder notification or the "Fogmosás indítása" launcher shortcut: brushing is expected right away.
+        if (i?.getBooleanExtra(EXTRA_ARM, false) == true || i?.action == "hu.fogmosas.action.START_BRUSHING") armRequest.value = true
     }
 
     override fun onStart() {

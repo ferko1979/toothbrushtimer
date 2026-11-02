@@ -12,9 +12,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,6 +39,7 @@ import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.WearableListenerService
 import hu.fogmosas.core.BrushRecord
+import hu.fogmosas.core.CareEntry
 import hu.fogmosas.core.Formatting
 import hu.fogmosas.core.Goals
 import hu.fogmosas.core.ModelHeads
@@ -56,6 +63,7 @@ class WearActivity : ComponentActivity() {
                     waterRunningS = r.waterRunningS, source = "watch", brushF0 = r.brushF0)
                 store.addRecord(rec)
                 WearSync.sendRecord(this, rec)
+                androidx.wear.tiles.TileService.getUpdater(this).requestUpdate(ProgressTileService::class.java)
             }
         }
         requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1)
@@ -79,13 +87,31 @@ fun WearRoot(activity: WearActivity, store: AppStore) {
     Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
         val r = s.result
         when {
-            r != null -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            r != null -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(if (r.durationS >= goals.targetS) "🎉" else "💪", fontSize = 30.sp)
                 Text(Formatting.clock(r.durationS), fontSize = 22.sp, fontWeight = FontWeight.Bold)
                 Text(if (r.durationS >= goals.targetS) "Cél elérve" else "Még ${(goals.targetS - r.durationS).toInt()} s hiányzott",
                     fontSize = 12.sp, color = Color.LightGray)
                 Text(if (r.waterRunningS >= 5) "🚰 folyt a csap" else "💧 elzárt csap", fontSize = 12.sp)
-                Button(onClick = { BrushingEngine.reset() }, colors = ButtonDefaults.secondaryButtonColors()) { Text("OK") }
+                // Quick journal: floss, bleeding gums, sensitivity (saved on the phone).
+                var floss by remember(r) { mutableStateOf(false) }
+                var bleed by remember(r) { mutableStateOf(false) }
+                var sens by remember(r) { mutableStateOf(false) }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    for ((label, on, flip) in listOf(
+                        Triple("🧵", floss) { floss = !floss }, Triple("🩸", bleed) { bleed = !bleed }, Triple("⚡", sens) { sens = !sens })) {
+                        Button(onClick = flip, modifier = Modifier.size(36.dp),
+                            colors = if (on) ButtonDefaults.buttonColors(backgroundColor = brand) else ButtonDefaults.secondaryButtonColors()) { Text(label, fontSize = 14.sp) }
+                    }
+                }
+                Button(onClick = {
+                    if (floss || bleed || sens) {
+                        val e = CareEntry(profileId = "me", dateMs = System.currentTimeMillis(), floss = floss, bleeding = bleed, sensitivity = if (sens) 1 else 0)
+                        store.addCare(e)
+                        WearSync.sendCare(activity, e)
+                    }
+                    BrushingEngine.reset()
+                }, colors = ButtonDefaults.secondaryButtonColors()) { Text("OK") }
             }
             s.phase == BrushingEngine.Phase.BRUSHING || s.phase == BrushingEngine.Phase.RINSING -> {
                 val p = brushProgress(s.elapsedS, goals.targetS)
@@ -128,6 +154,7 @@ class WearListenerService : WearableListenerService() {
             val g = Goals(map.getInt("perDay", 2), map.getDouble("targetS", 120.0)).clamped()
             val store = AppStore.get(this)
             store.data.value.profile("me")?.let { store.updateProfile(it.copy(goals = g)) }
+            androidx.wear.tiles.TileService.getUpdater(this).requestUpdate(ProgressTileService::class.java)
         }
     }
 }

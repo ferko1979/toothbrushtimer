@@ -41,6 +41,8 @@ struct BrushingView: View {
         }
         .onAppear(perform: begin)
         .onDisappear(perform: end)
+        .onChange(of: controller.phase) { _, _ in updateLiveActivity() }
+        .onChange(of: controller.wasteIcon) { _, _ in updateLiveActivity() }
         .onChange(of: scenePhase) { _, phase in
             let t = Date().timeIntervalSince(began)
             if phase == .background {
@@ -148,6 +150,9 @@ struct BrushingView: View {
                 }
             }
         }
+        if settings.isOn("live_activity", platform: .ios) {
+            LiveActivity.start(name: profile.name, targetS: profile.goals.targetS, child: profile.child)
+        }
         controller.targetS = profile.goals.targetS
         controller.cuesEnabled = settings.isOn("quadrant_cues")
         controller.onCue = { cue in Haptics.play(cue.haptic) }
@@ -169,7 +174,21 @@ struct BrushingView: View {
                          useSonic: profile.brushType == .electric, batterySaver: settings.isOn("battery_saver"))
     }
 
+    private func updateLiveActivity() {
+        let name: String
+        switch controller.phase {
+        case .water: name = "water"
+        case .armed: name = "armed"
+        case .brushing: name = "brushing"
+        case .rinsing: name = "rinsing"
+        case .finished: name = "done"
+        default: name = "listening"
+        }
+        LiveActivity.update(phase: name, elapsedS: controller.elapsedS, waterRunning: controller.wasteIcon)
+    }
+
     private func end() {
+        LiveActivity.end(durationS: nil)
         ticker?.invalidate()
         motion.stop()
         if controller.isListening { controller.stop() }
@@ -177,6 +196,7 @@ struct BrushingView: View {
 
     private func finished(_ r: BrushingController.Result) {
         policy.sessionFinished(t: now())
+        LiveActivity.end(durationS: r.durationS >= 5 ? r.durationS : nil)
         guard r.durationS >= 5 else {
             stopNote = "túl rövid volt (\(Int(r.durationS)) s), nem mentettem"
             return

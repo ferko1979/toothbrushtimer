@@ -98,6 +98,14 @@ class BootReceiver : BroadcastReceiver() {
 /** Receives brushings measured on the Wear OS watch. */
 class PhoneListenerService : WearableListenerService() {
     override fun onMessageReceived(event: MessageEvent) {
+        if (event.path == WearSync.PATH_CARE) {
+            // Journal entry from the watch: it belongs to the main profile.
+            WearSync.decodeCare(event.data)?.let { e ->
+                val store = AppStore.get(this)
+                if (store.data.value.care.none { it.id == e.id }) store.addCare(e.copy(profileId = "me"))
+            }
+            return
+        }
         if (event.path != WearSync.PATH_RECORD) return
         val rec = WearSync.decodeRecord(event.data) ?: return
         AppStore.get(this).addRecord(rec)
