@@ -1,4 +1,5 @@
 import AVFoundation
+import BrushCore
 import Foundation
 
 /// Microphone -> 16 kHz mono Float32 chunks. No audio is ever stored: samples
