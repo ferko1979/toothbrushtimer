@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.key
@@ -94,10 +96,7 @@ fun QuestionFlow(flow: OnboardingFlow, stopAtMore: Boolean = false, onFinish: ()
         return
     }
 
-    Column(
-        Modifier.fillMaxSize().let { if (q.pictureOnly) it.background(kidBrush) else it }.safeDrawingPadding().padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
+    FormPage(Modifier.let { if (q.pictureOnly) it.background(kidBrush) else it }) {
         if (q.text.isNotEmpty()) Text(q.text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         when (q.kind) {
             "choice" -> q.options.forEach { (id, label) ->
@@ -124,7 +123,7 @@ fun QuestionFlow(flow: OnboardingFlow, stopAtMore: Boolean = false, onFinish: ()
             }
         }
         error?.let { Text(it, color = C.danger) }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(8.dp))
         Button(
             onClick = {
                 val v = when (q.kind) { "text" -> text; "number" -> age.toString(); else -> selected ?: "" }
@@ -147,7 +146,7 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
     // Re-read texts when the language is switched on the first screen.
     var lang by remember { mutableStateOf(hu.fogmosas.core.I18n.lang) }
     key(lang) { when (step) {
-        0 -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        0 -> FormPage(horizontal = Alignment.CenterHorizontally) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 for ((code, label) in listOf("hu" to "Magyar", "en" to "English")) {
                     androidx.compose.material3.FilterChip(selected = lang == code, onClick = {
@@ -156,7 +155,7 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
                     }, label = { Text(label) }, modifier = Modifier.padding(start = 8.dp))
                 }
             }
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(8.dp))
             Text("🪥", fontSize = 70.sp)
             Text(tr("Üdv!"), fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Text(tr("Az app a hang alapján méri a fogmosásod idejét: a víz elzárásától az öblítésig. Hangfelvétel nem készül, minden a telefonodon marad."),
@@ -164,11 +163,11 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
             OutlinedTextField(name, { name = it }, label = { Text(tr("Hogy szólíthatunk?")) }, modifier = Modifier.fillMaxWidth(), singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { flow = OnboardingFlow(name.trim().ifEmpty { tr("Én") }); step = 1 }))
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(8.dp))
             Button(onClick = { flow = OnboardingFlow(name.trim().ifEmpty { tr("Én") }); step = 1 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
         1 -> QuestionFlow(flow) { step = 2 }
-        2 -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        2 -> FormPage {
             Text(tr("Milyen fogkefét használsz?"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 SegmentedButton(!electric, { electric = false }, SegmentedButtonDefaults.itemShape(0, 2)) { Text(tr("Kézi")) }
@@ -176,19 +175,19 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
             }
             Text(if (electric) tr("Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.")
                  else tr("Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását figyelmen kívül hagyjuk."), color = C.muted)
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(8.dp))
             Button(onClick = { step = 3 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
-        3 -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        3 -> FormPage {
             Text(tr("Mi a célod?"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Text(tr("A fogorvosok naponta kétszer 2 percet javasolnak."), color = C.muted)
             Stepper(tr("Naponta {0}×", goals.perDay), { goals = goals.copy(perDay = goals.perDay - 1).clamped() }, { goals = goals.copy(perDay = goals.perDay + 1).clamped() })
             Stepper(tr("Célidő: {0}", Formatting.clock(goals.targetS)), { goals = goals.copy(targetS = goals.targetS - 15).clamped() }, { goals = goals.copy(targetS = goals.targetS + 15).clamped() })
             goals.warnings.forEach { Text(it, color = C.warn, fontSize = 13.sp) }
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(8.dp))
             Button(onClick = { step = 4 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
-        else -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        else -> FormPage {
             Text(tr("Engedélyek"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             InfoCard {
                 Text(tr("🎙️ Mikrofon és 🔔 értesítések"), fontWeight = FontWeight.Bold)
@@ -196,7 +195,7 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
                     color = C.muted, fontSize = 14.sp)
                 OutlinedButton(onClick = { activity.requestPermissions() }) { Text(tr("Engedélyezés")) }
             }
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(8.dp))
             Button(onClick = {
                 val ps = flow.profiles().toMutableList()
                 ps[0] = ps[0].copy(brushType = if (electric) "electric" else "manual", goals = goals)
@@ -206,6 +205,17 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
             }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Kezdjük!")) }
         }
     } }
+}
+
+/** Onboarding page: content and button stay together in the middle, at most 520 dp wide, scrollable. */
+@Composable
+fun FormPage(modifier: Modifier = Modifier, horizontal: Alignment.Horizontal = Alignment.Start, content: @Composable ColumnScope.() -> Unit) {
+    Box(Modifier.fillMaxSize().then(modifier).safeDrawingPadding(), contentAlignment = Alignment.Center) {
+        Column(
+            Modifier.widthIn(max = 520.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(24.dp),
+            horizontalAlignment = horizontal, verticalArrangement = Arrangement.spacedBy(16.dp), content = content,
+        )
+    }
 }
 
 @Composable

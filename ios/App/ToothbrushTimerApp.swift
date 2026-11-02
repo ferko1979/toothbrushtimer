@@ -28,6 +28,7 @@ final class AppRouter: ObservableObject {
 
     static let shared = AppRouter()
     @Published var startRequest: StartRequest?
+    @Published var selectedTab = 0
 }
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {

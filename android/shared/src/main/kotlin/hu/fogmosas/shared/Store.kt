@@ -28,6 +28,9 @@ data class AppData(
     val extras: List<ExtraRecord> = emptyList(),
     val care: List<CareEntry> = emptyList(),
     val tourSeen: Boolean = false,
+    /** Set after the first successful transfer to the DentHub website (QR link). */
+    val denthubLinkedMs: Long? = null,
+    val denthubHost: String? = null,
 ) {
     val activeProfile get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.first()
     fun profile(id: String) = profiles.firstOrNull { it.id == id }

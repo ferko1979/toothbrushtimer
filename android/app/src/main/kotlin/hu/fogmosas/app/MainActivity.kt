@@ -21,6 +21,8 @@ class MainActivity : FragmentActivity() {
     /** App lock / parent lock state; locks again when the app goes to the background (not while brushing). */
     val unlocked = mutableStateOf(false)
     val parentUnlocked = mutableStateOf(false)
+    /** "Not linked to DentHub yet" banner: shown again every time the app is opened. */
+    val linkReminder = mutableStateOf(true)
     lateinit var speaker: Speaker
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +56,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
+        linkReminder.value = true
         BrushingEngine.appForeground()
     }
 

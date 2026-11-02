@@ -20,11 +20,11 @@ struct RootView: View {
             } else if model.data.onboarded && !model.data.tourSeen && brushing == nil {
                 TourView { model.data.tourSeen = true }
             } else if model.data.onboarded {
-                TabView {
-                    HomeView().tabItem { Label(tr("Főoldal"), systemImage: "house") }
-                    StatsView().tabItem { Label(tr("Statisztika"), systemImage: "chart.bar") }
-                    AchievementsView().tabItem { Label(tr("Kitüntetések"), systemImage: "rosette") }
-                    SettingsView().tabItem { Label(tr("Beállítások"), systemImage: "gearshape") }
+                TabView(selection: $router.selectedTab) {
+                    HomeView().tabItem { Label(tr("Főoldal"), systemImage: "house") }.tag(0)
+                    StatsView().tabItem { Label(tr("Statisztika"), systemImage: "chart.bar") }.tag(1)
+                    AchievementsView().tabItem { Label(tr("Kitüntetések"), systemImage: "rosette") }.tag(2)
+                    SettingsView().tabItem { Label(tr("Beállítások"), systemImage: "gearshape") }.tag(3)
                 }
             } else {
                 OnboardingView()
@@ -43,6 +43,7 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             // Lock again in the background, but never in the middle of a brushing.
             if phase == .background && brushing == nil { lock.lock() }
+            if phase == .active { model.linkReminder = true }
         }
     }
 }

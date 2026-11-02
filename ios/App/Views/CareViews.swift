@@ -263,7 +263,13 @@ struct CareStatsSections: View {
             guard ok else { return }
             do {
                 let json = try WebShare.snapshotJSON(model: model)
-                WebShare.send(pr, json: json) { err in webStatus = err ?? tr("✔︎ Elküldve, nézd meg a böngészőben.") }
+                WebShare.send(pr, json: json) { err in
+                    webStatus = err ?? tr("✔︎ Elküldve, nézd meg a böngészőben.")
+                    if err == nil {
+                        model.data.denthubLinkedAt = Date()
+                        model.data.denthubHost = pr.host
+                    }
+                }
             } catch {
                 webStatus = tr("Nem sikerült összeállítani az adatokat.")
             }
@@ -330,6 +336,30 @@ struct ProfileCareSection: View {
                     Text(tr("A matricákat a jutalom indításától számoljuk (egy matrica = egy nap, amikor a napi cél teljesült).")).font(.caption).foregroundStyle(.secondary)
                 }
                 .onAppear { rewardText = p.reward ?? "" }
+            }
+        }
+    }
+}
+
+// MARK: - DentHub link reminder
+
+/// Until the app has been linked to the DentHub website, remind on every start where the results live.
+struct LinkReminderCard: View {
+    @EnvironmentObject var model: AppModel
+    @EnvironmentObject var router: AppRouter
+    var body: some View {
+        if model.data.denthubLinkedAt == nil && model.linkReminder && model.activeProfile.canRead {
+            Card {
+                Text(tr("⚠️ Még nincs összekötve a DentHubbal")).font(.headline).foregroundStyle(Theme.warn)
+                Text(tr("Regisztráció nélkül is használhatod, de az eredményeid most csak ezen a telefonon vannak. A DentHub oldalán akkor jelennek meg, ha összekötöd: nyisd meg a DentHub-Brush weboldalt, és olvasd be a QR-kódot."))
+                    .font(.caption).foregroundStyle(.secondary)
+                HStack {
+                    Button(tr("Összekötés")) {
+                        if !model.settings.isOn("web_link") { model.data.settings.set("web_link", true) }
+                        router.selectedTab = 1
+                    }.buttonStyle(.borderedProminent)
+                    Button(tr("Később")) { model.linkReminder = false }
+                }
             }
         }
     }

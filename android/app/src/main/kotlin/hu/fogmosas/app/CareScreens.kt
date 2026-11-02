@@ -270,6 +270,7 @@ private fun WebLinkCard(activity: MainActivity, store: AppStore) {
                     scope.launch {
                         val err = WebShare.send(pr, WebShare.snapshotJson(store.data.value))
                         status = err ?: tr("✔︎ Elküldve, nézd meg a böngészőben.")
+                        if (err == null) store.update { it.copy(denthubLinkedMs = System.currentTimeMillis(), denthubHost = pr.host) }
                     }
                 }
             }) { Text(tr("Megosztás")) } },
@@ -305,6 +306,29 @@ fun ProfileCareSettings(store: AppStore, p: Profile, onGoalsChanged: () -> Unit)
             if (p.reward != null) TextButton(onClick = { text = ""; store.updateProfile(p.copy(reward = null, rewardSinceMs = null)) }) { Text(tr("Törlés")) }
         }
         Text(tr("A matricákat a jutalom indításától számoljuk (egy matrica = egy nap, amikor a napi cél teljesült)."), fontSize = 12.sp, color = C.muted)
+    }
+}
+
+// ------------------------------------------------------------------ DentHub link reminder
+
+/** Until the app has been linked to the DentHub website, remind on every start where the results live. */
+@Composable
+fun LinkReminderBanner(activity: MainActivity, store: AppStore, onLink: () -> Unit) {
+    val data by store.data.collectAsStateWithLifecycle()
+    if (data.denthubLinkedMs != null || !activity.linkReminder.value || !data.activeProfile.canRead) return
+    Box(Modifier.background(C.bg).padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
+        InfoCard {
+            Text(tr("⚠️ Még nincs összekötve a DentHubbal"), fontWeight = FontWeight.Bold, color = C.warn)
+            Text(tr("Regisztráció nélkül is használhatod, de az eredményeid most csak ezen a telefonon vannak. A DentHub oldalán akkor jelennek meg, ha összekötöd: nyisd meg a DentHub-Brush weboldalt, és olvasd be a QR-kódot."),
+                fontSize = 13.sp, color = C.muted)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = {
+                    if (!store.data.value.settings.isOn("web_link", "android")) store.update { it.copy(settings = it.settings.with("web_link", true)) }
+                    onLink()
+                }) { Text(tr("Összekötés")) }
+                TextButton(onClick = { activity.linkReminder.value = false }) { Text(tr("Később")) }
+            }
+        }
     }
 }
 

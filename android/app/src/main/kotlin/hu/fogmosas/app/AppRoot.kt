@@ -2,6 +2,7 @@ package hu.fogmosas.app
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -94,7 +95,10 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 }) { pad ->
                     Box(Modifier.padding(pad).imePadding()) {
                         when (tab) {
-                            0 -> HomeScreen(store) { activity.requestPermissions(); startBrushing(false) }
+                            0 -> Column {
+                                LinkReminderBanner(activity, store) { tab = 1 }
+                                HomeScreen(store) { activity.requestPermissions(); startBrushing(false) }
+                            }
                             1 -> StatsScreen(activity, store)
                             2 -> AchievementsScreen(store)
                             else -> SettingsScreen(activity, store)

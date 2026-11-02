@@ -12,6 +12,7 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    LinkReminderCard()
                     Text(greeting).font(.largeTitle.bold())
                     if model.data.profiles.count > 1 { picker }
                     BigButton(title: tr("🪥  Fogmosás indítása")) {

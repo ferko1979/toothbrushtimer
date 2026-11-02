@@ -11,6 +11,9 @@ struct AppData: Codable {
     var extras: [ExtraRecord] = []
     var care: [CareEntry] = []
     var tourSeen = false
+    /// Set after the first successful transfer to the DentHub website (QR link).
+    var denthubLinkedAt: Date?
+    var denthubHost: String?
 
     init() {}
 
@@ -25,6 +28,8 @@ struct AppData: Codable {
         extras = try c.decodeIfPresent([ExtraRecord].self, forKey: .extras) ?? []
         care = try c.decodeIfPresent([CareEntry].self, forKey: .care) ?? []
         tourSeen = try c.decodeIfPresent(Bool.self, forKey: .tourSeen) ?? false
+        denthubLinkedAt = try c.decodeIfPresent(Date.self, forKey: .denthubLinkedAt)
+        denthubHost = try c.decodeIfPresent(String.self, forKey: .denthubHost)
     }
 }
 
@@ -35,6 +40,8 @@ final class AppModel: ObservableObject {
             save()
         }
     }
+    /// "Not linked to DentHub yet" banner: shown again every time the app is opened.
+    @Published var linkReminder = true
     let heads: ModelHeads?
     let coach = Coach()
     private let url: URL
