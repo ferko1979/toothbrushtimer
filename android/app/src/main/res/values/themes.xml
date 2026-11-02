@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.Fogmosas" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#F7FAFC</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+    <color name="brand">#1E9BB8</color>
+    <color name="brand2">#57C5B6</color>
+</resources>

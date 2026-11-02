@@ -1,0 +1,69 @@
+name: Android + Wear OS
+
+on:
+  push:
+    branches: [claude/relaxed-cori-ezyw1b, main]
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Test core + build phone and watch APKs
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace :brushcore:test :app:assembleDebug :wear:assembleDebug
+
+      - name: Collect APKs
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/out/Fogmosas-telefon-Android.apk"
+          cp wear/build/outputs/apk/debug/wear-debug.apk "$GITHUB_WORKSPACE/out/Fogmosas-ora-WearOS.apk"
+          ls -la "$GITHUB_WORKSPACE/out"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Fogmosas-Android-APKs
+          path: out/*.apk
+          retention-days: 30
+
+      - name: Publish test release (stable download link)
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete android-latest --cleanup-tag -y || true
+          git push origin :refs/tags/android-latest || true
+          cat > notes.md <<NOTES
+          **Teszt build #${{ github.run_number }}** (commit ${GITHUB_SHA::7})
+
+          - **Fogmosas-telefon-Android.apk**: telefonra (Android 8.0+)
+          - **Fogmosas-ora-WearOS.apk**: Wear OS órára (Wear OS 3+)
+
+          Telepítés: töltsd le a telefonra, nyisd meg, és engedélyezd az „Ismeretlen forrásból származó alkalmazások telepítését”.
+          Az órára ADB-vel (Wi-Fi hibakeresés) telepíthető, lásd android/README.md.
+          Az újabb buildek a régiek fölé települnek (közös tesztkulccsal vannak aláírva).
+          NOTES
+          gh release create android-latest out/*.apk --prerelease --target "$GITHUB_SHA" \
+            --title "Android + Wear OS teszt (#${{ github.run_number }})" --notes-file notes.md

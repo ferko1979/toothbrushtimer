@@ -1,0 +1,190 @@
+package hu.fogmosas.app
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import hu.fogmosas.core.Avatar
+import hu.fogmosas.core.ClockTime
+import hu.fogmosas.core.Formatting
+import hu.fogmosas.core.OnboardingFlow
+import hu.fogmosas.core.ReminderSettings
+import hu.fogmosas.core.tapFlowFromMeasurement
+import hu.fogmosas.shared.AppData
+import hu.fogmosas.shared.AppStore
+import hu.fogmosas.shared.WearSync
+import java.time.LocalDate
+import java.util.UUID
+
+@Composable
+fun SettingsScreen(activity: MainActivity, store: AppStore) {
+    val data by store.data.collectAsStateWithLifecycle()
+    var addingChild by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var tapStart by remember { mutableStateOf<Long?>(null) }
+    var tapResult by remember { mutableStateOf<String?>(null) }
+
+    if (addingChild) {
+        val flow = remember { OnboardingFlow().also { it.answer("family") } }
+        QuestionFlow(flow, stopAtMore = true) {
+            flow.profiles().drop(1).firstOrNull()?.let { child ->
+                val taken = data.profiles.mapNotNull { it.avatar }.toSet()
+                val avatar = if (child.avatar in taken) Avatar.all.firstOrNull { it.id !in taken }?.id else child.avatar
+                store.update { it.copy(profiles = it.profiles + child.copy(id = "child-" + UUID.randomUUID().toString().take(8), avatar = avatar)) }
+            }
+            addingChild = false
+        }
+        return
+    }
+
+    fun rem(transform: (ReminderSettings) -> ReminderSettings) {
+        store.update { it.copy(settings = it.settings.copy(reminders = transform(it.settings.reminders))) }
+        ReminderScheduler.reschedule(activity)
+    }
+
+    val p = data.activeProfile
+    Column(Modifier.fillMaxSize().background(C.bg).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Beállítások", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+
+        Section("Profilok")
+        InfoCard {
+            data.profiles.forEach { pr ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AvatarCircle(pr.avatarEmoji, 36.dp, pr.id == p.id) { store.update { it.copy(activeProfileId = pr.id) } }
+                    Spacer(Modifier.size(10.dp))
+                    Text(pr.name + if (pr.child) (if (pr.canRead) " · gyerek" else " · gyerek, csak képek") else "", Modifier.weight(1f))
+                    if (pr.id != "me") TextButton(onClick = {
+                        store.update { d -> d.copy(profiles = d.profiles.filter { it.id != pr.id }, activeProfileId = if (d.activeProfileId == pr.id) "me" else d.activeProfileId) }
+                    }) { Text("Törlés") }
+                }
+            }
+            OutlinedButton(onClick = { addingChild = true }) { Text("Gyerek hozzáadása") }
+        }
+
+        Section("${p.name} beállításai")
+        InfoCard {
+            Stepper("Naponta ${p.goals.perDay}×", { updateGoals(store, activity, p.id, -1, 0.0) }, { updateGoals(store, activity, p.id, 1, 0.0) })
+            Stepper("Célidő: ${Formatting.clock(p.goals.targetS)}", { updateGoals(store, activity, p.id, 0, -15.0) }, { updateGoals(store, activity, p.id, 0, 15.0) })
+            p.goals.warnings.forEach { Text(it, color = C.warn, fontSize = 12.sp) }
+            SwitchRow("Elektromos fogkefe", "", p.electric) { on -> store.updateProfile(p.copy(brushType = if (on) "electric" else "manual")) }
+            OutlinedButton(onClick = { store.updateProfile(p.copy(brushHeadInstalled = LocalDate.now().toString())) }) {
+                Text(if (p.electric) "Új fogkefefejet tettem fel" else "Új fogkefét kezdtem")
+            }
+            if (p.electric && data.settings.isOn("calibration")) Text(p.calibration.statusText, fontSize = 12.sp, color = C.muted)
+            if (p.child) SwitchRow("Tud olvasni", "", p.canRead) { on -> store.updateProfile(p.copy(canRead = on)) }
+        }
+
+        Section("Emlékeztetők")
+        val r = data.settings.reminders
+        InfoCard {
+            SwitchRow("Reggel, ébredés után", "", r.morningEnabled) { on -> rem { it.copy(morningEnabled = on) } }
+            if (r.morningEnabled) TimeRow("Ébredés", r.wakeTime) { t -> rem { it.copy(wakeTime = t) } }
+            SwitchRow("Lefekvés előtt", "${r.bedtimeLeadMin} perccel előtte", r.bedtimeEnabled) { on -> rem { it.copy(bedtimeEnabled = on) } }
+            if (r.bedtimeEnabled) TimeRow("Lefekvés", r.bedtime) { t -> rem { it.copy(bedtime = t) } }
+            SwitchRow("Esti emlékeztető (pl. vacsora után)", "", r.eveningEnabled) { on -> rem { it.copy(eveningEnabled = on) } }
+            if (r.eveningEnabled) TimeRow("Időpont", r.eveningTime) { t -> rem { it.copy(eveningTime = t) } }
+            SwitchRow("Ismétlés, ha elmaradt", "${r.followupAfterMin} perc múlva", r.followupEnabled) { on -> rem { it.copy(followupEnabled = on) } }
+        }
+
+        data.settings.groups("android").forEach { (group, features) ->
+            Section(group)
+            InfoCard {
+                features.forEach { f ->
+                    if (f.available) {
+                        SwitchRow(f.title, f.description, data.settings.isOn(f.id)) { on ->
+                            store.update { it.copy(settings = it.settings.with(f.id, on)) }
+                            if (f.id == "notifications") ReminderScheduler.reschedule(activity)
+                        }
+                    } else {
+                        SwitchRow(f.title, "hamarosan", false, enabled = false) {}
+                    }
+                }
+            }
+        }
+
+        Section("Víz")
+        InfoCard {
+            SwitchRow("USA mértékegységek (gallon, $)", "", data.settings.locale == "us") { on ->
+                store.update { it.copy(settings = it.settings.copy(locale = if (on) "us" else "hu")) }
+            }
+            Text("Csap mérése: tegyél a csap alá egy 1 literes palackot, nyisd meg úgy, ahogy fogmosáskor szoktad, nyomd meg az Indítást, és amikor megtelt, a Stopot.", fontSize = 13.sp, color = C.muted)
+            val st = tapStart
+            if (st == null) Button(onClick = { tapStart = System.currentTimeMillis(); tapResult = null }) { Text("Indítás") }
+            else Button(onClick = {
+                val secs = (System.currentTimeMillis() - st) / 1000.0
+                tapStart = null
+                tapResult = try {
+                    val f = tapFlowFromMeasurement(1.0, secs)
+                    store.update { it.copy(settings = it.settings.copy(tapFlowLPerMin = f)) }
+                    "%.1f l/perc – elmentve.".format(f)
+                } catch (e: Exception) { "Ez nem tűnik reálisnak, próbáld újra." }
+            }) { Text("Stop") }
+            tapResult?.let { Text(it) }
+            data.settings.tapFlowLPerMin?.let { Text("A te csapod: %.1f l/perc".format(it), fontSize = 12.sp, color = C.muted) }
+        }
+
+        Section("Adatvédelem")
+        InfoCard {
+            Text("A hang csak ezen a készüléken, a memóriában dolgozódik fel. Hangfelvétel nem készül, és semmi nem kerül szerverre.", fontSize = 13.sp, color = C.muted)
+            TextButton(onClick = { confirmDelete = true }) { Text("Összes adat törlése", color = C.danger) }
+        }
+    }
+
+    if (confirmDelete) AlertDialog(
+        onDismissRequest = { confirmDelete = false },
+        title = { Text("Biztosan törölsz minden adatot?") },
+        confirmButton = { TextButton(onClick = { store.update { AppData() }; confirmDelete = false }) { Text("Törlés", color = C.danger) } },
+        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Mégse") } },
+    )
+}
+
+private fun updateGoals(store: AppStore, activity: MainActivity, id: String, dPerDay: Int, dTarget: Double) {
+    val p = store.data.value.profile(id) ?: return
+    val g = p.goals.copy(perDay = p.goals.perDay + dPerDay, targetS = p.goals.targetS + dTarget).clamped()
+    store.updateProfile(p.copy(goals = g))
+    if (id == "me") WearSync.pushGoals(activity, g)
+    ReminderScheduler.reschedule(activity)
+}
+
+@Composable
+private fun Section(title: String) = Text(title.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = C.muted)
+
+@Composable
+fun SwitchRow(title: String, sub: String, on: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(title)
+            if (sub.isNotEmpty()) Text(sub, fontSize = 12.sp, color = C.muted)
+        }
+        Switch(checked = on, onCheckedChange = onChange, enabled = enabled)
+    }
+}
+
+@Composable
+private fun TimeRow(label: String, t: ClockTime, onChange: (ClockTime) -> Unit) {
+    Stepper("$label: ${t.text}", { onChange(t.plusMinutes(-15)) }, { onChange(t.plusMinutes(15)) })
+}
