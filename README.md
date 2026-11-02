@@ -8,11 +8,10 @@ Hangfelvétel nem készül, minden a készüléken marad ([PRIVACY.md](PRIVACY.m
 | Mappa | Tartalom |
 |---|---|
 | [`ios/`](ios/README.md) | **iPhone + Apple Watch app** (SwiftUI). Indítás: `cd ios && ./bootstrap.sh` |
+| [`android/`](android/README.md) | **Android telefon + Wear OS óra** (Jetpack Compose). Letöltés: [android-latest kiadás](https://github.com/ferko1979/toothbrushtimer/releases/tag/android-latest) |
 | [`analysis/`](analysis/README.md) | Python prototípus és referencia: felismerés, tanítás, app-logika, tesztek |
 | [`docs/PORTING.md`](docs/PORTING.md) | Pontos algoritmus-specifikáció a Swift- és Kotlin-portokhoz |
 | [`docs/design/`](docs/design/mockups.html) | Látványterv: iPhone, Apple Watch, Android, Wear OS |
-
-| [`android/`](android/README.md) | **Android telefon + Wear OS óra** (Jetpack Compose). Letöltés: [android-latest kiadás](https://github.com/ferko1979/toothbrushtimer/releases/tag/android-latest) |
 
 Minden feltöltés után a GitHub Actions lefordítja és teszteli mind a négy appot
 (`.github/workflows/`). Az Android-APK-k automatikusan letölthetők; az iPhone- és
