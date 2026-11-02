@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fogmosás látványterv</title>
+<title>DentHub-Brush látványterv</title>
 <style>
 :root {
   --bg: #eef3f6; --ink: #13232f; --muted: #5b6d79; --card: #ffffff;
@@ -68,7 +68,7 @@ p.lead { margin: 0 32px 8px; color: var(--muted); max-width: 900px; }
 .tabbar { display: flex; justify-content: space-around; border-top: 1px solid var(--line); padding: 8px 0 18px; background: #fff; font-size: 10px; color: var(--muted); text-align: center; }
 .tabbar .on { color: var(--brand); font-weight: 700; }
 .tabbar span { display: block; font-size: 20px; }
-.lock { background: linear-gradient(160deg, #20374a, #0f1d28); color: #fff; }
+.iphone .scr.lock { background: linear-gradient(160deg, #20374a, #0f1d28); color: #fff; }
 .notif { background: rgba(255,255,255,.88); color: var(--ink); border-radius: 18px; padding: 12px 14px; font-size: 13px; }
 .notif b { display: block; margin-bottom: 2px; }
 .liveact { background: rgba(20,30,38,.85); color: #fff; border-radius: 22px; padding: 14px; display: flex; gap: 12px; align-items: center; }
@@ -103,6 +103,8 @@ p.lead { margin: 0 32px 8px; color: var(--muted); max-width: 900px; }
 /* ---------- Wear OS ---------- */
 .wear { width: 210px; height: 210px; border-radius: 50%; background: #1c2227; padding: 10px; box-shadow: 0 14px 30px rgba(19,35,47,.25); }
 .wear .scr { width: 100%; height: 100%; border-radius: 50%; background: #000; color: #fff; display: grid; place-items: center; text-align: center; overflow: hidden; position: relative; }
+.status, .tabbar, .navbar { flex: none; }
+.body { min-height: 0; overflow: hidden; }
 </style>
 </head>
 <body>
@@ -337,6 +339,135 @@ p.lead { margin: 0 32px 8px; color: var(--muted); max-width: 900px; }
       <div class="tabbar"><div><span>🏠</span>Főoldal</div><div class="on"><span>📊</span>Statisztika</div><div><span>🏅</span>Kitüntetések</div><div><span>⚙️</span>Beállítások</div></div>
     </div></div>
     <div class="cap">11. Statisztika és havi összefoglaló</div>
+  </div>
+</div>
+
+
+<div class="row" id="iphone-5">
+  <!-- 13. home with DentHub reminder -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>7:12</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div class="card" style="border-left:4px solid var(--warn)">
+          <b style="color:var(--warn);font-size:14px">⚠️ Még nincs összekötve a DentHubbal</b>
+          <div class="sub" style="margin-top:4px">Az eredményeid most csak ezen a telefonon vannak. A DentHub oldalán akkor jelennek meg, ha összekötöd.</div>
+          <div style="display:flex;gap:8px;margin-top:10px"><div class="btn" style="padding:9px 14px;font-size:14px">Összekötés</div><div style="padding:9px 6px;color:var(--brand);font-weight:700;font-size:14px">Később</div></div>
+        </div>
+        <div class="title">Jó reggelt, Anna!</div>
+        <div class="btn big">🪥 Fogmosás indítása</div>
+        <div class="card stat"><div><div class="sub">Ma</div><div class="big">0 / 2</div></div>
+          <div style="text-align:right"><div class="sub">Sorozat</div><div class="big">🔥 6 nap</div></div></div>
+        <div class="card"><b style="font-size:13px">🦷 Fogorvos</b><div class="sub">Esedékes a félévenkénti fogorvosi kontroll.</div></div>
+      </div>
+      <div class="tabbar"><div class="on"><span>🏠</span>Főoldal</div><div><span>📊</span>Statisztika</div><div><span>🏅</span>Kitüntetések</div><div><span>⚙️</span>Beállítások</div></div>
+    </div></div>
+    <div class="cap">13. Főoldal: DentHub-emlékeztető minden indításkor, amíg nincs összekötve; fogorvosi kontroll</div>
+  </div>
+
+  <!-- 14. tour -->
+  <div>
+    <div class="iphone"><div class="scr kid"><div class="island"></div>
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="body" style="align-items:center;text-align:center">
+        <div style="display:flex;justify-content:space-between;width:100%" class="sub"><span>Mit tud az app?</span><span style="color:var(--brand);font-weight:700">Kihagyás</span></div>
+        <div style="flex:1"></div>
+        <div class="av" style="width:130px;height:130px;font-size:66px">📝</div>
+        <div class="title">Tünetnapló és fogselyem</div>
+        <div class="sub" style="font-size:14px">Fogmosás után egy koppintással jelölheted, ha érzékeny volt a fogad vagy vérzett az ínyed, és ha fogselymeztél. Ha egy tünet tartós, szól, hogy nézz el a fogorvoshoz.</div>
+        <div style="letter-spacing:4px;color:var(--muted)">○○○○●○○○○○○</div>
+        <div style="flex:1"></div>
+        <div class="btn" style="width:100%">Tovább</div>
+      </div>
+    </div></div>
+    <div class="cap">14. Bemutató („Mit tud az app?”): 11 lapozható oldal, első indításkor és a Beállításokból</div>
+  </div>
+
+  <!-- 15. check-in -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>21:58</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div style="font-size:44px;text-align:center">🎉</div>
+        <div class="title" style="text-align:center">2:06</div>
+        <div class="card">
+          <b>Hogy érezted a fogmosást?</b>
+          <div class="sub">Érzékeny volt a fogad?</div>
+          <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
+            <span class="pill info" style="border:1.5px solid var(--brand)">😀 Nem</span><span class="pill" style="background:#eef2f4">😐 Kicsit</span><span class="pill" style="background:#eef2f4">😣 Nagyon</span>
+          </div>
+          <span class="pill" style="background:#eef2f4">🩸 Vérzett az ínyem</span>
+          <div class="sub" style="margin-top:10px">Ma ezt is csináltam:</div>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><span class="pill info" style="border:1.5px solid var(--brand)">🧵 Fogselyem</span><span class="pill" style="background:#eef2f4">🫧 Szájvíz</span></div>
+          <div class="btn" style="margin-top:12px;padding:11px">Mentés a naplóba</div>
+        </div>
+        <div class="banner ok">💧 Szép munka, elzártad a csapot!</div>
+      </div>
+    </div></div>
+    <div class="cap">15. Fogmosás után: tünetnapló (érzékenység, ínyvérzés), fogselyem, szájvíz</div>
+  </div>
+</div>
+
+<div class="row" id="iphone-6">
+  <!-- 16. stats: care, report, web -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>20:10</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div class="title">Statisztika</div>
+        <div class="card">
+          <b>Fogápolás</b>
+          <div class="set"><span>🧵 Fogselyem</span><span class="sub">5/7 · 🔥4</span></div>
+          <div class="set"><span>⚡ Érzékenység</span><span class="sub">2 nap / 2 hét</span></div>
+          <div class="set"><span>🩸 Ínyvérzés</span><span class="sub">1 nap / 2 hét</span></div>
+          <div class="sub" style="margin-top:6px">Gyakrabban fogselymezel, ritkábban vérzik az ínyed.</div>
+        </div>
+        <div class="card"><b>Jelentés a fogorvosnak</b><div style="display:flex;gap:8px;margin-top:8px"><div class="btn alt" style="padding:8px 10px;font-size:13px;white-space:nowrap">PDF 30 nap</div><div class="btn alt" style="padding:8px 10px;font-size:13px;white-space:nowrap">PDF 90 nap</div></div></div>
+        <div class="card"><b>Megnézem a weben</b><div class="sub">Olvasd be a DentHub-Brush weboldal QR-kódját.</div><div class="btn" style="margin-top:8px;padding:10px;font-size:14px">📷 QR-kód beolvasása</div></div>
+      </div>
+      <div class="tabbar"><div><span>🏠</span>Főoldal</div><div class="on"><span>📊</span>Statisztika</div><div><span>🏅</span>Kitüntetések</div><div><span>⚙️</span>Beállítások</div></div>
+    </div></div>
+    <div class="cap">16. Statisztika: fogápolási napló, megfigyelések, PDF-jelentés, webes megtekintés QR-kóddal</div>
+  </div>
+
+  <!-- 17. lock screen live activity -->
+  <div>
+    <div class="iphone"><div class="scr lock"><div class="island" style="width:150px;height:34px;top:8px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;color:#fff;font-size:12px"><span>🪥</span><span>1:12</span></div>
+      <div class="status" style="color:#fff"><span></span><span>●●● ▮</span></div>
+      <div class="body" style="align-items:center">
+        <div style="font-size:66px;font-weight:300;margin-top:12px">21:59</div>
+        <div style="flex:1"></div>
+        <div class="liveact" style="width:100%">
+          <div style="font-size:34px">🪥</div>
+          <div style="flex:1"><b>DentHub-Brush</b>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0"><span style="font-size:24px;font-weight:800">1:12</span><span style="font-size:11px;opacity:.7">cél 2:00</span></div>
+            <div class="minibar"><i></i></div></div>
+        </div>
+      </div>
+    </div></div>
+    <div class="cap">17. Élő kijelzés a lezárt képernyőn és a Dynamic Islanden (Androidon: futó idő az értesítésben)</div>
+  </div>
+
+  <!-- 18. settings: language, locks -->
+  <div>
+    <div class="iphone"><div class="scr"><div class="island"></div>
+      <div class="status"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="body">
+        <div class="title">Beállítások</div>
+        <div class="card"><div class="set"><span>✨ Mit tud az app? (bemutató)</span><span>›</span></div></div>
+        <div class="grp">Nyelv / Language</div>
+        <div class="card" style="display:flex;gap:6px;padding:8px"><span class="pill" style="background:#eef2f4">Telefon nyelve</span><span class="pill info" style="border:1.5px solid var(--brand)">Magyar</span><span class="pill" style="background:#eef2f4">English</span></div>
+        <div class="grp">Adatvédelem</div>
+        <div class="card">
+          <div class="set"><span>Zárolás Face ID-val<small>Megnyitáskor azonosítás kell.</small></span><div class="toggle off"></div></div>
+          <div class="set"><span>Szülői zár<small>A Beállítások és a webes megosztás csak azonosítás után.</small></span><div class="toggle"></div></div>
+        </div>
+        <div class="grp">Egészség</div>
+        <div class="card"><div class="set"><span>Tünetnapló</span><div class="toggle"></div></div><div class="set"><span>Fogkrém nyilvántartása</span><div class="toggle off"></div></div></div>
+      </div>
+      <div class="tabbar"><div><span>🏠</span>Főoldal</div><div><span>📊</span>Statisztika</div><div><span>🏅</span>Kitüntetések</div><div class="on"><span>⚙️</span>Beállítások</div></div>
+    </div></div>
+    <div class="cap">18. Beállítások: bemutató, nyelv, Face ID-zár, szülői zár, egészség</div>
   </div>
 </div>
 
