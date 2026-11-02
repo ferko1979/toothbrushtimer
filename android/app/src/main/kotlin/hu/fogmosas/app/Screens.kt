@@ -13,6 +13,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.key
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -89,7 +95,7 @@ fun QuestionFlow(flow: OnboardingFlow, stopAtMore: Boolean = false, onFinish: ()
     }
 
     Column(
-        Modifier.fillMaxSize().let { if (q.pictureOnly) it.background(kidBrush) else it }.padding(20.dp),
+        Modifier.fillMaxSize().let { if (q.pictureOnly) it.background(kidBrush) else it }.safeDrawingPadding().padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         if (q.text.isNotEmpty()) Text(q.text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -100,7 +106,11 @@ fun QuestionFlow(flow: OnboardingFlow, stopAtMore: Boolean = false, onFinish: ()
                     Text(label, fontSize = 17.sp)
                 }
             }
-            "text" -> OutlinedTextField(text, { text = it }, label = { Text(tr("Név")) }, modifier = Modifier.fillMaxWidth())
+            "text" -> OutlinedTextField(text, { text = it }, label = { Text(tr("Név")) }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    try { flow.answer(text); version++ } catch (e: Exception) { error = tr("Kérlek, ellenőrizd a választ.") }
+                }))
             "number" -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedButton(onClick = { if (age > 1) age-- }) { Text("–", fontSize = 22.sp) }
                 Text(tr("{0} éves", age), fontSize = 26.sp, fontWeight = FontWeight.Bold)
@@ -134,19 +144,31 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
     var electric by remember { mutableStateOf(false) }
     var goals by remember { mutableStateOf(Goals()) }
 
-    when (step) {
-        0 -> Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    // Re-read texts when the language is switched on the first screen.
+    var lang by remember { mutableStateOf(hu.fogmosas.core.I18n.lang) }
+    key(lang) { when (step) {
+        0 -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                for ((code, label) in listOf("hu" to "Magyar", "en" to "English")) {
+                    androidx.compose.material3.FilterChip(selected = lang == code, onClick = {
+                        store.update { it.copy(settings = it.settings.copy(language = code)) }
+                        lang = hu.fogmosas.core.I18n.lang
+                    }, label = { Text(label) }, modifier = Modifier.padding(start = 8.dp))
+                }
+            }
             Spacer(Modifier.weight(1f))
             Text("🪥", fontSize = 70.sp)
             Text(tr("Üdv!"), fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Text(tr("Az app a hang alapján méri a fogmosásod idejét: a víz elzárásától az öblítésig. Hangfelvétel nem készül, minden a telefonodon marad."),
                 textAlign = TextAlign.Center, color = C.muted)
-            OutlinedTextField(name, { name = it }, label = { Text(tr("Hogy szólíthatunk?")) }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(name, { name = it }, label = { Text(tr("Hogy szólíthatunk?")) }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { flow = OnboardingFlow(name.trim().ifEmpty { tr("Én") }); step = 1 }))
             Spacer(Modifier.weight(1f))
             Button(onClick = { flow = OnboardingFlow(name.trim().ifEmpty { tr("Én") }); step = 1 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
         1 -> QuestionFlow(flow) { step = 2 }
-        2 -> Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        2 -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(tr("Milyen fogkefét használsz?"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 SegmentedButton(!electric, { electric = false }, SegmentedButtonDefaults.itemShape(0, 2)) { Text(tr("Kézi")) }
@@ -157,7 +179,7 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
             Spacer(Modifier.weight(1f))
             Button(onClick = { step = 3 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
-        3 -> Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        3 -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(tr("Mi a célod?"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Text(tr("A fogorvosok naponta kétszer 2 percet javasolnak."), color = C.muted)
             Stepper(tr("Naponta {0}×", goals.perDay), { goals = goals.copy(perDay = goals.perDay - 1).clamped() }, { goals = goals.copy(perDay = goals.perDay + 1).clamped() })
@@ -166,7 +188,7 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
             Spacer(Modifier.weight(1f))
             Button(onClick = { step = 4 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
-        else -> Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        else -> Column(Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Text(tr("Engedélyek"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             InfoCard {
                 Text(tr("🎙️ Mikrofon és 🔔 értesítések"), fontWeight = FontWeight.Bold)
@@ -183,7 +205,7 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
                 WearSync.pushGoals(activity, goals)
             }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Kezdjük!")) }
         }
-    }
+    } }
 }
 
 @Composable

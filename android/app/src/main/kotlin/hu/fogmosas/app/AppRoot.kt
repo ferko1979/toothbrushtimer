@@ -1,6 +1,10 @@
 package hu.fogmosas.app
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -61,16 +65,22 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
             }
         }
 
+        // Android 15+ draws edge to edge: full-screen pages keep clear of the status bar, the
+        // navigation bar and the keyboard (the tabbed pages get this from the Scaffold).
+        val safe = Modifier.fillMaxSize().background(C.bg).safeDrawingPadding()
         when {
-            data.onboarded && data.settings.isOn("app_lock", "android") && !activity.unlocked.value && !engine.active ->
+            data.onboarded && data.settings.isOn("app_lock", "android") && !activity.unlocked.value && !engine.active -> Box(safe) {
                 LockScreen(tr("DentHub-Brush – zárolva")) {
                     DeviceAuth.authenticate(activity, tr("DentHub-Brush feloldása")) { ok -> if (ok) activity.unlocked.value = true }
                 }
-            !data.onboarded -> OnboardingScreen(activity, store)
-            !data.tourSeen && !engine.active -> TourScreen { store.update { it.copy(tourSeen = true) } }
-            showBrushing || engine.active || engine.result != null -> BrushingScreen(activity, store) {
-                BrushingEngine.reset()
-                showBrushing = false
+            }
+            !data.onboarded -> Box(safe) { OnboardingScreen(activity, store) }
+            !data.tourSeen && !engine.active -> Box(safe) { TourScreen { store.update { it.copy(tourSeen = true) } } }
+            showBrushing || engine.active || engine.result != null -> Box(safe) {
+                BrushingScreen(activity, store) {
+                    BrushingEngine.reset()
+                    showBrushing = false
+                }
             }
             else -> {
                 var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -82,7 +92,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                         NavigationBarItem(tab == 3, { tab = 3 }, { Icon(Icons.Filled.Settings, null) }, label = { Text(tr("Beállítások")) })
                     }
                 }) { pad ->
-                    Box(Modifier.padding(pad)) {
+                    Box(Modifier.padding(pad).imePadding()) {
                         when (tab) {
                             0 -> HomeScreen(store) { activity.requestPermissions(); startBrushing(false) }
                             1 -> StatsScreen(activity, store)

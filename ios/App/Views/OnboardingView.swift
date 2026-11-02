@@ -32,6 +32,8 @@ struct QuestionFlowView: View {
                     }
                 case .text:
                     TextField(tr("Név"), text: $text).textFieldStyle(.roundedBorder).font(.title3)
+                        .submitLabel(.done)
+                        .onSubmit { submit(q) }
                 case .number:
                     Picker(tr("Életkor"), selection: $age) {
                         ForEach(1...17, id: \.self) { Text(tr("{0} éves", $0)).tag($0) }
@@ -113,18 +115,29 @@ struct OnboardingView: View {
 
     private var welcome: some View {
         VStack(spacing: 18) {
+            Picker("Nyelv / Language", selection: Binding(get: { I18n.lang }, set: { model.data.settings.language = $0 })) {
+                Text("Magyar").tag("hu")
+                Text("English").tag("en")
+            }
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 240)
+            .frame(maxWidth: .infinity, alignment: .trailing)
             Spacer()
             Text("🪥").font(.system(size: 70))
             Text(tr("Üdv!")).font(.largeTitle.bold())
             Text(tr("Az app a hang alapján méri a fogmosásod idejét: a víz elzárásától az öblítésig. Hangfelvétel nem készül, minden a telefonodon marad."))
                 .multilineTextAlignment(.center).foregroundStyle(.secondary)
             TextField(tr("Hogy szólíthatunk?"), text: $name).textFieldStyle(.roundedBorder).font(.title3)
+                .submitLabel(.done)
+                .onSubmit(startFlow)
             Spacer()
-            Button(tr("Tovább")) {
-                flow = OnboardingFlow(adultName: name.trimmingCharacters(in: .whitespaces).isEmpty ? tr("Én") : name)
-                step = 1
-            }.buttonStyle(.borderedProminent).controlSize(.large)
+            Button(tr("Tovább"), action: startFlow).buttonStyle(.borderedProminent).controlSize(.large)
         }.padding()
+    }
+
+    private func startFlow() {
+        flow = OnboardingFlow(adultName: name.trimmingCharacters(in: .whitespaces).isEmpty ? tr("Én") : name)
+        step = 1
     }
 
     private var brushTypeStep: some View {
