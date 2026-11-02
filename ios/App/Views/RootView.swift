@@ -16,15 +16,15 @@ struct RootView: View {
     var body: some View {
         Group {
             if model.data.onboarded && model.settings.isOn("app_lock", platform: .ios) && !lock.unlocked && brushing == nil {
-                LockView(title: "Fogmosás – zárolva", reason: "Fogmosás feloldása") { lock.unlocked = true }
+                LockView(title: tr("Fogmosás – zárolva"), reason: tr("Fogmosás feloldása")) { lock.unlocked = true }
             } else if model.data.onboarded && !model.data.tourSeen && brushing == nil {
                 TourView { model.data.tourSeen = true }
             } else if model.data.onboarded {
                 TabView {
-                    HomeView().tabItem { Label("Főoldal", systemImage: "house") }
-                    StatsView().tabItem { Label("Statisztika", systemImage: "chart.bar") }
-                    AchievementsView().tabItem { Label("Kitüntetések", systemImage: "rosette") }
-                    SettingsView().tabItem { Label("Beállítások", systemImage: "gearshape") }
+                    HomeView().tabItem { Label(tr("Főoldal"), systemImage: "house") }
+                    StatsView().tabItem { Label(tr("Statisztika"), systemImage: "chart.bar") }
+                    AchievementsView().tabItem { Label(tr("Kitüntetések"), systemImage: "rosette") }
+                    SettingsView().tabItem { Label(tr("Beállítások"), systemImage: "gearshape") }
                 }
             } else {
                 OnboardingView()

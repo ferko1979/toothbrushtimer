@@ -20,7 +20,7 @@ struct ResultView: View {
                     Card {
                         Text(String(repeating: "🟡", count: st.stickers % 7) + String(repeating: "⚪", count: 7 - st.stickers % 7))
                             .font(.title2).frame(maxWidth: .infinity)
-                        if profile.canRead { Text("Figurák: \(st.figures)").font(.caption).frame(maxWidth: .infinity) }
+                        if profile.canRead { Text(tr("Figurák: {0}", st.figures)).font(.caption).frame(maxWidth: .infinity) }
                     }
                     if profile.canRead { Text(fb.text).multilineTextAlignment(.center) }
                     if !profile.canRead {
@@ -41,13 +41,13 @@ struct ResultView: View {
                 if settings.isOn("achievements") {
                     ForEach(achievements) { a in
                         Card {
-                            Text("🏅 Új kitüntetés: \(achievementTitle(a.id, for: profile))").font(.headline)
+                            Text(tr("🏅 Új kitüntetés: {0}", achievementTitle(a.id, for: profile))).font(.headline)
                             if profile.canRead { Text(a.description).font(.subheadline).foregroundStyle(.secondary) }
                         }
                     }
                 }
                 CareCheckInCard(profile: profile)
-                Button("Kész", action: onDone).buttonStyle(.borderedProminent).controlSize(.large).padding(.top)
+                Button(tr("Kész"), action: onDone).buttonStyle(.borderedProminent).controlSize(.large).padding(.top)
             }
             .padding()
         }

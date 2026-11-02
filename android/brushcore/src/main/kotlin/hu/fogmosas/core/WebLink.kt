@@ -46,7 +46,7 @@ import javax.crypto.spec.SecretKeySpec
     val orthodontic: Boolean, val days: List<WebDay>, val insights: List<WebInsight>, val report: WebReport,
 )
 
-@Serializable data class WebSnapshot(val v: Int = 1, val generated: String, val locale: String, val profiles: List<WebProfile>)
+@Serializable data class WebSnapshot(val v: Int = 1, val generated: String, val locale: String, val profiles: List<WebProfile>, val lang: String = "hu")
 
 object WebLink {
     const val INFO = "fogmosas-web-v1"
@@ -161,5 +161,5 @@ object WebLink {
             WebReport(rep.title, rep.subtitle, rep.sections.map { WebSection(it.title, it.lines) }))
     }
 
-    fun snapshot(profiles: List<WebProfile>, now: Instant, locale: String) = WebSnapshot(generated = now.toString(), locale = locale, profiles = profiles)
+    fun snapshot(profiles: List<WebProfile>, now: Instant, locale: String) = WebSnapshot(generated = now.toString(), locale = locale, profiles = profiles, lang = I18n.lang)
 }

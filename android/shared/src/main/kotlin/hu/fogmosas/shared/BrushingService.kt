@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import hu.fogmosas.core.tr
 
 /**
  * Foreground service (type microphone): keeps listening while the screen is off
@@ -42,7 +43,7 @@ class BrushingService : Service(), SensorEventListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val nm = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= 26) {
-            nm.createNotificationChannel(NotificationChannel(CHANNEL, "Fogmosás folyamatban", NotificationManager.IMPORTANCE_LOW))
+            nm.createNotificationChannel(NotificationChannel(CHANNEL, tr("Fogmosás folyamatban"), NotificationManager.IMPORTANCE_LOW))
         }
         val type = if (Build.VERSION.SDK_INT >= 30) ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0
         ServiceCompat.startForeground(this, ID, build("Figyelek…"), type)
@@ -61,10 +62,10 @@ class BrushingService : Service(), SensorEventListener {
                 }
                 val brushing = s.phase == BrushingEngine.Phase.BRUSHING || s.phase == BrushingEngine.Phase.RINSING
                 val text = when (s.phase) {
-                    BrushingEngine.Phase.BRUSHING -> (if (live) "Fogmosás" else "${Formatting.clock(s.elapsedS)} · fogmosás") + if (s.wasteIcon) " · 🚰 folyik a csap!" else ""
-                    BrushingEngine.Phase.RINSING -> "Öblítés…"
-                    BrushingEngine.Phase.WATER -> "Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot."
-                    BrushingEngine.Phase.ARMED -> "Várom a fogmosást…"
+                    BrushingEngine.Phase.BRUSHING -> (if (live) tr("Fogmosás") else tr("{0} · fogmosás", Formatting.clock(s.elapsedS))) + if (s.wasteIcon) tr(" · 🚰 folyik a csap!") else ""
+                    BrushingEngine.Phase.RINSING -> tr("Öblítés…")
+                    BrushingEngine.Phase.WATER -> tr("Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot.")
+                    BrushingEngine.Phase.ARMED -> tr("Várom a fogmosást…")
                     else -> "Figyelek…"
                 }
                 // Live mode: the system chronometer counts; refresh only on change and once a second for the bar.
@@ -83,7 +84,7 @@ class BrushingService : Service(), SensorEventListener {
         val pi = launch?.let { PendingIntent.getActivity(this, 0, it, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT) }
         val b = NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_brush)
-            .setContentTitle("🪥 Fogmosás")
+            .setContentTitle(tr("🪥 Fogmosás"))
             .setContentText(text)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -96,7 +97,7 @@ class BrushingService : Service(), SensorEventListener {
                 .setWhen(System.currentTimeMillis() - (elapsedS * 1000).toLong())
                 .setShowWhen(true)
                 .setProgress(target.toInt(), minOf(elapsedS, target).toInt(), false)
-                .setSubText("cél ${Formatting.clock(target)}")
+                .setSubText(tr("cél {0}", Formatting.clock(target)))
         }
         return b.build()
     }

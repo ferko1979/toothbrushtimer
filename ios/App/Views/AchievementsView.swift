@@ -12,15 +12,15 @@ struct AchievementsView: View {
             List {
                 if profile.child {
                     let st = stickers(records, goals: profile.goals, coach: model.coach)
-                    Section("Matricák") {
-                        Text("🟡 \(st.stickers) matrica · 🦖 \(st.figures) figura").font(.headline)
-                        Text("Minden tökéletes nap egy matrica, 7 matrica egy figura.").font(.caption).foregroundStyle(.secondary)
+                    Section(tr("Matricák")) {
+                        Text(tr("🟡 {0} matrica · 🦖 {1} figura", st.stickers, st.figures)).font(.headline)
+                        Text(tr("Minden tökéletes nap egy matrica, 7 matrica egy figura.")).font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 if profile.child && profile.reward != nil {
-                    Section("Jutalom") { RewardCard(profile: profile).listRowInsets(EdgeInsets()) }
+                    Section(tr("Jutalom")) { RewardCard(profile: profile).listRowInsets(EdgeInsets()) }
                 }
-                Section("Kitüntetések") {
+                Section(tr("Kitüntetések")) {
                     ForEach(Achievements.all) { a in
                         HStack(spacing: 12) {
                             Text(earned.contains(a.id) ? "🏅" : "🔒").font(.title2)
@@ -33,7 +33,7 @@ struct AchievementsView: View {
                     }
                 }
             }
-            .navigationTitle("Kitüntetések")
+            .navigationTitle(tr("Kitüntetések"))
         }
     }
 }

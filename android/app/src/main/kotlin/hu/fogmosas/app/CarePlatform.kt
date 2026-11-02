@@ -29,6 +29,7 @@ import java.net.URL
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import hu.fogmosas.core.tr
 
 /** Face / fingerprint / screen-lock check (androidx.biometric). */
 object DeviceAuth {
@@ -83,7 +84,7 @@ object ReportPdf {
             for (l in s.lines) draw("•  $l", body, indent = 8)
             y += 10f
         }
-        draw("Készült a Fogmosás appal. A tünetek a felhasználó saját jelölései, nem orvosi diagnózis.", muted)
+        draw(tr("Készült a Fogmosás appal. A tünetek a felhasználó saját jelölései, nem orvosi diagnózis."), muted)
         page?.let { doc.finishPage(it) }
         val dir = File(ctx.cacheDir, "reports").apply { mkdirs() }
         val f = File(dir, "fogapolasi-jelentes.pdf")
@@ -96,7 +97,7 @@ object ReportPdf {
         val uri = FileProvider.getUriForFile(ctx, ctx.packageName + ".files", file)
         val i = Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, uri)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        ctx.startActivity(Intent.createChooser(i, "Jelentés megosztása").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        ctx.startActivity(Intent.createChooser(i, tr("Jelentés megosztása")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 }
 
@@ -136,11 +137,11 @@ object WebShare {
             c.disconnect()
             when (code) {
                 204, 200 -> null
-                409 -> "Ezt a kódot már felhasználtad. Kérj új kódot a weboldalon."
-                else -> "A szerver hibát jelzett ($code)."
+                409 -> tr("Ezt a kódot már felhasználtad. Kérj új kódot a weboldalon.")
+                else -> tr("A szerver hibát jelzett ({0}).", code)
             }
         } catch (e: Exception) {
-            "Nem sikerült elérni a weboldalt. Ellenőrizd az internetkapcsolatot."
+            tr("Nem sikerült elérni a weboldalt. Ellenőrizd az internetkapcsolatot.")
         }
     }
 }

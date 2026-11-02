@@ -14,8 +14,8 @@ const base = `http://localhost:${srv.address().port}`;
 const browser = await chromium.launch();
 let failed = false;
 try {
-  for (const [name, vp, scheme] of [['desktop', { width: 1200, height: 900 }, 'light'], ['mobile', { width: 390, height: 844 }, 'dark']]) {
-    const page = await browser.newPage({ viewport: vp, colorScheme: scheme });
+  for (const [name, vp, scheme, locale] of [['desktop', { width: 1200, height: 900 }, 'light', 'hu-HU'], ['mobile', { width: 390, height: 844 }, 'dark', 'en-US']]) {
+    const page = await browser.newPage({ viewport: vp, colorScheme: scheme, locale });
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -29,6 +29,8 @@ try {
     if (r.status !== 204) throw new Error(`relay POST ${r.status}`);
     await page.waitForSelector('#dash:not([hidden])', { timeout: 10000 });
     const title = await page.textContent('#dash-title');
+    const heading = await page.textContent('#profile .card h2');
+    if (heading !== (locale === 'hu-HU' ? 'Fogmosási idő (napi átlag)' : 'Brushing time (daily average)')) { console.log('wrong language:', heading); failed = true; }
     const tiles = await page.$$eval('.tile .v', (els) => els.map((e) => e.textContent));
     const alerts = await page.$$eval('.insights li.alert', (els) => els.length);
     const bars = await page.$$eval('.chart .bar', (els) => els.length);

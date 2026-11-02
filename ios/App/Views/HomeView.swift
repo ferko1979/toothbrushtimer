@@ -14,13 +14,13 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     Text(greeting).font(.largeTitle.bold())
                     if model.data.profiles.count > 1 { picker }
-                    BigButton(title: "🪥  Fogmosás indítása") {
+                    BigButton(title: tr("🪥  Fogmosás indítása")) {
                         router.startRequest = AppRouter.StartRequest(armed: false)
                     }
                     todayCard
                     if model.settings.isOn("habit_tips"), let tip = detectHabits(records, goals: profile.goals, today: Date()).first {
                         Card {
-                            Text("Tipp").font(.subheadline.bold())
+                            Text(tr("Tipp")).font(.subheadline.bold())
                             Text(tip.message).font(.subheadline).foregroundStyle(.secondary)
                         }
                     }
@@ -29,7 +29,7 @@ struct HomeView: View {
                                                  records: records, today: Date())
                         Card {
                             HStack {
-                                Text("🪥 " + (profile.brushType == .electric ? "Fogkefefej" : "Fogkefe") + ": \(st.ageDays) napos").font(.subheadline)
+                                Text("🪥 " + (profile.brushType == .electric ? tr("Fogkefefej") : tr("Fogkefe")) + tr(": {0} napos", st.ageDays)).font(.subheadline)
                                 Spacer()
                                 if st.due { Text("csere!").font(.caption.bold()).foregroundStyle(Theme.warn) }
                             }
@@ -42,9 +42,9 @@ struct HomeView: View {
                         let done = careDoneToday(model.care(for: profile.id), .floss, today: Date())
                         Card {
                             HStack {
-                                Text(done ? "🧵 Fogselyem: ma kipipálva ✔︎" : "🧵 Fogselyem: ma még nem volt").font(.subheadline)
+                                Text(done ? tr("🧵 Fogselyem: ma kipipálva ✔︎") : tr("🧵 Fogselyem: ma még nem volt")).font(.subheadline)
                                 Spacer()
-                                if !done { Button("Kész") { model.addExtra(.floss) }.buttonStyle(.bordered) }
+                                if !done { Button(tr("Kész")) { model.addExtra(.floss) }.buttonStyle(.bordered) }
                             }
                         }
                     }
@@ -57,13 +57,13 @@ struct HomeView: View {
 
     private var greeting: String {
         let h = Calendar.current.component(.hour, from: Date())
-        let part = h < 10 ? "Jó reggelt" : (h < 18 ? "Szia" : "Jó estét")
+        let part = h < 10 ? tr("Jó reggelt") : (h < 18 ? tr("Szia") : tr("Jó estét"))
         return profile.canRead ? "\(part), \(profile.name)!" : profile.avatarEmoji
     }
 
     private var picker: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Ki mos most fogat?").font(.subheadline).foregroundStyle(.secondary)
+            Text(tr("Ki mos most fogat?")).font(.subheadline).foregroundStyle(.secondary)
             HStack(spacing: 12) {
                 ForEach(model.data.profiles) { p in
                     Button { model.data.activeProfileId = p.id } label: {
@@ -84,14 +84,14 @@ struct HomeView: View {
         return Card {
             HStack {
                 VStack(alignment: .leading) {
-                    Text("Ma").font(.subheadline).foregroundStyle(.secondary)
+                    Text(tr("Ma")).font(.subheadline).foregroundStyle(.secondary)
                     Text("\(count) / \(profile.goals.perDay)").font(.title.bold())
                 }
                 Spacer()
                 if model.settings.isOn("achievements") {
                     VStack(alignment: .trailing) {
-                        Text("Sorozat").font(.subheadline).foregroundStyle(.secondary)
-                        Text("🔥 \(streak) nap").font(.title.bold())
+                        Text(tr("Sorozat")).font(.subheadline).foregroundStyle(.secondary)
+                        Text(tr("🔥 {0} nap", streak)).font(.title.bold())
                     }
                 }
             }

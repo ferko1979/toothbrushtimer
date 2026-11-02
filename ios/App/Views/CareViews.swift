@@ -56,7 +56,7 @@ struct CareCheckInCard: View {
     @State private var ticked: Set<CareKind> = []
     @State private var paste: String?
     private static let faces = ["😀", "😐", "😣"]
-    private static let faceLabels = ["Nem", "Kicsit", "Nagyon"]
+    private static var faceLabels: [String] { [tr("Nem"), tr("Kicsit"), tr("Nagyon")] }
 
     var body: some View {
         let s = model.settings
@@ -67,20 +67,20 @@ struct CareCheckInCard: View {
         if symptoms || !extras.isEmpty || pasteOn {
             Card {
                 if saved {
-                    Text(pictures ? "✔︎ 👍" : "Elmentve a naplóba ✔︎").font(.headline).foregroundStyle(Theme.ok)
+                    Text(pictures ? "✔︎ 👍" : tr("Elmentve a naplóba ✔︎")).font(.headline).foregroundStyle(Theme.ok)
                 } else {
                     if symptoms {
-                        Text(pictures ? "🦷 ?" : "Hogy érezted a fogmosást?").font(.headline)
-                        if !pictures { Text("Érzékeny volt a fogad?").font(.caption).foregroundStyle(.secondary) }
+                        Text(pictures ? "🦷 ?" : tr("Hogy érezted a fogmosást?")).font(.headline)
+                        if !pictures { Text(tr("Érzékeny volt a fogad?")).font(.caption).foregroundStyle(.secondary) }
                         HStack {
                             ForEach(0..<3, id: \.self) { i in
                                 ChoiceChip(title: pictures ? Self.faces[i] : "\(Self.faces[i]) \(Self.faceLabels[i])", selected: sens == i, big: pictures) { sens = i }
                             }
                         }
-                        ChoiceChip(title: pictures ? "🩸" : "🩸 Vérzett az ínyem", selected: bleed, big: pictures) { bleed.toggle() }
+                        ChoiceChip(title: pictures ? "🩸" : tr("🩸 Vérzett az ínyem"), selected: bleed, big: pictures) { bleed.toggle() }
                     }
                     if !extras.isEmpty {
-                        if !pictures { Text("Ma ezt is csináltam:").font(.caption).foregroundStyle(.secondary) }
+                        if !pictures { Text(tr("Ma ezt is csináltam:")).font(.caption).foregroundStyle(.secondary) }
                         HStack {
                             ForEach(extras, id: \.self) { k in
                                 ChoiceChip(title: pictures ? k.icon : "\(k.icon) \(k.label)", selected: ticked.contains(k), big: pictures) {
@@ -90,12 +90,12 @@ struct CareCheckInCard: View {
                         }
                     }
                     if pasteOn && !pictures {
-                        Picker("Fogkrém", selection: Binding(get: { paste ?? profile.toothpaste ?? "" }, set: { paste = $0.isEmpty ? nil : $0 })) {
-                            Text("Fogkrém…").tag("")
+                        Picker(tr("Fogkrém"), selection: Binding(get: { paste ?? profile.toothpaste ?? "" }, set: { paste = $0.isEmpty ? nil : $0 })) {
+                            Text(tr("Fogkrém…")).tag("")
                             ForEach(Toothpastes.all) { Text($0.title).tag($0.id) }
                         }
                     }
-                    Button(pictures ? "✔︎" : "Mentés a naplóba") { save(pasteOn: pasteOn) }
+                    Button(pictures ? "✔︎" : tr("Mentés a naplóba")) { save(pasteOn: pasteOn) }
                         .buttonStyle(.borderedProminent)
                 }
             }
@@ -123,14 +123,14 @@ struct DentistHomeCard: View {
         let p = model.activeProfile
         if model.settings.isOn("dentist_reminders") && p.canRead {
             let st = dentistStatus(lastCheckup: p.lastCheckup, lastCleaning: p.lastCleaning, today: Date())
-            if let msg = st.message ?? (p.lastCheckup == nil ? "Mikor voltál utoljára fogorvosnál? Add meg, és szólok, ha esedékes a kontroll." : nil) {
+            if let msg = st.message ?? (p.lastCheckup == nil ? tr("Mikor voltál utoljára fogorvosnál? Add meg, és szólok, ha esedékes a kontroll.") : nil) {
                 Card {
-                    Text("🦷 Fogorvos").font(.subheadline.bold())
+                    Text(tr("🦷 Fogorvos")).font(.subheadline.bold())
                     Text(msg).font(.caption).foregroundStyle(.secondary)
                     HStack {
-                        Button("Ma voltam kontrollon") { var q = p; q.lastCheckup = Date(); model.updateProfile(q) }.buttonStyle(.bordered)
+                        Button(tr("Ma voltam kontrollon")) { var q = p; q.lastCheckup = Date(); model.updateProfile(q) }.buttonStyle(.bordered)
                         if st.cleaningOverdue || p.lastCleaning == nil {
-                            Button("Fogkő is") { var q = p; q.lastCleaning = Date(); model.updateProfile(q) }
+                            Button(tr("Fogkő is")) { var q = p; q.lastCleaning = Date(); model.updateProfile(q) }
                         }
                     }
                 }
@@ -147,9 +147,9 @@ struct RewardCard: View {
            let r = rewardProgress(model.records(for: profile.id), goals: profile.goals, reward: profile.reward,
                                   need: profile.rewardStickers, since: profile.rewardSince, coach: model.coach) {
             Card {
-                Text(r.done ? "🎁 \(r.text) – megvan!" : "🎁 \(r.text)").font(.headline)
+                Text(r.done ? tr("🎁 {0} – megvan!", r.text) : "🎁 \(r.text)").font(.headline)
                 ProgressView(value: r.fraction).tint(Theme.brand2)
-                Text(profile.canRead ? "\(r.have) / \(r.need) matrica" : String(repeating: "🟡", count: min(r.have, 14)))
+                Text(profile.canRead ? tr("{0} / {1} matrica", r.have, r.need) : String(repeating: "🟡", count: min(r.have, 14)))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -171,13 +171,13 @@ struct CareStatsSections: View {
         let today = Date()
         let extras = model.careExtras(for: p)
         if !extras.isEmpty || model.settings.isOn("care_checkin") {
-            Section("Fogápolás") {
+            Section(tr("Fogápolás")) {
                 ForEach(extras, id: \.self) { k in
                     let streak = careStreak(es, k, today: today)
                     HStack {
                         Text("\(k.icon) \(k.label)")
                         Spacer()
-                        Text("\(careCount(es, k, today: today, days: 7))/7 · \(careCount(es, k, today: today, days: 30))/30 nap" + (streak > 1 ? " · 🔥\(streak)" : ""))
+                        Text(tr("{0}/7 · {1}/30 nap", careCount(es, k, today: today, days: 7), careCount(es, k, today: today, days: 30)) + (streak > 1 ? " · 🔥\(streak)" : ""))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
@@ -186,7 +186,7 @@ struct CareStatsSections: View {
                         HStack {
                             Text("\(k.icon) \(k.label)")
                             Spacer()
-                            Text("\(careCount(es, k, today: today, days: 14)) nap / 2 hét · \(careCount(es, k, today: today, days: 30)) / 30")
+                            Text(tr("{0} nap / 2 hét · {1} / 30", careCount(es, k, today: today, days: 14), careCount(es, k, today: today, days: 30)))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
@@ -198,10 +198,10 @@ struct CareStatsSections: View {
             }
         }
         if model.settings.isOn("dentist_report") {
-            Section("Jelentés a fogorvosnak") {
-                Text("Fogmosás, fogköztisztítás, tünetek és fogkrém egy kinyomtatható PDF-ben.").font(.caption).foregroundStyle(.secondary)
+            Section(tr("Jelentés a fogorvosnak")) {
+                Text(tr("Fogmosás, fogköztisztítás, tünetek és fogkrém egy kinyomtatható PDF-ben.")).font(.caption).foregroundStyle(.secondary)
                 ForEach([30, 90], id: \.self) { days in
-                    Button("PDF – utóbbi \(days) nap") {
+                    Button(tr("PDF – utóbbi {0} nap", days)) {
                         pdf = ReportPDF.write(dentistReport(profile: p, records: model.records(for: p.id), entries: es, today: today,
                                                             days: days, coach: model.coach))
                     }
@@ -212,14 +212,14 @@ struct CareStatsSections: View {
             }
         }
         if model.settings.isOn("family_overview") && !p.child && model.data.profiles.contains(where: \.child) {
-            Section("Család") {
+            Section(tr("Család")) {
                 ForEach(model.data.profiles.filter(\.child)) { k in
                     let rs = model.records(for: k.id)
                     HStack(spacing: 10) {
                         AvatarCircle(emoji: k.avatarEmoji, size: 40)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(k.name).font(.subheadline.bold())
-                            Text("Ma \(model.coach.todayCount(rs, today: today))/\(k.goals.perDay) · 🔥 \(model.coach.perfectStreak(rs, goals: k.goals, today: today)) nap · 🟡 \(stickers(rs, goals: k.goals, coach: model.coach).stickers) matrica"
+                            Text(tr("Ma {0}/{1} · 🔥 {2} nap · 🟡 {3} matrica", model.coach.todayCount(rs, today: today), k.goals.perDay, model.coach.perfectStreak(rs, goals: k.goals, today: today), stickers(rs, goals: k.goals, coach: model.coach).stickers)
                                  + (careDoneToday(model.care(for: k.id), .floss, today: today) ? " · 🧵" : ""))
                                 .font(.caption).foregroundStyle(.secondary)
                             if let r = rewardProgress(rs, goals: k.goals, reward: k.reward, need: k.rewardStickers, since: k.rewardSince, coach: model.coach) {
@@ -231,41 +231,41 @@ struct CareStatsSections: View {
             }
         }
         if model.settings.isOn("web_link", platform: .ios) {
-            Section("Megnézem a weben") {
-                Text("Nyisd meg a Fogmosás weboldalát a számítógépen, és olvasd be az ott látható QR-kódot. Az adatok titkosítva mennek át, a szerver nem tárolja őket.")
+            Section(tr("Megnézem a weben")) {
+                Text(tr("Nyisd meg a Fogmosás weboldalát a számítógépen, és olvasd be az ott látható QR-kódot. Az adatok titkosítva mennek át, a szerver nem tárolja őket."))
                     .font(.caption).foregroundStyle(.secondary)
-                Button { webStatus = nil; scanning = true } label: { Label("QR-kód beolvasása", systemImage: "qrcode.viewfinder") }
+                Button { webStatus = nil; scanning = true } label: { Label(tr("QR-kód beolvasása"), systemImage: "qrcode.viewfinder") }
                 if let s = webStatus { Text(s).font(.footnote).foregroundStyle(s.hasPrefix("✔") ? Theme.ok : Theme.danger) }
             }
             .sheet(isPresented: $scanning) {
                 NavigationStack {
                     QRScannerView { code in
                         scanning = false
-                        if let pr = WebLink.parse(code) { pairing = pr } else { webStatus = "Ez nem a Fogmosás weboldal QR-kódja." }
+                        if let pr = WebLink.parse(code) { pairing = pr } else { webStatus = tr("Ez nem a Fogmosás weboldal QR-kódja.") }
                     }
                     .ignoresSafeArea()
-                    .navigationTitle("QR-kód").navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Mégse") { scanning = false } } }
+                    .navigationTitle(tr("QR-kód")).navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button(tr("Mégse")) { scanning = false } } }
                 }
             }
-            .alert("Megosztod a weboldallal?", isPresented: Binding(get: { pairing != nil }, set: { if !$0 { pairing = nil } }), presenting: pairing) { pr in
-                Button("Megosztás") { share(pr) }
-                Button("Mégse", role: .cancel) {}
+            .alert(tr("Megosztod a weboldallal?"), isPresented: Binding(get: { pairing != nil }, set: { if !$0 { pairing = nil } }), presenting: pairing) { pr in
+                Button(tr("Megosztás")) { share(pr) }
+                Button(tr("Mégse"), role: .cancel) {}
             } message: { pr in
                 let who = model.activeProfile.child ? model.activeProfile.name : model.data.profiles.map(\.name).joined(separator: ", ")
-                Text("Webcím: \(pr.host)\nProfilok: \(who)\n\nCsak akkor folytasd, ha ezt a címet te nyitottad meg a saját számítógépeden.")
+                Text(tr("Webcím: {0}\nProfilok: {1}\n\nCsak akkor folytasd, ha ezt a címet te nyitottad meg a saját számítógépeden.", pr.host, who))
             }
         }
     }
 
     private func share(_ pr: WebLink.Pairing) {
-        DeviceAuth.authenticate(reason: "Megosztás a weboldallal: \(pr.host)") { ok in
+        DeviceAuth.authenticate(reason: tr("Megosztás a weboldallal: {0}", pr.host)) { ok in
             guard ok else { return }
             do {
                 let json = try WebShare.snapshotJSON(model: model)
-                WebShare.send(pr, json: json) { err in webStatus = err ?? "✔︎ Elküldve, nézd meg a böngészőben." }
+                WebShare.send(pr, json: json) { err in webStatus = err ?? tr("✔︎ Elküldve, nézd meg a böngészőben.") }
             } catch {
-                webStatus = "Nem sikerült összeállítani az adatokat."
+                webStatus = tr("Nem sikerült összeállítani az adatokat.")
             }
         }
     }
@@ -285,7 +285,7 @@ struct ProfileCareSection: View {
 
     var body: some View {
         if let p = model.profile(profileId) {
-            Section("Fogápolás") {
+            Section(tr("Fogápolás")) {
                 Toggle(isOn: Binding(get: { p.orthodontic }, set: { on in
                     var q = p
                     q.orthodontic = on
@@ -293,31 +293,31 @@ struct ProfileCareSection: View {
                     model.updateProfile(q)
                 })) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Fogszabályzó")
-                        Text("Hosszabb célidő (\(formatClock(Orthodontic.targetS))), fogköztisztítás a naplóban.").font(.caption).foregroundStyle(.secondary)
+                        Text(tr("Fogszabályzó"))
+                        Text(tr("Hosszabb célidő ({0}), fogköztisztítás a naplóban.", formatClock(Orthodontic.targetS))).font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 if model.settings.isOn("toothpaste_tracking") {
-                    Picker("Fogkrém", selection: Binding(get: { p.toothpaste ?? "" }, set: { v in var q = p; q.toothpaste = v.isEmpty ? nil : v; model.updateProfile(q) })) {
+                    Picker(tr("Fogkrém"), selection: Binding(get: { p.toothpaste ?? "" }, set: { v in var q = p; q.toothpaste = v.isEmpty ? nil : v; model.updateProfile(q) })) {
                         Text("—").tag("")
                         ForEach(Toothpastes.all) { Text($0.title).tag($0.id) }
                     }
                 }
             }
             if model.settings.isOn("dentist_reminders") {
-                Section("Fogorvos") {
-                    DatePicker("Utolsó kontroll", selection: Binding(get: { p.lastCheckup ?? Date() }, set: { v in var q = p; q.lastCheckup = v; model.updateProfile(q) }),
+                Section(tr("Fogorvos")) {
+                    DatePicker(tr("Utolsó kontroll"), selection: Binding(get: { p.lastCheckup ?? Date() }, set: { v in var q = p; q.lastCheckup = v; model.updateProfile(q) }),
                                in: ...Date(), displayedComponents: .date)
-                    DatePicker("Utolsó fogkőeltávolítás", selection: Binding(get: { p.lastCleaning ?? Date() }, set: { v in var q = p; q.lastCleaning = v; model.updateProfile(q) }),
+                    DatePicker(tr("Utolsó fogkőeltávolítás"), selection: Binding(get: { p.lastCleaning ?? Date() }, set: { v in var q = p; q.lastCleaning = v; model.updateProfile(q) }),
                                in: ...Date(), displayedComponents: .date)
-                    if p.lastCheckup == nil { Text("Még nincs megadva. Állítsd be, és szólok, ha esedékes a következő (félévente kontroll, évente fogkő).").font(.caption).foregroundStyle(.secondary) }
+                    if p.lastCheckup == nil { Text(tr("Még nincs megadva. Állítsd be, és szólok, ha esedékes a következő (félévente kontroll, évente fogkő).")).font(.caption).foregroundStyle(.secondary) }
                 }
             }
             if p.child && model.settings.isOn("kid_rewards") {
-                Section("Jutalom") {
-                    TextField("Jutalom (pl. mozi, fagyi)", text: $rewardText)
-                    Stepper("Ennyi matricáért: \(p.rewardStickers)", value: Binding(get: { p.rewardStickers }, set: { v in var q = p; q.rewardStickers = v; model.updateProfile(q) }), in: 3...60)
-                    Button("Jutalom indítása") {
+                Section(tr("Jutalom")) {
+                    TextField(tr("Jutalom (pl. mozi, fagyi)"), text: $rewardText)
+                    Stepper(tr("Ennyi matricáért: {0}", p.rewardStickers), value: Binding(get: { p.rewardStickers }, set: { v in var q = p; q.rewardStickers = v; model.updateProfile(q) }), in: 3...60)
+                    Button(tr("Jutalom indítása")) {
                         var q = p
                         let t = rewardText.trimmingCharacters(in: .whitespaces)
                         q.reward = t.isEmpty ? nil : t
@@ -325,9 +325,9 @@ struct ProfileCareSection: View {
                         model.updateProfile(q)
                     }
                     if p.reward != nil {
-                        Button("Jutalom törlése", role: .destructive) { var q = p; q.reward = nil; q.rewardSince = nil; rewardText = ""; model.updateProfile(q) }
+                        Button(tr("Jutalom törlése"), role: .destructive) { var q = p; q.reward = nil; q.rewardSince = nil; rewardText = ""; model.updateProfile(q) }
                     }
-                    Text("A matricákat a jutalom indításától számoljuk (egy matrica = egy nap, amikor a napi cél teljesült).").font(.caption).foregroundStyle(.secondary)
+                    Text(tr("A matricákat a jutalom indításától számoljuk (egy matrica = egy nap, amikor a napi cél teljesült).")).font(.caption).foregroundStyle(.secondary)
                 }
                 .onAppear { rewardText = p.reward ?? "" }
             }
@@ -345,7 +345,7 @@ struct LockView: View {
         VStack(spacing: 16) {
             Text("🔒").font(.system(size: 64))
             Text(title).font(.title3.bold()).multilineTextAlignment(.center)
-            Button("Feloldás") { DeviceAuth.authenticate(reason: reason) { if $0 { onUnlock() } } }
+            Button(tr("Feloldás")) { DeviceAuth.authenticate(reason: reason) { if $0 { onUnlock() } } }
                 .buttonStyle(.borderedProminent).controlSize(.large)
         }
         .padding(32)

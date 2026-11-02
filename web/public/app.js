@@ -6,6 +6,26 @@ const PAIR_TIMEOUT_MS = 5 * 60 * 1000;
 const $ = (id) => document.getElementById(id);
 const enc = new TextEncoder();
 
+// ------------------------------------------------------------------ language
+// Hungarian source text; English from i18n.js (generated from i18n/web.json).
+const EN = window.FOGMOSAS_EN || {};
+let LANG = (navigator.language || '').toLowerCase().startsWith('hu') ? 'hu' : 'en';
+function t(key, ...args) {
+  let s = key;
+  if (LANG !== 'hu' && EN[key] !== undefined) {
+    const v = EN[key];
+    s = typeof v === 'string' ? v : (args.find((a) => typeof a === 'number') === 1 ? v.one : v.other) || key;
+  }
+  args.forEach((a, i) => { s = s.split(`{${i}}`).join(String(a)); });
+  return s;
+}
+function applyStatic() {
+  document.documentElement.lang = LANG;
+  for (const e of document.querySelectorAll('[data-i18n]')) e.textContent = t(e.dataset.i18n);
+  for (const e of document.querySelectorAll('[data-i18n-html]')) e.innerHTML = t(e.dataset.i18nHtml);
+  for (const e of document.querySelectorAll('[data-i18n-alt]')) e.alt = t(e.dataset.i18nAlt);
+}
+
 const b64 = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const unb64 = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
 
@@ -41,7 +61,7 @@ let pairing = 0;   // generation counter: a renewed QR cancels the old poll loop
 
 async function startPairing() {
   const gen = ++pairing;
-  $('pair-status').textContent = 'Várom a telefont…';
+  $('pair-status').textContent = t('Várom a telefont…');
   session = await newSession();
   const qr = qrcode(0, 'M');
   qr.addData(session.qr);
@@ -50,14 +70,14 @@ async function startPairing() {
   const started = Date.now();
   while (gen === pairing) {
     if (Date.now() - started > PAIR_TIMEOUT_MS) {
-      $('pair-status').textContent = 'A kód lejárt, újat készítettem.';
+      $('pair-status').textContent = t('A kód lejárt, újat készítettem.');
       return startPairing();
     }
     let res;
     try {
       res = await fetch(`${basePath()}/api/relay/${session.sid}`, { cache: 'no-store' });
     } catch {
-      $('pair-status').textContent = 'Nincs kapcsolat a szerverrel, újrapróbálom…';
+      $('pair-status').textContent = t('Nincs kapcsolat a szerverrel, újrapróbálom…');
       await new Promise((r) => setTimeout(r, 3000));
       continue;
     }
@@ -68,7 +88,7 @@ async function startPairing() {
         session = null;   // one-time: forget the private key
         showDashboard(data);
       } catch (e) {
-        $('pair-status').textContent = 'A csomagot nem sikerült kinyitni. Próbáld újra egy új kóddal.';
+        $('pair-status').textContent = t('A csomagot nem sikerült kinyitni. Próbáld újra egy új kóddal.');
         startPairing();
       }
       return;
@@ -99,7 +119,8 @@ function svg(tag, attrs = {}) {
 
 const clock = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const huDay = (s) => s.slice(5).replace('-', '.') + '.';
+const huDay = (s) => (LANG === 'hu' ? s.slice(5).replace('-', '.') + '.'
+  : new Date(s + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
 
 function lastDays(n, endIso) {
   const end = new Date(endIso + 'T12:00:00');
@@ -112,12 +133,13 @@ let data = null;
 
 function showDashboard(d) {
   data = d;
+  if (d.lang === 'hu' || d.lang === 'en') { LANG = d.lang; applyStatic(); }
   $('pair').hidden = true;
   $('phone-hint').hidden = true;
   $('dash').hidden = false;
   $('logout').hidden = false;
   const gen = new Date(d.generated);
-  $('dash-sub').textContent = `Frissítve: ${gen.toLocaleString('hu-HU')} · Az adatok csak ebben a böngészőlapban vannak.`;
+  $('dash-sub').textContent = t('Frissítve: {0} · Az adatok csak ebben a böngészőlapban vannak.', gen.toLocaleString(LANG === 'hu' ? 'hu-HU' : 'en-US'));
   const tabs = $('tabs');
   tabs.replaceChildren();
   d.profiles.forEach((p, i) => {
@@ -146,15 +168,15 @@ function renderProfile(p) {
 
   const tile = (v, l) => el('div', { class: 'card tile' }, el('div', { class: 'v', text: v }), el('div', { class: 'l', text: l }));
   const tiles = el('div', { class: 'tiles' },
-    tile(`🔥 ${p.streak}`, 'nap sorozat (napi cél teljesítve)'),
-    tile(clock(avg), `átlagos fogmosás (cél: ${clock(p.goals.targetS)})`),
-    tile(brushes ? `${Math.round((100 * hits) / brushes)}%` : '–', 'célidőt elérte (30 nap)'),
-    tile(`${floss} / 30`, 'nap fogselyemmel'));
+    tile(`🔥 ${p.streak}`, t('nap sorozat (napi cél teljesítve)')),
+    tile(clock(avg), t('átlagos fogmosás (cél: {0})', clock(p.goals.targetS))),
+    tile(brushes ? `${Math.round((100 * hits) / brushes)}%` : '–', t('célidőt elérte (30 nap)')),
+    tile(`${floss} / 30`, t('nap fogselyemmel')));
 
-  const insights = el('div', { class: 'card' }, el('h2', { text: 'Megfigyelések' }));
+  const insights = el('div', { class: 'card' }, el('h2', { text: t('Megfigyelések') }));
   if (p.insights.length) {
     insights.append(el('ul', { class: 'insights' }, p.insights.map((t) => el('li', { class: t.alert ? 'alert' : '', text: t.text }))));
-  } else insights.append(el('p', { class: 'muted', text: 'Nincs különösebb észrevétel. Így tovább!' }));
+  } else insights.append(el('p', { class: 'muted', text: t('Nincs különösebb észrevétel. Így tovább!') }));
 
   const report = el('div', { class: 'card report' }, el('h2', { text: p.report.title }), el('p', { class: 'muted small', text: p.report.subtitle }),
     p.report.sections.map((s) => [el('h3', { text: s.title }), el('ul', {}, s.lines.map((l) => el('li', { text: l })))]));
@@ -174,7 +196,7 @@ function durationChart(p, days, byDay) {
   const y = (v) => T + (H - T - B) * (1 - v / max);
   const step = (W - L - R) / days.length;
   const bw = Math.max(step - 2, 2);   // 2px gap between bars
-  const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Átlagos fogmosási idő naponta, az utóbbi 30 nap' });
+  const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': t('Átlagos fogmosási idő naponta, az utóbbi 30 nap') });
   const grid = svg('g', { class: 'grid' }), axis = svg('g', { class: 'axis' });
   for (let t = 0; t <= max; t += 60) {
     grid.append(svg('line', { x1: L, x2: W - R, y1: y(t), y2: y(t) }));
@@ -197,7 +219,7 @@ function durationChart(p, days, byDay) {
     const bar = svg('path', { class: 'bar', d: h ? `M${x},${y(0)} V${y(0) - h + r} q0,-${r} ${r},-${r} H${x + bw - r} q${r},0 ${r},${r} V${y(0)} Z` : '' });
     const show = () => {
       const day = byDay[d];
-      tip.textContent = day && day.n ? `${huDay(d)} · ${day.n}× · átlag ${clock(day.avgS)}` : `${huDay(d)} · nem volt mérés`;
+      tip.textContent = day && day.n ? t('{0} · {1}× · átlag {2}', huDay(d), day.n, clock(day.avgS)) : t('{0} · nem volt mérés', huDay(d));
       tip.style.left = `${Math.min(Math.max(((x + bw / 2) / W) * 100, 18), 82)}%`;
       tip.style.top = `${(y(v) / H) * 100}%`;
       tip.hidden = false;
@@ -211,15 +233,15 @@ function durationChart(p, days, byDay) {
   });
   s.append(svg('line', { class: 'goal', x1: L, x2: W - R, y1: y(p.goals.targetS), y2: y(p.goals.targetS) }));
   wrap.append(s, tip);
-  return el('div', { class: 'card' }, el('h2', { text: 'Fogmosási idő (napi átlag)' }), wrap,
-    el('div', { class: 'legend' }, el('span', {}, el('span', { class: 'sw' }), 'napi átlag'), el('span', {}, el('span', { class: 'dash' }), 'célidő')));
+  return el('div', { class: 'card' }, el('h2', { text: t('Fogmosási idő (napi átlag)') }), wrap,
+    el('div', { class: 'legend' }, el('span', {}, el('span', { class: 'sw' }), t('napi átlag')), el('span', {}, el('span', { class: 'dash' }), t('célidő'))));
 }
 
 function careCalendar(p, today, byDay) {
   const days = lastDays(35, today);
   const first = new Date(days[0] + 'T12:00:00');
   const pad = (first.getDay() + 6) % 7;   // Monday first
-  const cal = el('div', { class: 'cal' }, ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'].map((d) => el('div', { class: 'dow', text: d })));
+  const cal = el('div', { class: 'cal' }, (LANG === 'hu' ? ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'] : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']).map((d) => el('div', { class: 'dow', text: d })));
   for (let i = 0; i < pad; i++) cal.append(el('div', { class: 'day empty' }));
   for (const d of days) {
     const x = byDay[d];
@@ -227,24 +249,24 @@ function careCalendar(p, today, byDay) {
     if (x?.floss) marks.push(el('span', { class: 'mark', text: '🧵' }));
     if (x?.bleed) marks.push(el('span', { class: 'mark bleed', text: '●' }));
     if (x?.sens) marks.push(el('span', { class: 'mark sens', text: x.sens > 1 ? '▲▲' : '▲' }));
-    const label = [huDay(d), x?.n ? `${x.n} fogmosás` : 'nincs fogmosás', x?.floss ? 'fogselyem' : '', x?.bleed ? 'ínyvérzés' : '',
-      x?.sens ? (x.sens > 1 ? 'erős érzékenység' : 'enyhe érzékenység') : ''].filter(Boolean).join(', ');
+    const label = [huDay(d), x?.n ? t('{0} fogmosás', x.n) : t('nincs fogmosás'), x?.floss ? t('fogselyem') : '', x?.bleed ? t('ínyvérzés') : '',
+      x?.sens ? (x.sens > 1 ? t('erős érzékenység') : t('enyhe érzékenység')) : ''].filter(Boolean).join(', ');
     cal.append(el('div', { class: `day${x?.floss ? ' floss' : ''}`, title: label, 'aria-label': label },
       el('span', { text: d.slice(8) }), el('span', { class: 'n', text: x?.n ? `${x.n}×` : '' }), el('span', {}, marks)));
   }
-  return el('div', { class: 'card' }, el('h2', { text: 'Fogápolási napló (5 hét)' }), cal,
-    el('div', { class: 'legend' }, el('span', { text: '🧵 fogselyem' }), el('span', {}, el('b', { class: 'bleed', text: '● ' }), 'ínyvérzés'),
-      el('span', {}, el('b', { class: 'sens', text: '▲ ' }), 'érzékenység (▲▲ erős)')));
+  return el('div', { class: 'card' }, el('h2', { text: t('Fogápolási napló (5 hét)') }), cal,
+    el('div', { class: 'legend' }, el('span', { text: t('🧵 fogselyem') }), el('span', {}, el('b', { class: 'bleed', text: '● ' }), t('ínyvérzés')),
+      el('span', {}, el('b', { class: 'sens', text: '▲ ' }), t('érzékenység (▲▲ erős)'))));
 }
 
 function tableView(p, days, byDay) {
   const rows = days.slice().reverse().map((d) => byDay[d]).filter(Boolean);
-  const yes = (b) => (b ? 'igen' : '');
-  return el('details', { class: 'card' }, el('summary', { text: 'Táblázat (30 nap)' }),
+  const yes = (b) => (b ? t('igen') : '');
+  return el('details', { class: 'card' }, el('summary', { text: t('Táblázat (30 nap)') }),
     el('table', { class: 'data' },
-      el('thead', {}, el('tr', {}, ['Nap', 'Fogmosás', 'Átlag', 'Célidő elérve', 'Fogselyem', 'Szájvíz', 'Érzékenység', 'Ínyvérzés'].map((h) => el('th', { text: h })))),
+      el('thead', {}, el('tr', {}, ['Nap', 'Fogmosás', 'Átlag', 'Célidő elérve', 'Fogselyem', 'Szájvíz', 'Érzékenység', 'Ínyvérzés'].map((h) => el('th', { text: t(h) })))),
       el('tbody', {}, rows.map((x) => el('tr', {}, [huDay(x.d), String(x.n), x.n ? clock(x.avgS) : '', String(x.goalHits), yes(x.floss), yes(x.mouthwash),
-        ['', 'enyhe', 'erős'][x.sens] || '', yes(x.bleed)].map((v) => el('td', { text: v })))))));
+        ['', t('enyhe'), t('erős')][x.sens] || '', yes(x.bleed)].map((v) => el('td', { text: v })))))));
 }
 
 // ------------------------------------------------------------------ start
@@ -253,9 +275,10 @@ $('renew').addEventListener('click', () => startPairing());
 $('print').addEventListener('click', () => window.print());
 $('logout').addEventListener('click', () => { data = null; location.replace(`${basePath()}/`); });
 
+applyStatic();
 if (location.pathname.endsWith('/l') && /Android|iPhone|iPad/i.test(navigator.userAgent)) $('phone-hint').hidden = false;
 if (!window.crypto?.subtle) {
-  $('pair-status').textContent = 'Ehhez a böngészőhöz biztonságos (https) kapcsolat kell.';
+  $('pair-status').textContent = t('Ehhez a böngészőhöz biztonságos (https) kapcsolat kell.');
 } else {
   startPairing();
 }

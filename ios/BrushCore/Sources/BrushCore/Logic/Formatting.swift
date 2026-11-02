@@ -6,7 +6,7 @@ enum Formatting {
         let s = String(abs(n))
         var out = ""
         for (i, ch) in s.reversed().enumerated() {
-            if i > 0 && i % 3 == 0 { out.append(" ") }
+            if i > 0 && i % 3 == 0 { out.append(I18n.lang == "hu" ? " " : ",") }
             out.append(ch)
         }
         return (n < 0 ? "-" : "") + String(out.reversed())
@@ -18,7 +18,7 @@ enum Formatting {
         let parts = s.split(separator: ".")
         let intPart = Int(parts[0]) ?? 0
         let grouped = Formatting.grouped(intPart)
-        if parts.count > 1 { return grouped + "," + parts[1] }
+        if parts.count > 1 { return grouped + (I18n.lang == "hu" ? "," : ".") + parts[1] }
         return grouped
     }
 

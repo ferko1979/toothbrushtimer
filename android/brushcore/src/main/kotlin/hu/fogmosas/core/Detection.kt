@@ -149,8 +149,8 @@ class SonicDetector(val cfg: SonicConfig = SonicConfig()) {
 
         fun describe(f0Hz: Double): String {
             val moves = (f0Hz * 120).roundToInt()
-            val kind = if (f0Hz in 220.0..300.0) "szónikus fogkefe (Sonicare-típusú)" else "elektromos fogkefe"
-            return "$kind: ${f0Hz.roundToInt()} Hz-es zúgás, kb. ${Formatting.grouped(moves)} mozdulat/perc"
+            val kind = if (f0Hz in 220.0..300.0) tr("szónikus fogkefe (Sonicare-típusú)") else tr("elektromos fogkefe")
+            return tr("{0}: {1} Hz-es zúgás, kb. {2} mozdulat/perc", kind, f0Hz.roundToInt(), Formatting.grouped(moves))
         }
     }
 

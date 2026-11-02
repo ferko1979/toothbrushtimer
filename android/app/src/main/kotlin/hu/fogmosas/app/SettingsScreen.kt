@@ -39,6 +39,7 @@ import hu.fogmosas.shared.AppStore
 import hu.fogmosas.shared.WearSync
 import java.time.LocalDate
 import java.util.UUID
+import hu.fogmosas.core.tr
 
 @Composable
 fun SettingsScreen(activity: MainActivity, store: AppStore) {
@@ -73,59 +74,71 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
     }
 
     if (data.settings.isOn("parent_lock", "android") && !activity.parentUnlocked.value) {
-        LockScreen("A beállítások szülői zárral védettek") {
-            DeviceAuth.authenticate(activity, "Szülői zár") { ok -> if (ok) activity.parentUnlocked.value = true }
+        LockScreen(tr("A beállítások szülői zárral védettek")) {
+            DeviceAuth.authenticate(activity, tr("Szülői zár")) { ok -> if (ok) activity.parentUnlocked.value = true }
         }
         return
     }
 
     val p = data.activeProfile
     Column(Modifier.fillMaxSize().background(C.bg).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Beállítások", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-        OutlinedButton(onClick = { touring = true }, modifier = Modifier.fillMaxWidth()) { Text("✨ Mit tud az app? (bemutató)") }
+        Text(tr("Beállítások"), fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        OutlinedButton(onClick = { touring = true }, modifier = Modifier.fillMaxWidth()) { Text(tr("✨ Mit tud az app? (bemutató)")) }
 
-        Section("Profilok")
+        Section("Nyelv / Language")
+        InfoCard {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                for ((code, label) in listOf("" to tr("Telefon nyelve"), "hu" to "Magyar", "en" to "English")) {
+                    androidx.compose.material3.FilterChip(selected = data.settings.language == code, onClick = {
+                        store.update { it.copy(settings = it.settings.copy(language = code)) }
+                        ReminderScheduler.reschedule(activity)
+                    }, label = { Text(label) })
+                }
+            }
+        }
+
+        Section(tr("Profilok"))
         InfoCard {
             data.profiles.forEach { pr ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     AvatarCircle(pr.avatarEmoji, 36.dp, pr.id == p.id) { store.update { it.copy(activeProfileId = pr.id) } }
                     Spacer(Modifier.size(10.dp))
-                    Text(pr.name + if (pr.child) (if (pr.canRead) " · gyerek" else " · gyerek, csak képek") else "", Modifier.weight(1f))
+                    Text(pr.name + if (pr.child) (if (pr.canRead) tr(" · gyerek") else tr(" · gyerek, csak képek")) else "", Modifier.weight(1f))
                     if (pr.id != "me") TextButton(onClick = {
                         store.update { d -> d.copy(profiles = d.profiles.filter { it.id != pr.id }, activeProfileId = if (d.activeProfileId == pr.id) "me" else d.activeProfileId) }
-                    }) { Text("Törlés") }
+                    }) { Text(tr("Törlés")) }
                 }
             }
-            OutlinedButton(onClick = { addingChild = true }) { Text("Gyerek hozzáadása") }
+            OutlinedButton(onClick = { addingChild = true }) { Text(tr("Gyerek hozzáadása")) }
         }
 
-        Section("${p.name} beállításai")
+        Section(tr("{0} beállításai", p.name))
         InfoCard {
-            Stepper("Naponta ${p.goals.perDay}×", { updateGoals(store, activity, p.id, -1, 0.0) }, { updateGoals(store, activity, p.id, 1, 0.0) })
-            Stepper("Célidő: ${Formatting.clock(p.goals.targetS)}", { updateGoals(store, activity, p.id, 0, -15.0) }, { updateGoals(store, activity, p.id, 0, 15.0) })
+            Stepper(tr("Naponta {0}×", p.goals.perDay), { updateGoals(store, activity, p.id, -1, 0.0) }, { updateGoals(store, activity, p.id, 1, 0.0) })
+            Stepper(tr("Célidő: {0}", Formatting.clock(p.goals.targetS)), { updateGoals(store, activity, p.id, 0, -15.0) }, { updateGoals(store, activity, p.id, 0, 15.0) })
             p.goals.warnings.forEach { Text(it, color = C.warn, fontSize = 12.sp) }
-            SwitchRow("Elektromos fogkefe", "", p.electric) { on -> store.updateProfile(p.copy(brushType = if (on) "electric" else "manual")) }
+            SwitchRow(tr("Elektromos fogkefe"), "", p.electric) { on -> store.updateProfile(p.copy(brushType = if (on) "electric" else "manual")) }
             OutlinedButton(onClick = { store.updateProfile(p.copy(brushHeadInstalled = LocalDate.now().toString())) }) {
-                Text(if (p.electric) "Új fogkefefejet tettem fel" else "Új fogkefét kezdtem")
+                Text(if (p.electric) tr("Új fogkefefejet tettem fel") else tr("Új fogkefét kezdtem"))
             }
             if (p.electric && data.settings.isOn("calibration")) Text(p.calibration.statusText, fontSize = 12.sp, color = C.muted)
-            if (p.child) SwitchRow("Tud olvasni", "", p.canRead) { on -> store.updateProfile(p.copy(canRead = on)) }
+            if (p.child) SwitchRow(tr("Tud olvasni"), "", p.canRead) { on -> store.updateProfile(p.copy(canRead = on)) }
             ProfileCareSettings(store, p) {
                 store.data.value.profile(p.id)?.let { if (it.id == "me") WearSync.pushGoals(activity, it.goals) }
                 ReminderScheduler.reschedule(activity)
             }
         }
 
-        Section("Emlékeztetők")
+        Section(tr("Emlékeztetők"))
         val r = data.settings.reminders
         InfoCard {
-            SwitchRow("Reggel, ébredés után", "", r.morningEnabled) { on -> rem { it.copy(morningEnabled = on) } }
-            if (r.morningEnabled) TimeRow("Ébredés", r.wakeTime) { t -> rem { it.copy(wakeTime = t) } }
-            SwitchRow("Lefekvés előtt", "${r.bedtimeLeadMin} perccel előtte", r.bedtimeEnabled) { on -> rem { it.copy(bedtimeEnabled = on) } }
-            if (r.bedtimeEnabled) TimeRow("Lefekvés", r.bedtime) { t -> rem { it.copy(bedtime = t) } }
-            SwitchRow("Esti emlékeztető (pl. vacsora után)", "", r.eveningEnabled) { on -> rem { it.copy(eveningEnabled = on) } }
-            if (r.eveningEnabled) TimeRow("Időpont", r.eveningTime) { t -> rem { it.copy(eveningTime = t) } }
-            SwitchRow("Ismétlés, ha elmaradt", "${r.followupAfterMin} perc múlva", r.followupEnabled) { on -> rem { it.copy(followupEnabled = on) } }
+            SwitchRow(tr("Reggel, ébredés után"), "", r.morningEnabled) { on -> rem { it.copy(morningEnabled = on) } }
+            if (r.morningEnabled) TimeRow(tr("Ébredés"), r.wakeTime) { t -> rem { it.copy(wakeTime = t) } }
+            SwitchRow(tr("Lefekvés előtt"), tr("{0} perccel előtte", r.bedtimeLeadMin), r.bedtimeEnabled) { on -> rem { it.copy(bedtimeEnabled = on) } }
+            if (r.bedtimeEnabled) TimeRow(tr("Lefekvés"), r.bedtime) { t -> rem { it.copy(bedtime = t) } }
+            SwitchRow(tr("Esti emlékeztető (pl. vacsora után)"), "", r.eveningEnabled) { on -> rem { it.copy(eveningEnabled = on) } }
+            if (r.eveningEnabled) TimeRow(tr("Időpont"), r.eveningTime) { t -> rem { it.copy(eveningTime = t) } }
+            SwitchRow(tr("Ismétlés, ha elmaradt"), tr("{0} perc múlva", r.followupAfterMin), r.followupEnabled) { on -> rem { it.copy(followupEnabled = on) } }
         }
 
         data.settings.groups("android").forEach { (group, features) ->
@@ -134,7 +147,7 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
                 features.forEach { f ->
                     if (f.available) {
                         val lock = f.id == "app_lock" || f.id == "parent_lock"
-                        val sub = if (lock && !DeviceAuth.available(activity)) "Ehhez képernyőzárat (ujjlenyomat, arc vagy PIN) kell beállítani a telefonon." else f.description
+                        val sub = if (lock && !DeviceAuth.available(activity)) tr("Ehhez képernyőzárat (ujjlenyomat, arc vagy PIN) kell beállítani a telefonon.") else f.description
                         SwitchRow(f.title, sub, data.settings.isOn(f.id)) { on ->
                             fun apply() {
                                 store.update { it.copy(settings = it.settings.with(f.id, on)) }
@@ -150,39 +163,39 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
             }
         }
 
-        Section("Víz")
+        Section(tr("Víz"))
         InfoCard {
-            SwitchRow("USA mértékegységek (gallon, $)", "", data.settings.locale == "us") { on ->
+            SwitchRow(tr("USA mértékegységek (gallon, \$)"), "", data.settings.locale == "us") { on ->
                 store.update { it.copy(settings = it.settings.copy(locale = if (on) "us" else "hu")) }
             }
-            Text("Csap mérése: tegyél a csap alá egy 1 literes palackot, nyisd meg úgy, ahogy fogmosáskor szoktad, nyomd meg az Indítást, és amikor megtelt, a Stopot.", fontSize = 13.sp, color = C.muted)
+            Text(tr("Csap mérése: tegyél a csap alá egy 1 literes palackot, nyisd meg úgy, ahogy fogmosáskor szoktad, nyomd meg az Indítást, és amikor megtelt, a Stopot."), fontSize = 13.sp, color = C.muted)
             val st = tapStart
-            if (st == null) Button(onClick = { tapStart = System.currentTimeMillis(); tapResult = null }) { Text("Indítás") }
+            if (st == null) Button(onClick = { tapStart = System.currentTimeMillis(); tapResult = null }) { Text(tr("Indítás")) }
             else Button(onClick = {
                 val secs = (System.currentTimeMillis() - st) / 1000.0
                 tapStart = null
                 tapResult = try {
                     val f = tapFlowFromMeasurement(1.0, secs)
                     store.update { it.copy(settings = it.settings.copy(tapFlowLPerMin = f)) }
-                    "%.1f l/perc – elmentve.".format(f)
-                } catch (e: Exception) { "Ez nem tűnik reálisnak, próbáld újra." }
-            }) { Text("Stop") }
+                    tr("%.1f l/perc – elmentve.").format(f)
+                } catch (e: Exception) { tr("Ez nem tűnik reálisnak, próbáld újra.") }
+            }) { Text(tr("Stop")) }
             tapResult?.let { Text(it) }
-            data.settings.tapFlowLPerMin?.let { Text("A te csapod: %.1f l/perc".format(it), fontSize = 12.sp, color = C.muted) }
+            data.settings.tapFlowLPerMin?.let { Text(tr("A te csapod: %.1f l/perc").format(it), fontSize = 12.sp, color = C.muted) }
         }
 
-        Section("Adatvédelem")
+        Section(tr("Adatvédelem"))
         InfoCard {
-            Text("A hang csak ezen a készüléken, a memóriában dolgozódik fel. Hangfelvétel nem készül, és semmi nem kerül szerverre. A webes megtekintés csak akkor küld adatot, ha te olvasod be a QR-kódot, és akkor is titkosítva.", fontSize = 13.sp, color = C.muted)
-            TextButton(onClick = { confirmDelete = true }) { Text("Összes adat törlése", color = C.danger) }
+            Text(tr("A hang csak ezen a készüléken, a memóriában dolgozódik fel. Hangfelvétel nem készül, és semmi nem kerül szerverre. A webes megtekintés csak akkor küld adatot, ha te olvasod be a QR-kódot, és akkor is titkosítva."), fontSize = 13.sp, color = C.muted)
+            TextButton(onClick = { confirmDelete = true }) { Text(tr("Összes adat törlése"), color = C.danger) }
         }
     }
 
     if (confirmDelete) AlertDialog(
         onDismissRequest = { confirmDelete = false },
-        title = { Text("Biztosan törölsz minden adatot?") },
-        confirmButton = { TextButton(onClick = { store.update { AppData() }; confirmDelete = false }) { Text("Törlés", color = C.danger) } },
-        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Mégse") } },
+        title = { Text(tr("Biztosan törölsz minden adatot?")) },
+        confirmButton = { TextButton(onClick = { store.update { AppData() }; confirmDelete = false }) { Text(tr("Törlés"), color = C.danger) } },
+        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(tr("Mégse")) } },
     )
 }
 

@@ -4,6 +4,7 @@ import android.content.Context
 import hu.fogmosas.core.AppSettings
 import hu.fogmosas.core.BrushRecord
 import hu.fogmosas.core.CareEntry
+import hu.fogmosas.core.I18n
 import hu.fogmosas.core.toCare
 import hu.fogmosas.core.Coach
 import hu.fogmosas.core.ExtraRecord
@@ -14,13 +15,14 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.LocalDate
+import hu.fogmosas.core.tr
 
 /** Everything the app stores, on the device only (JSON in the app's private files). */
 @Serializable
 data class AppData(
     val onboarded: Boolean = false,
     val settings: AppSettings = AppSettings(),
-    val profiles: List<Profile> = listOf(Profile("me", "Én")),
+    val profiles: List<Profile> = listOf(Profile("me", tr("Én"))),
     val activeProfileId: String = "me",
     val records: List<BrushRecord> = emptyList(),
     val extras: List<ExtraRecord> = emptyList(),
@@ -49,15 +51,20 @@ class AppStore private constructor(context: Context) {
     val data: StateFlow<AppData> = _data
     val coach = Coach()
 
-    private fun load(): AppData = try {
-        if (file.exists()) json.decodeFromString(AppData.serializer(), file.readText()) else AppData()
+    private fun load(): AppData = (try {
+        if (file.exists()) json.decodeFromString(AppData.serializer(), file.readText()) else null
     } catch (e: Exception) {
-        AppData()
-    }
+        null
+    } ?: run {
+        // First start: language (and with it the default profile name) from the device.
+        I18n.setLanguage(null)
+        AppData(profiles = listOf(Profile("me", tr("Én"))))
+    }).also { I18n.setLanguage(it.settings.language) }
 
     @Synchronized
     fun update(transform: (AppData) -> AppData) {
         val next = transform(_data.value)
+        if (next.settings.language != _data.value.settings.language) I18n.setLanguage(next.settings.language)
         _data.value = next
         val tmp = File(file.parentFile, file.name + ".tmp")
         tmp.writeText(json.encodeToString(AppData.serializer(), next))

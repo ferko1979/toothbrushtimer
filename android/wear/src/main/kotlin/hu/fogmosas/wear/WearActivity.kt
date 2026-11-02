@@ -49,6 +49,7 @@ import hu.fogmosas.shared.AppStore
 import hu.fogmosas.shared.BrushingEngine
 import hu.fogmosas.shared.WearSync
 import java.time.LocalDate
+import hu.fogmosas.core.tr
 
 private val brand = Color(0xFF1E9BB8)
 private val brand2 = Color(0xFF57C5B6)
@@ -90,9 +91,9 @@ fun WearRoot(activity: WearActivity, store: AppStore) {
             r != null -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(if (r.durationS >= goals.targetS) "🎉" else "💪", fontSize = 30.sp)
                 Text(Formatting.clock(r.durationS), fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text(if (r.durationS >= goals.targetS) "Cél elérve" else "Még ${(goals.targetS - r.durationS).toInt()} s hiányzott",
+                Text(if (r.durationS >= goals.targetS) tr("Cél elérve") else tr("Még {0} s hiányzott", (goals.targetS - r.durationS).toInt()),
                     fontSize = 12.sp, color = Color.LightGray)
-                Text(if (r.waterRunningS >= 5) "🚰 folyt a csap" else "💧 elzárt csap", fontSize = 12.sp)
+                Text(if (r.waterRunningS >= 5) tr("🚰 folyt a csap") else tr("💧 elzárt csap"), fontSize = 12.sp)
                 // Quick journal: floss, bleeding gums, sensitivity (saved on the phone).
                 var floss by remember(r) { mutableStateOf(false) }
                 var bleed by remember(r) { mutableStateOf(false) }
@@ -120,19 +121,19 @@ fun WearRoot(activity: WearActivity, store: AppStore) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(p.quadrantName, fontSize = 12.sp, color = Color.LightGray)
                     Text(Formatting.clock(s.elapsedS), fontSize = 32.sp, fontWeight = FontWeight.Bold)
-                    if (s.wasteIcon) Text("🚰 Folyik a csap!", fontSize = 11.sp, color = Color(0xFFE8833A))
-                    Button(onClick = { BrushingEngine.stop() }, colors = ButtonDefaults.secondaryButtonColors()) { Text("Kész", fontSize = 12.sp) }
+                    if (s.wasteIcon) Text(tr("🚰 Folyik a csap!"), fontSize = 11.sp, color = Color(0xFFE8833A))
+                    Button(onClick = { BrushingEngine.stop() }, colors = ButtonDefaults.secondaryButtonColors()) { Text(tr("Kész"), fontSize = 12.sp) }
                 }
             }
             s.active -> Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(if (s.phase == BrushingEngine.Phase.WATER) "🚰" else "🚰 → 🪥", fontSize = 24.sp)
-                Text("Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted.", fontSize = 12.sp, textAlign = TextAlign.Center, color = Color.LightGray)
+                Text(tr("Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted."), fontSize = 12.sp, textAlign = TextAlign.Center, color = Color.LightGray)
                 Button(onClick = { BrushingEngine.startManual(activity) }, colors = ButtonDefaults.secondaryButtonColors()) { Text("⏱", fontSize = 14.sp) }
             }
             else -> Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("🪥", fontSize = 34.sp)
                 val rs = data.records("me")
-                Text("Ma ${store.coach.todayCount(rs, LocalDate.now())}/${goals.perDay} · 🔥 ${store.coach.perfectStreak(rs, goals, LocalDate.now())}",
+                Text(tr("Ma {0}/{1} · 🔥 {2}", store.coach.todayCount(rs, LocalDate.now()), goals.perDay, store.coach.perfectStreak(rs, goals, LocalDate.now())),
                     fontSize = 12.sp, color = Color.LightGray)
                 Button(onClick = {
                     BrushingEngine.start(activity, BrushingEngine.Config(

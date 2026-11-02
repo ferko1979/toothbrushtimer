@@ -10,7 +10,7 @@ let package = Package(
     targets: [
         .target(
             name: "BrushCore",
-            resources: [.copy("Resources/brush_model.json")]
+            resources: [.copy("Resources/brush_model.json"), .copy("Resources/en.json")]
         ),
         .testTarget(
             name: "BrushCoreTests",

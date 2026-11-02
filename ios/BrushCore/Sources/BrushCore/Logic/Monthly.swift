@@ -11,8 +11,10 @@ public struct MonthlyReport: Equatable {
     public let waterSavedL: Double, waterWastedL: Double
 }
 
-public let monthNamesHU = ["január", "február", "március", "április", "május", "június", "július",
-                           "augusztus", "szeptember", "október", "november", "december"]
+public var monthNamesHU: [String] {
+    [tr("január"), tr("február"), tr("március"), tr("április"), tr("május"), tr("június"), tr("július"),
+     tr("augusztus"), tr("szeptember"), tr("október"), tr("november"), tr("december")]
+}
 
 public func monthlyReport(_ records: [BrushRecord], goals: Goals, year: Int, month: Int,
                           locale: WaterLocale = .hu, calendar: Calendar = .current) -> MonthlyReport {
@@ -55,14 +57,14 @@ public func monthlyReport(_ records: [BrushRecord], goals: Goals, year: Int, mon
 
 public func formatMonthly(_ r: MonthlyReport, goals: Goals, name: String = "") -> String {
     let expected = r.daysInMonth * goals.perDay
-    let title = "Havi fogmosás-összefoglaló – \(r.year). \(monthNamesHU[r.month - 1])" + (name.isEmpty ? "" : " – \(name)")
+    let title = tr("Havi fogmosás-összefoglaló – {0}. {1}", r.year, monthNamesHU[r.month - 1]) + (name.isEmpty ? "" : " – \(name)")
     var lines = [title,
-                 "Fogmosások: \(r.sessions) / \(expected) tervezett (\(r.daysBrushed) napon; reggel \(r.morning), este \(r.evening))",
-                 "Átlagos időtartam: \(Int(r.avgS.rounded())) s (cél: \(Int(goals.targetS)) s), a célidőt elérte: \(Int(r.pctGoal.rounded()))%",
-                 "Tökéletes napok: \(r.perfectDays), leghosszabb sorozat: \(r.bestStreak) nap",
-                 "Elzárt csappal: \(r.tapOffSessions) fogmosás, megtakarított víz kb. \(Int(r.waterSavedL.rounded())) l"]
-    if r.waterWastedL >= 1 { lines.append("Fogmosás közben elfolyt víz: kb. \(Int(r.waterWastedL.rounded())) l") }
-    lines.append("Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül).")
+                 tr("Fogmosások: {0} / {1} tervezett ({2} napon; reggel {3}, este {4})", r.sessions, expected, r.daysBrushed, r.morning, r.evening),
+                 tr("Átlagos időtartam: {0} s (cél: {1} s), a célidőt elérte: {2}%", Int(r.avgS.rounded()), Int(goals.targetS), Int(r.pctGoal.rounded())),
+                 tr("Tökéletes napok: {0}, leghosszabb sorozat: {1} nap", r.perfectDays, r.bestStreak),
+                 tr("Elzárt csappal: {0} fogmosás, megtakarított víz kb. {1} l", r.tapOffSessions, Int(r.waterSavedL.rounded()))]
+    if r.waterWastedL >= 1 { lines.append(tr("Fogmosás közben elfolyt víz: kb. {0} l", Int(r.waterWastedL.rounded()))) }
+    lines.append(tr("Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül)."))
     return lines.joined(separator: "\n")
 }
 

@@ -21,6 +21,7 @@ import hu.fogmosas.shared.WearSync
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.Locale
+import hu.fogmosas.core.tr
 
 /** Rolling 7-day plan of reminder alarms (same planner as iOS). */
 object ReminderScheduler {
@@ -58,7 +59,7 @@ object ReminderScheduler {
         val today = LocalDate.now()
         val day = nextDentistReminder(me.lastCheckup?.let(LocalDate::parse), me.lastCleaning?.let(LocalDate::parse), today) ?: return
         val st = dentistStatus(me.lastCheckup?.let(LocalDate::parse), me.lastCleaning?.let(LocalDate::parse), day)
-        val text = (st.message ?: "Esedékes a fogorvosi kontroll.") + " Foglalj időpontot! 🦷"
+        val text = (st.message ?: tr("Esedékes a fogorvosi kontroll.")) + tr(" Foglalj időpontot! 🦷")
         val intent = Intent(ctx, ReminderReceiver::class.java).putExtra("text", text).putExtra("arm", false)
         val pi = PendingIntent.getBroadcast(ctx, DENTIST_CODE, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val at = day.atTime(LocalTime.of(10, 0)).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -67,13 +68,13 @@ object ReminderScheduler {
 
     fun show(ctx: Context, text: String, arm: Boolean = true) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel(CHANNEL, "Emlékeztetők", NotificationManager.IMPORTANCE_DEFAULT))
+        nm.createNotificationChannel(NotificationChannel(CHANNEL, tr("Emlékeztetők"), NotificationManager.IMPORTANCE_DEFAULT))
         val open = Intent(ctx, MainActivity::class.java).putExtra(MainActivity.EXTRA_ARM, arm)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val pi = PendingIntent.getActivity(ctx, if (arm) 7 else 8, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val n = NotificationCompat.Builder(ctx, CHANNEL)
             .setSmallIcon(hu.fogmosas.shared.R.drawable.ic_stat_brush)
-            .setContentTitle("🪥 Fogmosás")
+            .setContentTitle(tr("🪥 Fogmosás"))
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setAutoCancel(true)
@@ -85,7 +86,7 @@ object ReminderScheduler {
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
-        ReminderScheduler.show(ctx, intent.getStringExtra("text") ?: "Ideje fogat mosni! 🪥", intent.getBooleanExtra("arm", true))
+        ReminderScheduler.show(ctx, intent.getStringExtra("text") ?: tr("Ideje fogat mosni! 🪥"), intent.getBooleanExtra("arm", true))
     }
 }
 
@@ -122,7 +123,7 @@ class Speaker(ctx: Context) : TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         ready = status == TextToSpeech.SUCCESS
         if (ready) {
-            tts.language = Locale("hu", "HU")
+            tts.language = hu.fogmosas.core.I18n.locale
             pending?.let { say(it) }
         }
     }
@@ -130,6 +131,7 @@ class Speaker(ctx: Context) : TextToSpeech.OnInitListener {
     fun say(text: String) {
         val clean = text.filter { Character.getType(it) != Character.SURROGATE.toInt() && Character.getType(it) != Character.OTHER_SYMBOL.toInt() }
         if (!ready) { pending = clean; return }
+        tts.language = hu.fogmosas.core.I18n.locale
         tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "fb")
     }
 

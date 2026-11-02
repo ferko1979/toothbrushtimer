@@ -13,12 +13,12 @@ struct WatchHomeView: View {
                 Text("🪥").font(.system(size: 40))
                 let count = model.coach.todayCount(model.records, today: Date())
                 let streak = model.coach.perfectStreak(model.records, goals: model.goals, today: Date())
-                Text("Ma \(count)/\(model.goals.perDay) · 🔥 \(streak)").font(.footnote).foregroundStyle(.secondary)
-                Button("Indítás") { brushing = true }
+                Text(tr("Ma {0}/{1} · 🔥 {2}", count, model.goals.perDay, streak)).font(.footnote).foregroundStyle(.secondary)
+                Button(tr("Indítás")) { brushing = true }
                     .buttonStyle(.borderedProminent)
                     .tint(Color(red: 0.118, green: 0.608, blue: 0.722))
             }
-            .navigationTitle("Fogmosás")
+            .navigationTitle(tr("Fogmosás"))
             .fullScreenCover(isPresented: $brushing) {
                 WatchBrushingView().environmentObject(model)
             }
@@ -64,17 +64,17 @@ struct WatchBrushingView: View {
                     Text(formatClock(controller.elapsedS)).font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit()
                 }
                 .frame(width: 120, height: 120)
-                if controller.wasteIcon { Text("🚰 Folyik a csap!").font(.caption2).foregroundStyle(.orange) }
+                if controller.wasteIcon { Text(tr("🚰 Folyik a csap!")).font(.caption2).foregroundStyle(.orange) }
             case .failed(let msg):
                 Text(msg).font(.footnote).multilineTextAlignment(.center)
-                Button("Időzítő") { controller.startManual() }
+                Button(tr("Időzítő")) { controller.startManual() }
             default:
                 Text(controller.phase == .water ? "🚰" : "🚰 → 🪥").font(.title)
-                Text("Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted.")
+                Text(tr("Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted."))
                     .font(.footnote).multilineTextAlignment(.center).foregroundStyle(.secondary)
-                Button("Időzítő") { controller.startManual() }.font(.footnote)
+                Button(tr("Időzítő")) { controller.startManual() }.font(.footnote)
             }
-            Button("Kész") { controller.stop() }.font(.footnote)
+            Button(tr("Kész")) { controller.stop() }.font(.footnote)
         }
     }
 
@@ -82,16 +82,16 @@ struct WatchBrushingView: View {
         ScrollView { VStack(spacing: 6) {
             Text(r.durationS >= model.goals.targetS ? "🎉" : "💪").font(.system(size: 34))
             Text(formatClock(r.durationS)).font(.title3.bold())
-            Text(r.durationS >= model.goals.targetS ? "Cél elérve" : "Még \(Int(model.goals.targetS - r.durationS)) s hiányzott")
+            Text(r.durationS >= model.goals.targetS ? tr("Cél elérve") : tr("Még {0} s hiányzott", Int(model.goals.targetS - r.durationS)))
                 .font(.caption2).foregroundStyle(.secondary)
-            Text(r.waterRunningS >= 5 ? "🚰 folyt a csap" : "💧 elzárt csap").font(.caption2)
+            Text(r.waterRunningS >= 5 ? tr("🚰 folyt a csap") : tr("💧 elzárt csap")).font(.caption2)
             // Quick journal: floss, bleeding gums, sensitivity (saved on the phone).
             HStack(spacing: 4) {
-                toggle("🧵", $floss, "Fogselyem")
-                toggle("🩸", $bleed, "Vérzett az íny")
-                toggle("⚡", $sens, "Érzékeny fog")
+                toggle("🧵", $floss, tr("Fogselyem"))
+                toggle("🩸", $bleed, tr("Vérzett az íny"))
+                toggle("⚡", $sens, tr("Érzékeny fog"))
             }
-            Button("Kész") {
+            Button(tr("Kész")) {
                 model.addCare(floss: floss, bleeding: bleed, sensitive: sens)
                 dismiss()
             }

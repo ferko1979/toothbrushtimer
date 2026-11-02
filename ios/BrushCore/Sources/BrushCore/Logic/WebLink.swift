@@ -47,6 +47,7 @@ public struct WebSnapshot: Codable, Equatable {
     public let generated: String
     public let locale: String
     public let profiles: [WebProfile]
+    public var lang = "hu"
 }
 
 public enum WebLink {
@@ -142,6 +143,6 @@ public enum WebLink {
 
     public static func snapshot(_ profiles: [WebProfile], now: Date, locale: String) -> WebSnapshot {
         let f = ISO8601DateFormatter()
-        return WebSnapshot(generated: f.string(from: now), locale: locale, profiles: profiles)
+        return WebSnapshot(generated: f.string(from: now), locale: locale, profiles: profiles, lang: I18n.lang)
     }
 }

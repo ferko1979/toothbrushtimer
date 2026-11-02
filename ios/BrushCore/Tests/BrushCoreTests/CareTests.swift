@@ -149,3 +149,22 @@ final class TourTests: XCTestCase {
         XCTAssertTrue(Tour.pages(platform: .ios).contains { $0.text.contains("Face ID") })
     }
 }
+
+final class I18nTests: XCTestCase {
+    func testEnglishAndPlurals() {
+        I18n.setLanguage("en")
+        defer { I18n.setLanguage("hu") }
+        XCTAssertEqual(tr("Fogselyem: {0} napon", 1), "Floss: 1 day")
+        XCTAssertEqual(tr("Fogselyem: {0} napon", 3), "Floss: 3 days")
+        XCTAssertEqual(Quadrant.names[0], "upper right")
+        XCTAssertEqual(Formatting.hu(1234.5), "1,234.5")
+        XCTAssertEqual(Feature.byId("care_checkin")?.title, "Symptom journal")
+        XCTAssertTrue(Tour.pages(platform: .ios)[0].title.hasPrefix("Times"))
+    }
+
+    func testHungarianDefault() {
+        I18n.setLanguage("hu")
+        XCTAssertEqual(tr("Fogselyem: {0} napon", 3), "Fogselyem: 3 napon")
+        XCTAssertEqual(Formatting.hu(1234.5), "1 234,5")
+    }
+}

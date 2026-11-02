@@ -11,9 +11,9 @@ struct TourView: View {
         let last = page == pages.count - 1
         VStack(spacing: 0) {
             HStack {
-                Text("Mit tud az app?").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text(tr("Mit tud az app?")).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer()
-                if !last { Button("Kihagyás", action: onDone) }
+                if !last { Button(tr("Kihagyás"), action: onDone) }
             }
             .padding(.horizontal, 24).padding(.top, 16)
             TabView(selection: $page) {
@@ -36,7 +36,7 @@ struct TourView: View {
             Button {
                 if last { onDone() } else { withAnimation { page += 1 } }
             } label: {
-                Text(last ? "Kezdjük!" : "Tovább").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
+                Text(last ? tr("Kezdjük!") : tr("Tovább")).font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)

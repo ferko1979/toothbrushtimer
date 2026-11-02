@@ -14,13 +14,13 @@ import kotlin.math.roundToInt
 
 object Toothpastes {
     data class Kind(val id: String, val title: String)
-    val all = listOf(
-        Kind("fluoride", "Normál fluoridos"),
-        Kind("sensitive", "Érzékeny fogra"),
-        Kind("whitening", "Fehérítő"),
-        Kind("gum", "Ínyvédő"),
-        Kind("kids", "Gyerek fogkrém"),
-        Kind("herbal", "Gyógynövényes / fluoridmentes"),
+    val all get() = listOf(
+        Kind("fluoride", tr("Normál fluoridos")),
+        Kind("sensitive", tr("Érzékeny fogra")),
+        Kind("whitening", tr("Fehérítő")),
+        Kind("gum", tr("Ínyvédő")),
+        Kind("kids", tr("Gyerek fogkrém")),
+        Kind("herbal", tr("Gyógynövényes / fluoridmentes")),
     )
     fun title(id: String?) = all.firstOrNull { it.id == id }?.title ?: "—"
 }
@@ -47,8 +47,8 @@ fun ExtraRecord.toCare() = CareEntry(id = id, profileId = profileId, dateMs = da
     floss = kind == "floss", mouthwash = kind == "mouthwash")
 
 enum class CareKind(val label: String) {
-    FLOSS("Fogselyem"), MOUTHWASH("Szájvíz"), INTERDENTAL("Fogköztisztító"), TONGUE("Nyelvtisztítás"),
-    SENSITIVITY("Érzékenység"), BLEEDING("Ínyvérzés");
+    FLOSS(tr("Fogselyem")), MOUTHWASH(tr("Szájvíz")), INTERDENTAL(tr("Fogköztisztító")), TONGUE(tr("Nyelvtisztítás")),
+    SENSITIVITY(tr("Érzékenység")), BLEEDING(tr("Ínyvérzés"));
 
     fun matches(e: CareEntry) = when (this) {
         FLOSS -> e.floss
@@ -97,7 +97,7 @@ object CareRules {
     const val WINDOW = 14
     const val BLEEDING_ALERT_DAYS = 4
     const val SENSITIVITY_ALERT_DAYS = 5
-    const val DISCLAIMER = "Ez nem orvosi diagnózis."
+    val DISCLAIMER get() = tr("Ez nem orvosi diagnózis.")
 }
 
 /**
@@ -113,29 +113,29 @@ fun careInsights(entries: List<CareEntry>, today: LocalDate, zone: ZoneId, floss
 
     val bleed = now(CareKind.BLEEDING)
     if (bleed >= CareRules.BLEEDING_ALERT_DAYS && recent(CareKind.BLEEDING) > 0) out += CareInsight("bleeding_persistent",
-        "Az ínyed az utóbbi 2 hétben $bleed napon vérzett. Ha a vérzés 2 hétnél tovább tart, keresd fel a fogorvosodat. ${CareRules.DISCLAIMER}", alert = true)
+        tr("Az ínyed az utóbbi 2 hétben {0} napon vérzett. Ha a vérzés 2 hétnél tovább tart, keresd fel a fogorvosodat. {1}", bleed, CareRules.DISCLAIMER), alert = true)
     val days = careDays(entries, zone)
     val strong = days.values.count { it.sensitivity >= 2 && !it.day.isBefore(today.minusDays(w - 1L)) && !it.day.isAfter(today) }
     val sens = now(CareKind.SENSITIVITY)
     if (sens >= CareRules.SENSITIVITY_ALERT_DAYS && recent(CareKind.SENSITIVITY) > 0) out += CareInsight("sensitivity_persistent",
-        "Az utóbbi 2 hétben $sens napon jeleztél fogérzékenységet" + (if (strong > 0) " ($strong napon erőset)" else "") +
-            ". A tartós érzékenységet érdemes megmutatni a fogorvosnak. ${CareRules.DISCLAIMER}", alert = true)
+        tr("Az utóbbi 2 hétben {0} napon jeleztél fogérzékenységet", sens) + (if (strong > 0) tr(" ({0} napon erőset)", strong) else "") +
+            tr(". A tartós érzékenységet érdemes megmutatni a fogorvosnak. {0}", CareRules.DISCLAIMER), alert = true)
 
     val flossNow = now(CareKind.FLOSS)
     val flossBefore = before(CareKind.FLOSS)
     val bleedBefore = before(CareKind.BLEEDING)
     if (flossNow > flossBefore && bleed < bleedBefore) out += CareInsight("floss_helps",
-        "Amióta gyakrabban fogselymezel ($flossBefore → $flossNow nap / 2 hét), ritkábban vérzik az ínyed ($bleedBefore → $bleed nap).")
+        tr("Amióta gyakrabban fogselymezel ({0} → {1} nap / 2 hét), ritkábban vérzik az ínyed ({2} → {3} nap).", flossBefore, flossNow, bleedBefore, bleed))
 
     val pasteNow = days.values.filter { !it.day.isBefore(today.minusDays(w - 1L)) && !it.day.isAfter(today) }.mapNotNull { it.toothpaste }
     val sensBefore = before(CareKind.SENSITIVITY)
     if (pasteNow.count { it == "sensitive" } * 2 >= maxOf(pasteNow.size, 1) && pasteNow.isNotEmpty() && sens < sensBefore) out += CareInsight("toothpaste_helps",
-        "Amióta érzékeny fogra való fogkrémet használsz, ritkábban jelzel érzékenységet ($sensBefore → $sens nap / 2 hét).")
+        tr("Amióta érzékeny fogra való fogkrémet használsz, ritkábban jelzel érzékenységet ({0} → {1} nap / 2 hét).", sensBefore, sens))
     else if (sens >= 3 && pasteNow.isNotEmpty() && pasteNow.none { it == "sensitive" }) out += CareInsight("toothpaste_try",
-        "Gyakran jelzel érzékenységet. Kérdezd meg a fogorvosodat, hogy segíthet-e egy érzékeny fogra való fogkrém.")
+        tr("Gyakran jelzel érzékenységet. Kérdezd meg a fogorvosodat, hogy segíthet-e egy érzékeny fogra való fogkrém."))
 
     if (flossTracked && careCount(entries, CareKind.FLOSS, today, 7, zone) < 3 && entries.isNotEmpty()) out += CareInsight("floss_rare",
-        "A fogorvosok naponta egyszer javasolják a fogközök tisztítását (fogselyem vagy fogköztisztító kefe). Az utóbbi héten ${careCount(entries, CareKind.FLOSS, today, 7, zone)} napon volt.")
+        tr("A fogorvosok naponta egyszer javasolják a fogközök tisztítását (fogselyem vagy fogköztisztító kefe). Az utóbbi héten {0} napon volt.", careCount(entries, CareKind.FLOSS, today, 7, zone)))
     return out
 }
 
@@ -143,9 +143,9 @@ fun careInsights(entries: List<CareEntry>, today: LocalDate, zone: ZoneId, floss
 
 data class DentistStatus(val checkupDue: LocalDate?, val cleaningDue: LocalDate?, val checkupOverdue: Boolean, val cleaningOverdue: Boolean) {
     val message: String? get() = when {
-        checkupOverdue && cleaningOverdue -> "Esedékes a fogorvosi kontroll és a fogkőeltávolítás."
-        checkupOverdue -> "Esedékes a félévenkénti fogorvosi kontroll."
-        cleaningOverdue -> "Esedékes az éves fogkőeltávolítás."
+        checkupOverdue && cleaningOverdue -> tr("Esedékes a fogorvosi kontroll és a fogkőeltávolítás.")
+        checkupOverdue -> tr("Esedékes a félévenkénti fogorvosi kontroll.")
+        cleaningOverdue -> tr("Esedékes az éves fogkőeltávolítás.")
         else -> null
     }
 }
@@ -175,7 +175,7 @@ fun nextDentistReminder(lastCheckup: LocalDate?, lastCleaning: LocalDate?, today
 
 object Orthodontic {
     const val TARGET_S = 180.0
-    const val NOTE = "Fogszabályzóval a fogorvosok hosszabb, alaposabb fogmosást és a fogközök naponta többszöri tisztítását javasolják."
+    val NOTE get() = tr("Fogszabályzóval a fogorvosok hosszabb, alaposabb fogmosást és a fogközök naponta többszöri tisztítását javasolják.")
 }
 
 data class RewardProgress(val have: Int, val need: Int, val text: String) {
@@ -205,7 +205,6 @@ data class DentistReport(val title: String, val subtitle: String, val sections: 
     }.trimEnd()
 }
 
-private val HU_DATE = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
 
 fun dentistReport(
     profile: Profile, records: List<BrushRecord>, entries: List<CareEntry>, today: LocalDate, days: Int, zone: ZoneId,
@@ -223,42 +222,42 @@ fun dentistReport(
     val evening = rs.count { ReminderPlanner.inWindow(it.start(zone).toLocalTime(), ReminderPlanner.EVENING) }
     val perfect = brushDays.values.count { coach.isPerfectDay(it, g) }
     val brushing = mutableListOf(
-        "Fogmosások: ${rs.size} (${brushDays.size} napon a $days napból; reggel $morning, este $evening)",
-        "Átlagos időtartam: ${Formatting.clock(avg)} (cél: ${Formatting.clock(g.targetS)}), célidőt elérte: $pct%",
-        "Napi cél (${g.perDay}× ${Formatting.clock(g.targetS)}) teljesítve: $perfect napon",
-        "Elzárt csappal: ${rs.count { it.tapOff }} fogmosás",
+        tr("Fogmosások: {0} ({1} napon a {2} napból; reggel {3}, este {4})", rs.size, brushDays.size, days, morning, evening),
+        tr("Átlagos időtartam: {0} (cél: {1}), célidőt elérte: {2}%", Formatting.clock(avg), Formatting.clock(g.targetS), pct),
+        tr("Napi cél ({0}× {1}) teljesítve: {2} napon", g.perDay, Formatting.clock(g.targetS), perfect),
+        tr("Elzárt csappal: {0} fogmosás", rs.count { it.tapOff }),
     )
-    if (rs.isNotEmpty()) brushing += "Leghosszabb: ${Formatting.clock(rs.maxOf { it.durationS })}, legrövidebb: ${Formatting.clock(rs.minOf { it.durationS })}"
+    if (rs.isNotEmpty()) brushing += tr("Leghosszabb: {0}, legrövidebb: {1}", Formatting.clock(rs.maxOf { it.durationS }), Formatting.clock(rs.minOf { it.durationS }))
 
     fun c(k: CareKind) = careCount(es, k, today, days, zone)
     val cd = careDays(es, zone)
     val strong = cd.values.count { it.sensitivity >= 2 }
     val care = listOf(
-        "Fogselyem: ${c(CareKind.FLOSS)} napon",
-        "Fogköztisztító kefe / szájzuhany: ${c(CareKind.INTERDENTAL)} napon",
-        "Szájvíz: ${c(CareKind.MOUTHWASH)} napon",
-        "Nyelvtisztítás: ${c(CareKind.TONGUE)} napon",
+        tr("Fogselyem: {0} napon", c(CareKind.FLOSS)),
+        tr("Fogköztisztító kefe / szájzuhany: {0} napon", c(CareKind.INTERDENTAL)),
+        tr("Szájvíz: {0} napon", c(CareKind.MOUTHWASH)),
+        tr("Nyelvtisztítás: {0} napon", c(CareKind.TONGUE)),
     )
     val symptoms = mutableListOf(
-        "Fogérzékenység: ${c(CareKind.SENSITIVITY)} napon" + (if (strong > 0) " (ebből erős: $strong)" else ""),
-        "Ínyvérzés: ${c(CareKind.BLEEDING)} napon",
+        tr("Fogérzékenység: {0} napon", c(CareKind.SENSITIVITY)) + (if (strong > 0) tr(" (ebből erős: {0})", strong) else ""),
+        tr("Ínyvérzés: {0} napon", c(CareKind.BLEEDING)),
     )
     val lastBleed = es.filter { it.bleeding }.maxByOrNull { it.dateMs }?.day(zone)
-    if (lastBleed != null) symptoms += "Utolsó ínyvérzés: ${lastBleed.format(HU_DATE)}"
+    if (lastBleed != null) symptoms += tr("Utolsó ínyvérzés: {0}", I18n.date(lastBleed))
     val pastes = cd.values.mapNotNull { it.toothpaste }.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }
-    if (pastes.isNotEmpty()) symptoms += "Fogkrém: " + pastes.joinToString(", ") { "${Toothpastes.title(it.key)} (${it.value} nap)" }
+    if (pastes.isNotEmpty()) symptoms += tr("Fogkrém: ") + pastes.joinToString(", ") { tr("{0} ({1} nap)", Toothpastes.title(it.key), it.value) }
 
     val other = mutableListOf<String>()
-    other += "Fogkefe: " + (if (profile.electric) "elektromos" else "kézi")
-    if (profile.orthodontic) other += "Fogszabályzó: igen"
-    profile.lastCheckup?.let { other += "Utolsó fogorvosi kontroll: ${LocalDate.parse(it).format(HU_DATE)}" }
-    profile.lastCleaning?.let { other += "Utolsó fogkőeltávolítás: ${LocalDate.parse(it).format(HU_DATE)}" }
-    other += "Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül). A tüneteket a felhasználó jelölte."
+    other += "Fogkefe: " + (if (profile.electric) "elektromos" else tr("kézi"))
+    if (profile.orthodontic) other += tr("Fogszabályzó: igen")
+    profile.lastCheckup?.let { other += tr("Utolsó fogorvosi kontroll: {0}", I18n.date(LocalDate.parse(it))) }
+    profile.lastCleaning?.let { other += tr("Utolsó fogkőeltávolítás: {0}", I18n.date(LocalDate.parse(it))) }
+    other += tr("Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül). A tüneteket a felhasználó jelölte.")
 
     return DentistReport(
-        "Fogápolási jelentés – ${profile.name}",
-        "${start.format(HU_DATE)} – ${today.format(HU_DATE)} ($days nap)",
-        listOf(ReportSection("Fogmosás", brushing), ReportSection("Fogköztisztítás és kiegészítők", care),
-            ReportSection("Tünetek", symptoms), ReportSection("Egyéb", other)),
+        tr("Fogápolási jelentés – {0}", profile.name),
+        tr("{0} – {1} ({2} nap)", I18n.date(start), I18n.date(today), days),
+        listOf(ReportSection(tr("Fogmosás"), brushing), ReportSection(tr("Fogköztisztítás és kiegészítők"), care),
+            ReportSection(tr("Tünetek"), symptoms), ReportSection(tr("Egyéb"), other)),
     )
 }

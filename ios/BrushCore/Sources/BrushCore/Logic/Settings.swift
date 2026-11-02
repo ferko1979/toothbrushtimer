@@ -20,45 +20,45 @@ public struct Feature: Identifiable, Equatable {
         self.defaultOn = defaultOn; self.group = group; self.platforms = platforms; self.available = available
     }
 
-    public static let all: [Feature] = [
-        Feature("auto_detect", "Automatikus felismerés", "A víz, a súrolás és a szónikus zúgás alapján indul és áll le a mérés.", true, "Mérés"),
-        Feature("keep_listening_when_placed", "Figyelés letett telefonnal", "Ha a telefon vízszintesen, nyugalomban fekszik, a képernyő lezárása után is figyel.", true, "Mérés", [.ios, .android]),
-        Feature("calibration", "Kalibráció", "Az első 3 fogmosásból megtanulja a fogkeféd hangját.", true, "Mérés"),
-        Feature("battery_saver", "Akkumulátorkímélő mód", "Csak akkor futtatja a felismerő modellt, ha egyáltalán hallatszik valami.", true, "Mérés"),
-        Feature("quadrant_cues", "Rezgés a negyedeknél", "Indításkor, 30/60/90 másodpercnél és a célidőnél jelez.", true, "Fogmosás közben"),
-        Feature("spoken_feedback", "Felolvasott visszajelzés", "Gyerekeknél felolvassa az üzeneteket.", true, "Fogmosás közben"),
-        Feature("live_activity", "Élő kijelzés a lezárt képernyőn", "Élő tevékenység a lezárt képernyőn és a Dynamic Islanden.", true, "Fogmosás közben", [.ios, .android]),
-        Feature("water_warnings", "Vízpazarlás-figyelmeztetés", "Ikon, ha folyik a csap fogmosás közben, és összesítés a végén.", true, "Víz"),
-        Feature("notifications", "Emlékeztetők", "Reggel, lefekvés előtt és ismétlés.", true, "Értesítések"),
-        Feature("brush_head_reminder", "Fogkefecsere-emlékeztető", "3 havonta, illetve betegség után.", true, "Értesítések"),
-        Feature("dentist_reminders", "Fogorvosi kontroll emlékeztető", "Félévente kontroll, évente fogkőeltávolítás.", true, "Értesítések"),
-        Feature("achievements", "Kitüntetések és sorozatok", "", true, "Motiváció"),
-        Feature("kid_rewards", "Matricák és jutalmak gyerekeknek", "A szülő jutalmat tűzhet ki adott számú matricáért.", true, "Motiváció"),
-        Feature("family_overview", "Családi áttekintés", "A szülő egy helyen látja a gyerekek eredményeit.", true, "Motiváció"),
-        Feature("habit_tips", "Szokás-tippek", "Figyelmeztet, ha visszatérő rossz szokást lát.", true, "Motiváció"),
-        Feature("watch_complication", "Számlapelem az órán", "A sorozat és a mai haladás a számlapon.", true, "Motiváció", [.watchos, .wearos]),
-        Feature("floss_tracking", "Fogselyem követése", "Egy koppintással jelölheted fogmosás után (az ADA naponta egyszer javasolja).", false, "Kiegészítők"),
-        Feature("mouthwash_tracking", "Szájvíz követése", "", false, "Kiegészítők"),
-        Feature("interdental_tracking", "Fogköztisztító kefe / szájzuhany", "Fogszabályzóval különösen fontos.", false, "Kiegészítők"),
-        Feature("tongue_tracking", "Nyelvtisztítás", "", false, "Kiegészítők"),
-        Feature("voice_shortcuts", "Hangvezérlés", "„Hé Siri, fogmosás indul”.", true, "Kiegészítők"),
-        Feature("health_sync", "Mentés az Egészség appba", "Apple Health: Fogmosás.", false, "Adatok", [.ios, .watchos]),
-        Feature("care_checkin", "Tünetnapló", "Fogmosás után: érzékeny volt-e a fog, vérzett-e az íny. Statisztika és figyelmeztetés, ha tartós.", true, "Egészség"),
-        Feature("toothpaste_tracking", "Fogkrém nyilvántartása", "Látszik, segít-e az érzékeny fogra való fogkrém.", false, "Egészség"),
-        Feature("monthly_report", "Havi összefoglaló", "Kinyomtatható, a fogorvosnak is megmutatható.", true, "Adatok"),
-        Feature("dentist_report", "Jelentés a fogorvosnak (PDF)", "Fogmosás, fogselyem, tünetek az utóbbi 30/90 napból.", true, "Adatok"),
-        Feature("web_link", "Webes megtekintés QR-kóddal", "A weboldalon megjelenő QR-kódot beolvasva a statisztikád a böngészőben is látszik. Titkosítva, a szerver nem tárolja.", true, "Adatok", [.ios, .android]),
-        Feature("app_lock", "Zárolás Face ID-val / ujjlenyomattal", "Megnyitáskor azonosítás kell.", false, "Adatvédelem", [.ios, .android]),
-        Feature("parent_lock", "Szülői zár", "A Beállítások és a webes megosztás csak azonosítás után nyílik meg.", false, "Adatvédelem", [.ios, .android]),
-        Feature("family_sync", "Családi szinkron", "A gyerekek órája és a szülő telefonja között (iCloud, titkosítva).", false, "Adatok", available: false),
-        Feature("data_donation", "Adatfelajánlás a fejlesztéshez", "Névtelen hangjellemzők (hangfelvétel nélkül) a felismerés javításához.", false, "Adatok", available: false),
-    ]
+    public static var all: [Feature] { [
+        Feature("auto_detect", tr("Automatikus felismerés"), tr("A víz, a súrolás és a szónikus zúgás alapján indul és áll le a mérés."), true, tr("Mérés")),
+        Feature("keep_listening_when_placed", tr("Figyelés letett telefonnal"), tr("Ha a telefon vízszintesen, nyugalomban fekszik, a képernyő lezárása után is figyel."), true, tr("Mérés"), [.ios, .android]),
+        Feature("calibration", tr("Kalibráció"), tr("Az első 3 fogmosásból megtanulja a fogkeféd hangját."), true, tr("Mérés")),
+        Feature("battery_saver", tr("Akkumulátorkímélő mód"), tr("Csak akkor futtatja a felismerő modellt, ha egyáltalán hallatszik valami."), true, tr("Mérés")),
+        Feature("quadrant_cues", tr("Rezgés a negyedeknél"), tr("Indításkor, 30/60/90 másodpercnél és a célidőnél jelez."), true, tr("Fogmosás közben")),
+        Feature("spoken_feedback", tr("Felolvasott visszajelzés"), tr("Gyerekeknél felolvassa az üzeneteket."), true, tr("Fogmosás közben")),
+        Feature("live_activity", tr("Élő kijelzés a lezárt képernyőn"), tr("Élő tevékenység a lezárt képernyőn és a Dynamic Islanden."), true, tr("Fogmosás közben"), [.ios, .android]),
+        Feature("water_warnings", tr("Vízpazarlás-figyelmeztetés"), tr("Ikon, ha folyik a csap fogmosás közben, és összesítés a végén."), true, tr("Víz")),
+        Feature("notifications", tr("Emlékeztetők"), tr("Reggel, lefekvés előtt és ismétlés."), true, tr("Értesítések")),
+        Feature("brush_head_reminder", tr("Fogkefecsere-emlékeztető"), tr("3 havonta, illetve betegség után."), true, tr("Értesítések")),
+        Feature("dentist_reminders", tr("Fogorvosi kontroll emlékeztető"), tr("Félévente kontroll, évente fogkőeltávolítás."), true, tr("Értesítések")),
+        Feature("achievements", tr("Kitüntetések és sorozatok"), "", true, tr("Motiváció")),
+        Feature("kid_rewards", tr("Matricák és jutalmak gyerekeknek"), tr("A szülő jutalmat tűzhet ki adott számú matricáért."), true, tr("Motiváció")),
+        Feature("family_overview", tr("Családi áttekintés"), tr("A szülő egy helyen látja a gyerekek eredményeit."), true, tr("Motiváció")),
+        Feature("habit_tips", tr("Szokás-tippek"), tr("Figyelmeztet, ha visszatérő rossz szokást lát."), true, tr("Motiváció")),
+        Feature("watch_complication", tr("Számlapelem az órán"), tr("A sorozat és a mai haladás a számlapon."), true, tr("Motiváció"), [.watchos, .wearos]),
+        Feature("floss_tracking", tr("Fogselyem követése"), tr("Egy koppintással jelölheted fogmosás után (az ADA naponta egyszer javasolja)."), false, tr("Kiegészítők")),
+        Feature("mouthwash_tracking", tr("Szájvíz követése"), "", false, tr("Kiegészítők")),
+        Feature("interdental_tracking", tr("Fogköztisztító kefe / szájzuhany"), tr("Fogszabályzóval különösen fontos."), false, tr("Kiegészítők")),
+        Feature("tongue_tracking", tr("Nyelvtisztítás"), "", false, tr("Kiegészítők")),
+        Feature("voice_shortcuts", tr("Hangvezérlés"), tr("„Hé Siri, fogmosás indul”."), true, tr("Kiegészítők")),
+        Feature("health_sync", tr("Mentés az Egészség appba"), tr("Apple Health: Fogmosás."), false, tr("Adatok"), [.ios, .watchos]),
+        Feature("care_checkin", tr("Tünetnapló"), tr("Fogmosás után: érzékeny volt-e a fog, vérzett-e az íny. Statisztika és figyelmeztetés, ha tartós."), true, tr("Egészség")),
+        Feature("toothpaste_tracking", tr("Fogkrém nyilvántartása"), tr("Látszik, segít-e az érzékeny fogra való fogkrém."), false, tr("Egészség")),
+        Feature("monthly_report", tr("Havi összefoglaló"), tr("Kinyomtatható, a fogorvosnak is megmutatható."), true, tr("Adatok")),
+        Feature("dentist_report", tr("Jelentés a fogorvosnak (PDF)"), tr("Fogmosás, fogselyem, tünetek az utóbbi 30/90 napból."), true, tr("Adatok")),
+        Feature("web_link", tr("Webes megtekintés QR-kóddal"), tr("A weboldalon megjelenő QR-kódot beolvasva a statisztikád a böngészőben is látszik. Titkosítva, a szerver nem tárolja."), true, tr("Adatok"), [.ios, .android]),
+        Feature("app_lock", tr("Zárolás Face ID-val / ujjlenyomattal"), tr("Megnyitáskor azonosítás kell."), false, tr("Adatvédelem"), [.ios, .android]),
+        Feature("parent_lock", tr("Szülői zár"), tr("A Beállítások és a webes megosztás csak azonosítás után nyílik meg."), false, tr("Adatvédelem"), [.ios, .android]),
+        Feature("family_sync", tr("Családi szinkron"), tr("A gyerekek órája és a szülő telefonja között (iCloud, titkosítva)."), false, tr("Adatok"), available: false),
+        Feature("data_donation", tr("Adatfelajánlás a fejlesztéshez"), tr("Névtelen hangjellemzők (hangfelvétel nélkül) a felismerés javításához."), false, tr("Adatok"), available: false),
+    ] }
 
     public static func byId(_ id: String) -> Feature? { all.first { $0.id == id } }
 }
 
 public struct AppSettings: Codable, Equatable {
-    public var language = "hu"
+    public var language = ""                 // "" = device language, "hu", "en"
     public var locale = "hu"                 // water units/prices: "hu" or "us"
     public var tapFlowLPerMin: Double? = nil // measured by the user
     public var reminders = ReminderSettings()
@@ -93,7 +93,7 @@ public struct AppSettings: Codable, Equatable {
     // Older files: missing keys fall back to defaults.
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        language = try c.decodeIfPresent(String.self, forKey: .language) ?? "hu"
+        language = try c.decodeIfPresent(String.self, forKey: .language) ?? ""
         locale = try c.decodeIfPresent(String.self, forKey: .locale) ?? "hu"
         tapFlowLPerMin = try c.decodeIfPresent(Double.self, forKey: .tapFlowLPerMin)
         reminders = try c.decodeIfPresent(ReminderSettings.self, forKey: .reminders) ?? ReminderSettings()

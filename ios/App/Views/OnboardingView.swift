@@ -31,10 +31,10 @@ struct QuestionFlowView: View {
                         }.buttonStyle(.plain)
                     }
                 case .text:
-                    TextField("Név", text: $text).textFieldStyle(.roundedBorder).font(.title3)
+                    TextField(tr("Név"), text: $text).textFieldStyle(.roundedBorder).font(.title3)
                 case .number:
-                    Picker("Életkor", selection: $age) {
-                        ForEach(1...17, id: \.self) { Text("\($0) éves").tag($0) }
+                    Picker(tr("Életkor"), selection: $age) {
+                        ForEach(1...17, id: \.self) { Text(tr("{0} éves", $0)).tag($0) }
                     }.pickerStyle(.wheel)
                 case .avatar:
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 14) {
@@ -48,7 +48,7 @@ struct QuestionFlowView: View {
                 }
                 if let e = error { Text(e).foregroundStyle(Theme.danger).font(.footnote) }
                 Spacer()
-                Button(q.pictureOnly ? "✔︎" : "Tovább") { submit(q) }
+                Button(q.pictureOnly ? "✔︎" : tr("Tovább")) { submit(q) }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
                     .frame(maxWidth: .infinity)
@@ -81,7 +81,7 @@ struct QuestionFlowView: View {
             try flow.answer(value)
             load()
         } catch {
-            self.error = "Kérlek, ellenőrizd a választ."
+            self.error = tr("Kérlek, ellenőrizd a választ.")
         }
     }
 }
@@ -115,13 +115,13 @@ struct OnboardingView: View {
         VStack(spacing: 18) {
             Spacer()
             Text("🪥").font(.system(size: 70))
-            Text("Üdv!").font(.largeTitle.bold())
-            Text("Az app a hang alapján méri a fogmosásod idejét: a víz elzárásától az öblítésig. Hangfelvétel nem készül, minden a telefonodon marad.")
+            Text(tr("Üdv!")).font(.largeTitle.bold())
+            Text(tr("Az app a hang alapján méri a fogmosásod idejét: a víz elzárásától az öblítésig. Hangfelvétel nem készül, minden a telefonodon marad."))
                 .multilineTextAlignment(.center).foregroundStyle(.secondary)
-            TextField("Hogy szólíthatunk?", text: $name).textFieldStyle(.roundedBorder).font(.title3)
+            TextField(tr("Hogy szólíthatunk?"), text: $name).textFieldStyle(.roundedBorder).font(.title3)
             Spacer()
-            Button("Tovább") {
-                flow = OnboardingFlow(adultName: name.trimmingCharacters(in: .whitespaces).isEmpty ? "Én" : name)
+            Button(tr("Tovább")) {
+                flow = OnboardingFlow(adultName: name.trimmingCharacters(in: .whitespaces).isEmpty ? tr("Én") : name)
                 step = 1
             }.buttonStyle(.borderedProminent).controlSize(.large)
         }.padding()
@@ -129,47 +129,47 @@ struct OnboardingView: View {
 
     private var brushTypeStep: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Milyen fogkefét használsz?").font(.title2.bold())
-            Picker("Fogkefe", selection: $brushType) {
-                Text("Kézi").tag(BrushType.manual)
-                Text("Elektromos").tag(BrushType.electric)
+            Text(tr("Milyen fogkefét használsz?")).font(.title2.bold())
+            Picker(tr("Fogkefe"), selection: $brushType) {
+                Text(tr("Kézi")).tag(BrushType.manual)
+                Text(tr("Elektromos")).tag(BrushType.electric)
             }.pickerStyle(.segmented)
             Text(brushType == .electric
-                 ? "Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját."
-                 : "Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását (pl. valaki más elektromos fogkeféjét) figyelmen kívül hagyjuk.")
+                 ? tr("Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.")
+                 : tr("Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását (pl. valaki más elektromos fogkeféjét) figyelmen kívül hagyjuk."))
                 .foregroundStyle(.secondary)
             Spacer()
-            Button("Tovább") { step = 3 }.buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
+            Button(tr("Tovább")) { step = 3 }.buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
         }.padding()
     }
 
     private var goalsStep: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Mi a célod?").font(.title2.bold())
-            Text("A fogorvosok naponta kétszer 2 percet javasolnak.").foregroundStyle(.secondary)
-            Stepper("Naponta \(goals.perDay)×", value: Binding(get: { goals.perDay }, set: { goals = Goals(perDay: $0, targetS: goals.targetS) }), in: 1...4)
-            Stepper("Célidő: \(formatClock(goals.targetS))", value: Binding(get: { goals.targetS }, set: { goals = Goals(perDay: goals.perDay, targetS: $0) }), in: 30...300, step: 15)
+            Text(tr("Mi a célod?")).font(.title2.bold())
+            Text(tr("A fogorvosok naponta kétszer 2 percet javasolnak.")).foregroundStyle(.secondary)
+            Stepper(tr("Naponta {0}×", goals.perDay), value: Binding(get: { goals.perDay }, set: { goals = Goals(perDay: $0, targetS: goals.targetS) }), in: 1...4)
+            Stepper(tr("Célidő: {0}", formatClock(goals.targetS)), value: Binding(get: { goals.targetS }, set: { goals = Goals(perDay: goals.perDay, targetS: $0) }), in: 30...300, step: 15)
             ForEach(goals.warnings, id: \.self) { Text($0).font(.footnote).foregroundStyle(Theme.warn) }
             Spacer()
-            Button("Tovább") { step = 4 }.buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
+            Button(tr("Tovább")) { step = 4 }.buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
         }.padding()
     }
 
     private var permissionsStep: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Engedélyek").font(.title2.bold())
+            Text(tr("Engedélyek")).font(.title2.bold())
             Card {
-                Text("🎙️ Mikrofon").font(.headline)
-                Text("A fogmosás felismeréséhez. A hang csak a telefonon, a memóriában dolgozódik fel.").font(.subheadline).foregroundStyle(.secondary)
-                Button(micOK ? "Engedélyezve ✔︎" : "Engedélyezés") { AudioCapture.requestPermission { micOK = $0 } }.disabled(micOK)
+                Text(tr("🎙️ Mikrofon")).font(.headline)
+                Text(tr("A fogmosás felismeréséhez. A hang csak a telefonon, a memóriában dolgozódik fel.")).font(.subheadline).foregroundStyle(.secondary)
+                Button(micOK ? tr("Engedélyezve ✔︎") : tr("Engedélyezés")) { AudioCapture.requestPermission { micOK = $0 } }.disabled(micOK)
             }
             Card {
-                Text("🔔 Emlékeztetők").font(.headline)
-                Text("Reggel ébredés után és 15 perccel lefekvés előtt. A Beállításokban módosítható.").font(.subheadline).foregroundStyle(.secondary)
-                Button(notifOK ? "Engedélyezve ✔︎" : "Engedélyezés") { NotificationScheduler.requestAuthorization { notifOK = $0 } }.disabled(notifOK)
+                Text(tr("🔔 Emlékeztetők")).font(.headline)
+                Text(tr("Reggel ébredés után és 15 perccel lefekvés előtt. A Beállításokban módosítható.")).font(.subheadline).foregroundStyle(.secondary)
+                Button(notifOK ? tr("Engedélyezve ✔︎") : tr("Engedélyezés")) { NotificationScheduler.requestAuthorization { notifOK = $0 } }.disabled(notifOK)
             }
             Spacer()
-            Button("Kezdjük!") { finish() }.buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
+            Button(tr("Kezdjük!")) { finish() }.buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
         }.padding()
     }
 

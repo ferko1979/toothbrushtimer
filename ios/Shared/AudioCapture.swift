@@ -31,7 +31,7 @@ final class AudioCapture {
         guard let outFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16000,
                                             channels: 1, interleaved: false),
               let conv = AVAudioConverter(from: inFormat, to: outFormat) else {
-            throw NSError(domain: "AudioCapture", code: 1, userInfo: [NSLocalizedDescriptionKey: "Nem sikerült a hangformátum beállítása."])
+            throw NSError(domain: "AudioCapture", code: 1, userInfo: [NSLocalizedDescriptionKey: tr("Nem sikerült a hangformátum beállítása.")])
         }
         converter = conv
         let ratio = 16000.0 / inFormat.sampleRate

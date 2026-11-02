@@ -6,14 +6,14 @@ import Foundation
 
 public enum Toothpastes {
     public struct Kind: Identifiable, Equatable { public let id: String; public let title: String }
-    public static let all: [Kind] = [
-        Kind(id: "fluoride", title: "Normál fluoridos"),
-        Kind(id: "sensitive", title: "Érzékeny fogra"),
-        Kind(id: "whitening", title: "Fehérítő"),
-        Kind(id: "gum", title: "Ínyvédő"),
-        Kind(id: "kids", title: "Gyerek fogkrém"),
-        Kind(id: "herbal", title: "Gyógynövényes / fluoridmentes"),
-    ]
+    public static var all: [Kind] { [
+        Kind(id: "fluoride", title: tr("Normál fluoridos")),
+        Kind(id: "sensitive", title: tr("Érzékeny fogra")),
+        Kind(id: "whitening", title: tr("Fehérítő")),
+        Kind(id: "gum", title: tr("Ínyvédő")),
+        Kind(id: "kids", title: tr("Gyerek fogkrém")),
+        Kind(id: "herbal", title: tr("Gyógynövényes / fluoridmentes")),
+    ] }
     public static func title(_ id: String?) -> String { all.first { $0.id == id }?.title ?? "—" }
 }
 
@@ -52,12 +52,12 @@ public enum CareKind: String, CaseIterable {
 
     public var label: String {
         switch self {
-        case .floss: return "Fogselyem"
-        case .mouthwash: return "Szájvíz"
-        case .interdental: return "Fogköztisztító"
-        case .tongue: return "Nyelvtisztítás"
-        case .sensitivity: return "Érzékenység"
-        case .bleeding: return "Ínyvérzés"
+        case .floss: return tr("Fogselyem")
+        case .mouthwash: return tr("Szájvíz")
+        case .interdental: return tr("Fogköztisztító")
+        case .tongue: return tr("Nyelvtisztítás")
+        case .sensitivity: return tr("Érzékenység")
+        case .bleeding: return tr("Ínyvérzés")
         }
     }
 
@@ -128,7 +128,7 @@ public enum CareRules {
     public static let window = 14
     public static let bleedingAlertDays = 4
     public static let sensitivityAlertDays = 5
-    public static let disclaimer = "Ez nem orvosi diagnózis."
+    public static var disclaimer: String { tr("Ez nem orvosi diagnózis.") }
 }
 
 /// Observations over the last two weeks compared with the two weeks before. Alerts come first.
@@ -144,7 +144,7 @@ public func careInsights(_ entries: [CareEntry], today: Date, flossTracked: Bool
     let bleed = now(.bleeding)
     if bleed >= CareRules.bleedingAlertDays && recent(.bleeding) > 0 {
         out.append(CareInsight(id: "bleeding_persistent",
-            text: "Az ínyed az utóbbi 2 hétben \(bleed) napon vérzett. Ha a vérzés 2 hétnél tovább tart, keresd fel a fogorvosodat. \(CareRules.disclaimer)", alert: true))
+            text: tr("Az ínyed az utóbbi 2 hétben {0} napon vérzett. Ha a vérzés 2 hétnél tovább tart, keresd fel a fogorvosodat. {1}", bleed, CareRules.disclaimer), alert: true))
     }
     let days = careDays(entries, calendar: calendar)
     let inWindow = days.values.filter { $0.day >= wStart && $0.day <= t0 }
@@ -152,30 +152,30 @@ public func careInsights(_ entries: [CareEntry], today: Date, flossTracked: Bool
     let sens = now(.sensitivity)
     if sens >= CareRules.sensitivityAlertDays && recent(.sensitivity) > 0 {
         out.append(CareInsight(id: "sensitivity_persistent",
-            text: "Az utóbbi 2 hétben \(sens) napon jeleztél fogérzékenységet" + (strong > 0 ? " (\(strong) napon erőset)" : "") +
-                ". A tartós érzékenységet érdemes megmutatni a fogorvosnak. \(CareRules.disclaimer)", alert: true))
+            text: tr("Az utóbbi 2 hétben {0} napon jeleztél fogérzékenységet", sens) + (strong > 0 ? tr(" ({0} napon erőset)", strong) : "") +
+                tr(". A tartós érzékenységet érdemes megmutatni a fogorvosnak. {0}", CareRules.disclaimer), alert: true))
     }
 
     let flossNow = now(.floss), flossBefore = before(.floss), bleedBefore = before(.bleeding)
     if flossNow > flossBefore && bleed < bleedBefore {
         out.append(CareInsight(id: "floss_helps",
-            text: "Amióta gyakrabban fogselymezel (\(flossBefore) → \(flossNow) nap / 2 hét), ritkábban vérzik az ínyed (\(bleedBefore) → \(bleed) nap)."))
+            text: tr("Amióta gyakrabban fogselymezel ({0} → {1} nap / 2 hét), ritkábban vérzik az ínyed ({2} → {3} nap).", flossBefore, flossNow, bleedBefore, bleed)))
     }
 
     let pasteNow = inWindow.compactMap(\.toothpaste)
     let sensBefore = before(.sensitivity)
     if !pasteNow.isEmpty && pasteNow.filter({ $0 == "sensitive" }).count * 2 >= pasteNow.count && sens < sensBefore {
         out.append(CareInsight(id: "toothpaste_helps",
-            text: "Amióta érzékeny fogra való fogkrémet használsz, ritkábban jelzel érzékenységet (\(sensBefore) → \(sens) nap / 2 hét)."))
+            text: tr("Amióta érzékeny fogra való fogkrémet használsz, ritkábban jelzel érzékenységet ({0} → {1} nap / 2 hét).", sensBefore, sens)))
     } else if sens >= 3 && !pasteNow.isEmpty && !pasteNow.contains("sensitive") {
         out.append(CareInsight(id: "toothpaste_try",
-            text: "Gyakran jelzel érzékenységet. Kérdezd meg a fogorvosodat, hogy segíthet-e egy érzékeny fogra való fogkrém."))
+            text: tr("Gyakran jelzel érzékenységet. Kérdezd meg a fogorvosodat, hogy segíthet-e egy érzékeny fogra való fogkrém.")))
     }
 
     let floss7 = careCount(entries, .floss, today: today, days: 7, calendar: calendar)
     if flossTracked && floss7 < 3 && !entries.isEmpty {
         out.append(CareInsight(id: "floss_rare",
-            text: "A fogorvosok naponta egyszer javasolják a fogközök tisztítását (fogselyem vagy fogköztisztító kefe). Az utóbbi héten \(floss7) napon volt."))
+            text: tr("A fogorvosok naponta egyszer javasolják a fogközök tisztítását (fogselyem vagy fogköztisztító kefe). Az utóbbi héten {0} napon volt.", floss7)))
     }
     return out
 }
@@ -189,9 +189,9 @@ public struct DentistStatus: Equatable {
     public let cleaningOverdue: Bool
 
     public var message: String? {
-        if checkupOverdue && cleaningOverdue { return "Esedékes a fogorvosi kontroll és a fogkőeltávolítás." }
-        if checkupOverdue { return "Esedékes a félévenkénti fogorvosi kontroll." }
-        if cleaningOverdue { return "Esedékes az éves fogkőeltávolítás." }
+        if checkupOverdue && cleaningOverdue { return tr("Esedékes a fogorvosi kontroll és a fogkőeltávolítás.") }
+        if checkupOverdue { return tr("Esedékes a félévenkénti fogorvosi kontroll.") }
+        if cleaningOverdue { return tr("Esedékes az éves fogkőeltávolítás.") }
         return nil
     }
 }
@@ -220,7 +220,7 @@ public func nextDentistReminder(lastCheckup: Date?, lastCleaning: Date?, today: 
 
 public enum Orthodontic {
     public static let targetS = 180.0
-    public static let note = "Fogszabályzóval a fogorvosok hosszabb, alaposabb fogmosást és a fogközök naponta többszöri tisztítását javasolják."
+    public static var note: String { tr("Fogszabályzóval a fogorvosok hosszabb, alaposabb fogmosást és a fogközök naponta többszöri tisztítását javasolják.") }
 }
 
 public struct RewardProgress: Equatable {
@@ -263,10 +263,7 @@ public struct DentistReport: Equatable {
     }
 }
 
-public func huDate(_ d: Date, calendar: Calendar = .current) -> String {
-    let c = calendar.dateComponents([.year, .month, .day], from: d)
-    return String(format: "%04d.%02d.%02d.", c.year ?? 0, c.month ?? 0, c.day ?? 0)
-}
+public func huDate(_ d: Date, calendar: Calendar = .current) -> String { I18n.date(d, calendar: calendar) }
 
 public func dentistReport(profile: Profile, records: [BrushRecord], entries: [CareEntry], today: Date, days: Int,
                           coach: Coach = Coach()) -> DentistReport {
@@ -285,49 +282,49 @@ public func dentistReport(profile: Profile, records: [BrushRecord], entries: [Ca
     let evening = rs.filter { hour($0) >= 17 }.count
     let perfect = brushDays.values.filter { coach.isPerfectDay($0, goals: g) }.count
     var brushing = [
-        "Fogmosások: \(rs.count) (\(brushDays.count) napon a \(days) napból; reggel \(morning), este \(evening))",
-        "Átlagos időtartam: \(formatClock(avg)) (cél: \(formatClock(g.targetS))), célidőt elérte: \(pct)%",
-        "Napi cél (\(g.perDay)× \(formatClock(g.targetS))) teljesítve: \(perfect) napon",
-        "Elzárt csappal: \(rs.filter { $0.tapOff }.count) fogmosás",
+        tr("Fogmosások: {0} ({1} napon a {2} napból; reggel {3}, este {4})", rs.count, brushDays.count, days, morning, evening),
+        tr("Átlagos időtartam: {0} (cél: {1}), célidőt elérte: {2}%", formatClock(avg), formatClock(g.targetS), pct),
+        tr("Napi cél ({0}× {1}) teljesítve: {2} napon", g.perDay, formatClock(g.targetS), perfect),
+        tr("Elzárt csappal: {0} fogmosás", rs.filter { $0.tapOff }.count),
     ]
     if let mx = rs.map(\.durationS).max(), let mn = rs.map(\.durationS).min() {
-        brushing.append("Leghosszabb: \(formatClock(mx)), legrövidebb: \(formatClock(mn))")
+        brushing.append(tr("Leghosszabb: {0}, legrövidebb: {1}", formatClock(mx), formatClock(mn)))
     }
 
     func c(_ k: CareKind) -> Int { careCount(es, k, today: today, days: days, calendar: cal) }
     let cd = careDays(es, calendar: cal)
     let strong = cd.values.filter { $0.sensitivity >= 2 }.count
     let care = [
-        "Fogselyem: \(c(.floss)) napon",
-        "Fogköztisztító kefe / szájzuhany: \(c(.interdental)) napon",
-        "Szájvíz: \(c(.mouthwash)) napon",
-        "Nyelvtisztítás: \(c(.tongue)) napon",
+        tr("Fogselyem: {0} napon", c(.floss)),
+        tr("Fogköztisztító kefe / szájzuhany: {0} napon", c(.interdental)),
+        tr("Szájvíz: {0} napon", c(.mouthwash)),
+        tr("Nyelvtisztítás: {0} napon", c(.tongue)),
     ]
     var symptoms = [
-        "Fogérzékenység: \(c(.sensitivity)) napon" + (strong > 0 ? " (ebből erős: \(strong))" : ""),
-        "Ínyvérzés: \(c(.bleeding)) napon",
+        tr("Fogérzékenység: {0} napon", c(.sensitivity)) + (strong > 0 ? tr(" (ebből erős: {0})", strong) : ""),
+        tr("Ínyvérzés: {0} napon", c(.bleeding)),
     ]
     if let lastBleed = es.filter(\.bleeding).max(by: { $0.date < $1.date }) {
-        symptoms.append("Utolsó ínyvérzés: \(huDate(lastBleed.date, calendar: cal))")
+        symptoms.append(tr("Utolsó ínyvérzés: {0}", huDate(lastBleed.date, calendar: cal)))
     }
     var counts: [String: Int] = [:]
     for d in cd.values { if let p = d.toothpaste { counts[p, default: 0] += 1 } }
     if !counts.isEmpty {
         let sorted = counts.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
-        symptoms.append("Fogkrém: " + sorted.map { "\(Toothpastes.title($0.key)) (\($0.value) nap)" }.joined(separator: ", "))
+        symptoms.append(tr("Fogkrém: ") + sorted.map { tr("{0} ({1} nap)", Toothpastes.title($0.key), $0.value) }.joined(separator: ", "))
     }
 
-    var other = ["Fogkefe: " + (profile.brushType == .electric ? "elektromos" : "kézi")]
-    if profile.orthodontic { other.append("Fogszabályzó: igen") }
-    if let d = profile.lastCheckup { other.append("Utolsó fogorvosi kontroll: \(huDate(d, calendar: cal))") }
-    if let d = profile.lastCleaning { other.append("Utolsó fogkőeltávolítás: \(huDate(d, calendar: cal))") }
-    other.append("Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül). A tüneteket a felhasználó jelölte.")
+    var other = ["Fogkefe: " + (profile.brushType == .electric ? "elektromos" : tr("kézi"))]
+    if profile.orthodontic { other.append(tr("Fogszabályzó: igen")) }
+    if let d = profile.lastCheckup { other.append(tr("Utolsó fogorvosi kontroll: {0}", huDate(d, calendar: cal))) }
+    if let d = profile.lastCleaning { other.append(tr("Utolsó fogkőeltávolítás: {0}", huDate(d, calendar: cal))) }
+    other.append(tr("Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül). A tüneteket a felhasználó jelölte."))
 
     return DentistReport(
-        title: "Fogápolási jelentés – \(profile.name)",
-        subtitle: "\(huDate(start, calendar: cal)) – \(huDate(t0, calendar: cal)) (\(days) nap)",
-        sections: [ReportSection(title: "Fogmosás", lines: brushing),
-                   ReportSection(title: "Fogköztisztítás és kiegészítők", lines: care),
-                   ReportSection(title: "Tünetek", lines: symptoms),
-                   ReportSection(title: "Egyéb", lines: other)])
+        title: tr("Fogápolási jelentés – {0}", profile.name),
+        subtitle: tr("{0} – {1} ({2} nap)", huDate(start, calendar: cal), huDate(t0, calendar: cal), days),
+        sections: [ReportSection(title: tr("Fogmosás"), lines: brushing),
+                   ReportSection(title: tr("Fogköztisztítás és kiegészítők"), lines: care),
+                   ReportSection(title: tr("Tünetek"), lines: symptoms),
+                   ReportSection(title: tr("Egyéb"), lines: other)])
 }

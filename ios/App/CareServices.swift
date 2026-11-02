@@ -67,7 +67,7 @@ enum ReportPDF {
                     for l in sec.lines { draw("•  " + l, body, indent: 8) }
                     y += 10
                 }
-                draw("Készült a Fogmosás appal. A tünetek a felhasználó saját jelölései, nem orvosi diagnózis.", muted)
+                draw(tr("Készült a Fogmosás appal. A tünetek a felhasználó saját jelölései, nem orvosi diagnózis."), muted)
             }
             return url
         } catch {
@@ -93,7 +93,7 @@ enum WebShare {
     static func send(_ pairing: WebLink.Pairing, json: Data, _ done: @escaping (String?) -> Void) {
         let env: Data
         do { env = try WebLink.seal(webPublicKey: pairing.webPublicKey, sid: pairing.sid, plaintext: json) } catch {
-            done("A QR-kód hibás. Kérj új kódot a weboldalon."); return
+            done(tr("A QR-kód hibás. Kérj új kódot a weboldalon.")); return
         }
         var req = URLRequest(url: pairing.uploadURL, timeoutInterval: 15)
         req.httpMethod = "POST"
@@ -102,10 +102,10 @@ enum WebShare {
         URLSession.shared.dataTask(with: req) { _, resp, err in
             let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
             let msg: String?
-            if err != nil { msg = "Nem sikerült elérni a weboldalt. Ellenőrizd az internetkapcsolatot." }
+            if err != nil { msg = tr("Nem sikerült elérni a weboldalt. Ellenőrizd az internetkapcsolatot.") }
             else if code == 204 || code == 200 { msg = nil }
-            else if code == 409 { msg = "Ezt a kódot már felhasználtad. Kérj új kódot a weboldalon." }
-            else { msg = "A szerver hibát jelzett (\(code))." }
+            else if code == 409 { msg = tr("Ezt a kódot már felhasználtad. Kérj új kódot a weboldalon.") }
+            else { msg = tr("A szerver hibát jelzett ({0}).", code) }
             DispatchQueue.main.async { done(msg) }
         }.resume()
     }

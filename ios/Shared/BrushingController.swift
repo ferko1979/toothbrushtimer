@@ -59,7 +59,7 @@ final class BrushingController: ObservableObject {
         AudioCapture.requestPermission { [weak self] granted in
             guard let self = self else { return }
             guard granted else {
-                self.phase = .failed("A mikrofon-hozzáférés nincs engedélyezve. Beállítások → Adatvédelem → Mikrofon.")
+                self.phase = .failed(tr("A mikrofon-hozzáférés nincs engedélyezve. Beállítások → Adatvédelem → Mikrofon."))
                 return
             }
             do {
@@ -129,8 +129,8 @@ final class BrushingController: ObservableObject {
     }
 
     private func fireCues() {
-        guard cuesEnabled, let tr = cueTracker else { return }
-        for c in tr.update(elapsedS: elapsedS) { onCue?(c) }
+        guard cuesEnabled, let tracker = cueTracker else { return }
+        for c in tracker.update(elapsedS: elapsedS) { onCue?(c) }
     }
 
     // Called on the detector queue.

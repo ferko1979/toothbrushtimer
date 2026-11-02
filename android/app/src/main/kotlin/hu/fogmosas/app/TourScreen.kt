@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import hu.fogmosas.core.Tour
 import kotlinx.coroutines.launch
+import hu.fogmosas.core.tr
 
 /** "Mit tud az app?": swipeable feature tour, after the first setup and from Settings. */
 @Composable
@@ -41,8 +42,8 @@ fun TourScreen(onDone: () -> Unit) {
     val last = pager.currentPage == pages.lastIndex
     Column(Modifier.fillMaxSize().background(kidBrush).padding(24.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Mit tud az app?", color = C.muted, fontWeight = FontWeight.SemiBold)
-            if (!last) TextButton(onClick = onDone) { Text("Kihagyás") }
+            Text(tr("Mit tud az app?"), color = C.muted, fontWeight = FontWeight.SemiBold)
+            if (!last) TextButton(onClick = onDone) { Text(tr("Kihagyás")) }
         }
         HorizontalPager(state = pager, modifier = Modifier.weight(1f)) { i ->
             val p = pages[i]
@@ -56,7 +57,7 @@ fun TourScreen(onDone: () -> Unit) {
                 Text(p.text, fontSize = 17.sp, textAlign = TextAlign.Center, color = C.muted, lineHeight = 24.sp)
             }
         }
-        Row(Modifier.fillMaxWidth().padding(vertical = 16.dp).semantics { contentDescription = "${pager.currentPage + 1}. oldal a ${pages.size}-ból" },
+        Row(Modifier.fillMaxWidth().padding(vertical = 16.dp).semantics { contentDescription = tr("{0}. oldal a {1}-ból", pager.currentPage + 1, pages.size) },
             horizontalArrangement = Arrangement.Center) {
             pages.indices.forEach { i ->
                 Box(Modifier.padding(3.dp).size(if (i == pager.currentPage) 10.dp else 7.dp).clip(CircleShape)
@@ -65,7 +66,7 @@ fun TourScreen(onDone: () -> Unit) {
         }
         Button(onClick = { if (last) onDone() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } },
             modifier = Modifier.fillMaxWidth().height(54.dp)) {
-            Text(if (last) "Kezdjük!" else "Tovább", fontSize = 18.sp)
+            Text(if (last) tr("Kezdjük!") else tr("Tovább"), fontSize = 18.sp)
         }
     }
 }

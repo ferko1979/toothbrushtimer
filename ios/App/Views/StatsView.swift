@@ -10,7 +10,7 @@ struct StatsView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Ez a hét") {
+                Section(tr("Ez a hét")) {
                     Text(model.coach.weeklyProgress(records, goals: profile.goals, today: Date())).font(.subheadline)
                     WeekBars(records: records, target: profile.goals.targetS)
                         .frame(height: 120)
@@ -21,20 +21,20 @@ struct StatsView: View {
                     let rep = monthlyReport(records, goals: profile.goals, year: c.year ?? 2026, month: c.month ?? 1,
                                             locale: model.settings.waterLocale)
                     let text = formatMonthly(rep, goals: profile.goals, name: profile.name)
-                    Section("Havi összefoglaló") {
+                    Section(tr("Havi összefoglaló")) {
                         Text(text).font(.footnote)
-                        ShareLink(item: text) { Label("Megosztás (pl. a fogorvosnak)", systemImage: "square.and.arrow.up") }
-                        ShareLink(item: recordsCSV(records)) { Label("Exportálás CSV-ként", systemImage: "tablecells") }
+                        ShareLink(item: text) { Label(tr("Megosztás (pl. a fogorvosnak)"), systemImage: "square.and.arrow.up") }
+                        ShareLink(item: recordsCSV(records)) { Label(tr("Exportálás CSV-ként"), systemImage: "tablecells") }
                     }
                 }
                 CareStatsSections()
-                Section("Legutóbbiak") {
-                    if records.isEmpty { Text("Még nincs mért fogmosás.").foregroundStyle(.secondary) }
+                Section(tr("Legutóbbiak")) {
+                    if records.isEmpty { Text(tr("Még nincs mért fogmosás.")).foregroundStyle(.secondary) }
                     ForEach(records.sorted { $0.start > $1.start }.prefix(30)) { r in
                         HStack {
                             Text(r.start.formatted(date: .abbreviated, time: .shortened))
                             Spacer()
-                            if !r.tapOff { Text("🚰").accessibilityLabel("folyt a csap") }
+                            if !r.tapOff { Text("🚰").accessibilityLabel(tr("folyt a csap")) }
                             if r.source == "watch" { Image(systemName: "applewatch") }
                             Text(formatClock(r.durationS)).monospacedDigit()
                                 .foregroundStyle(r.durationS >= profile.goals.targetS ? Theme.ok : Theme.warn)
@@ -42,7 +42,7 @@ struct StatsView: View {
                     }
                 }
             }
-            .navigationTitle("Statisztika")
+            .navigationTitle(tr("Statisztika"))
         }
     }
 }

@@ -11,29 +11,29 @@
 <body>
 <header class="top">
   <div class="brand"><span class="logo" aria-hidden="true">🪥</span> Fogmosás</div>
-  <button id="logout" class="ghost" hidden>Kilépés</button>
+  <button id="logout" class="ghost" hidden data-i18n="Kilépés">Kilépés</button>
 </header>
 
 <main>
   <section id="phone-hint" class="card notice" hidden>
-    <h2>Ezt a QR-kódot az appban olvasd be</h2>
-    <p>Nyisd meg a <b>Fogmosás</b> appot a telefonon, és válaszd a <b>Statisztika → Megnézem a weben</b> lehetőséget, majd olvasd be a számítógép képernyőjén látható kódot.</p>
+    <h2 data-i18n="Ezt a QR-kódot az appban olvasd be">Ezt a QR-kódot az appban olvasd be</h2>
+    <p data-i18n-html="Nyisd meg a &lt;b&gt;Fogmosás&lt;/b&gt; appot a telefonon, és válaszd a &lt;b&gt;Statisztika → Megnézem a weben&lt;/b&gt; lehetőséget, majd olvasd be a számítógép képernyőjén látható kódot.">Nyisd meg a <b>Fogmosás</b> appot a telefonon, és válaszd a <b>Statisztika → Megnézem a weben</b> lehetőséget, majd olvasd be a számítógép képernyőjén látható kódot.</p>
   </section>
 
   <section id="pair" class="pair">
     <div class="pair-text">
-      <h1>A statisztikád a böngészőben</h1>
+      <h1 data-i18n="A statisztikád a böngészőben">A statisztikád a böngészőben</h1>
       <ol>
-        <li>Nyisd meg a <b>Fogmosás</b> appot a telefonodon.</li>
-        <li><b>Statisztika → Megnézem a weben</b>.</li>
-        <li>Olvasd be ezt a QR-kódot, és hagyd jóvá Face ID-val vagy ujjlenyomattal.</li>
+        <li data-i18n-html="Nyisd meg a &lt;b&gt;Fogmosás&lt;/b&gt; appot a telefonodon.">Nyisd meg a <b>Fogmosás</b> appot a telefonodon.</li>
+        <li data-i18n-html="&lt;b&gt;Statisztika → Megnézem a weben&lt;/b&gt;."><b>Statisztika → Megnézem a weben</b>.</li>
+        <li data-i18n="Olvasd be ezt a QR-kódot, és hagyd jóvá Face ID-val vagy ujjlenyomattal.">Olvasd be ezt a QR-kódot, és hagyd jóvá Face ID-val vagy ujjlenyomattal.</li>
       </ol>
-      <p class="muted small">Jelszó és fiók nem kell. Az adatok a telefonon titkosítva készülnek el, és csak ez a böngészőlap tudja kinyitni őket. A szerver csak továbbítja a titkosított csomagot, nem tárolja. A lap bezárásakor az adatok eltűnnek.</p>
+      <p class="muted small" data-i18n="Jelszó és fiók nem kell. Az adatok a telefonon titkosítva készülnek el, és csak ez a böngészőlap tudja kinyitni őket. A szerver csak továbbítja a titkosított csomagot, nem tárolja. A lap bezárásakor az adatok eltűnnek.">Jelszó és fiók nem kell. Az adatok a telefonon titkosítva készülnek el, és csak ez a böngészőlap tudja kinyitni őket. A szerver csak továbbítja a titkosított csomagot, nem tárolja. A lap bezárásakor az adatok eltűnnek.</p>
     </div>
     <div class="qr-box">
-      <img id="qr" alt="QR-kód a Fogmosás appnak" width="264" height="264">
+      <img id="qr" alt="QR-kód a Fogmosás appnak" data-i18n-alt="QR-kód a Fogmosás appnak" width="264" height="264">
       <p id="pair-status" class="muted small" role="status">Várom a telefont…</p>
-      <button id="renew" class="ghost small-btn">Új kód</button>
+      <button id="renew" class="ghost small-btn" data-i18n="Új kód">Új kód</button>
     </div>
   </section>
 
@@ -44,18 +44,19 @@
         <p id="dash-sub" class="muted small"></p>
       </div>
       <div class="actions">
-        <button id="print">Nyomtatás / PDF</button>
+        <button id="print" data-i18n="Nyomtatás / PDF">Nyomtatás / PDF</button>
       </div>
     </div>
     <nav id="tabs" class="tabs" aria-label="Profilok"></nav>
     <div id="profile"></div>
   </section>
 
-  <noscript><p class="card">A weboldal működéséhez JavaScript kell.</p></noscript>
+  <noscript><p class="card">A weboldal működéséhez JavaScript kell. / This page needs JavaScript.</p></noscript>
 </main>
 
-<footer class="muted small">Hangfelvétel nem készül; a fogmosást a telefon vagy az óra méri. A tünetnapló nem orvosi diagnózis.</footer>
+<footer class="muted small" data-i18n="Hangfelvétel nem készül; a fogmosást a telefon vagy az óra méri. A tünetnapló nem orvosi diagnózis.">Hangfelvétel nem készül; a fogmosást a telefon vagy az óra méri. A tünetnapló nem orvosi diagnózis.</footer>
 <script src="vendor/qrcode.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

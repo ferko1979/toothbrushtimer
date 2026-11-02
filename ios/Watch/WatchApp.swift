@@ -28,6 +28,7 @@ final class WatchModel: ObservableObject {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         url = dir.appendingPathComponent("watch.json")
         heads = try? ModelHeads.bundled()
+        I18n.setLanguage(nil)
         if let d = try? Data(contentsOf: url), let s = try? JSONDecoder().decode(Stored.self, from: d) {
             goals = s.goals
             ownerName = s.ownerName

@@ -1,0 +1,7 @@
+/* English permission texts (Hungarian ones are in project.yml) */
+"NSMicrophoneUsageDescription" = "Listens to recognise brushing (water, scrubbing, toothbrush hum). Nothing is recorded; everything stays on your phone.";
+"NSMotionUsageDescription" = "To tell whether the phone has been put down, so timing can continue after the screen locks.";
+"NSHealthShareUsageDescription" = "To show your brushings in the Health app.";
+"NSHealthUpdateUsageDescription" = "To save your brushings to the Health app (Toothbrushing).";
+"NSFaceIDUsageDescription" = "To lock the app and the parental settings, and to confirm sharing with the website.";
+"NSCameraUsageDescription" = "To scan the QR code on the website (View on the web). No photos are taken.";

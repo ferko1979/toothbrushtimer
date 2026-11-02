@@ -34,7 +34,7 @@ struct BrushingView: View {
             .toolbar {
                 if record == nil {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Bezárás") { controller.stop(); dismiss() }
+                        Button(tr("Bezárás")) { controller.stop(); dismiss() }
                     }
                 }
             }
@@ -67,9 +67,9 @@ struct BrushingView: View {
                 let p = brushProgress(elapsedS: controller.elapsedS, targetS: profile.goals.targetS)
                 if kid { AvatarCircle(emoji: profile.avatarEmoji, size: 70) }
                 ProgressRing(fraction: p.fraction, label: formatClock(controller.elapsedS),
-                             sublabel: "cél: \(formatClock(profile.goals.targetS))",
+                             sublabel: tr("cél: {0}", formatClock(profile.goals.targetS)),
                              color: controller.wasteIcon ? Theme.warn : Theme.brand)
-                if profile.canRead { Text("Most: \(p.quadrantName) negyed").font(.headline) }
+                if profile.canRead { Text(tr("Most: {0} negyed", p.quadrantName)).font(.headline) }
                 QuadrantGrid(current: p.quadrant, labels: profile.canRead)
                 if profile.brushType == .electric, let f0 = controller.liveF0, profile.canRead {
                     Text("🔊 " + SonicDetector.describe(f0Hz: f0)).font(.footnote).foregroundStyle(.secondary)
@@ -77,25 +77,25 @@ struct BrushingView: View {
                 if controller.wasteIcon && settings.isOn("water_warnings") {
                     let r = WaterReport(seconds: controller.waterRunningS, locale: settings.waterLocale)
                     Card {
-                        Text("Eddig elfolyt").font(.subheadline).foregroundStyle(.secondary)
-                        Text("≈ \(String(format: "%.1f", r.litres)) l").font(.title.bold()).foregroundStyle(Theme.danger)
+                        Text(tr("Eddig elfolyt")).font(.subheadline).foregroundStyle(.secondary)
+                        Text(tr("≈ {0} l", String(format: "%.1f", r.litres))).font(.title.bold()).foregroundStyle(Theme.danger)
                     }
                 }
             case .failed(let msg):
                 Text(msg).multilineTextAlignment(.center).foregroundStyle(.secondary)
-                Button("Kézi indítás (időzítő)") { controller.startManual() }.buttonStyle(.borderedProminent)
+                Button(tr("Kézi indítás (időzítő)")) { controller.startManual() }.buttonStyle(.borderedProminent)
             default:
                 Spacer()
                 Text(kid ? "🚰 → 🪥" : "🪥").font(.system(size: 64))
                 if profile.canRead {
                     Text(waitingText).multilineTextAlignment(.center).foregroundStyle(.secondary)
                 }
-                if let note = stopNote { Text("Leállt: \(note)").font(.footnote).foregroundStyle(Theme.warn) }
-                Button("Kézi indítás (időzítő)") { controller.startManual() }.buttonStyle(.bordered)
+                if let note = stopNote { Text(tr("Leállt: {0}", note)).font(.footnote).foregroundStyle(Theme.warn) }
+                Button(tr("Kézi indítás (időzítő)")) { controller.startManual() }.buttonStyle(.bordered)
             }
             Spacer()
             Button { controller.stop() } label: {
-                Text("Kész").font(.headline).frame(maxWidth: .infinity).padding()
+                Text(tr("Kész")).font(.headline).frame(maxWidth: .infinity).padding()
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.brand, lineWidth: 2))
             }.buttonStyle(.plain)
         }
@@ -106,12 +106,12 @@ struct BrushingView: View {
 
     private var waitingText: String {
         switch controller.phase {
-        case .water: return "Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot."
-        case .armed: return "Várom a fogmosást…"
+        case .water: return tr("Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot.")
+        case .armed: return tr("Várom a fogmosást…")
         default:
             return policy.placed
-                ? "Figyelek. A telefon maradhat letéve, a képernyő lezárása után is mérek."
-                : "Figyelek. Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted."
+                ? tr("Figyelek. A telefon maradhat letéve, a képernyő lezárása után is mérek.")
+                : tr("Figyelek. Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted.")
         }
     }
 
@@ -119,18 +119,18 @@ struct BrushingView: View {
         switch controller.phase {
         case .brushing:
             if controller.wasteIcon && settings.isOn("water_warnings") {
-                Banner(text: "🚰 Folyik a csap! Zárd el, amíg fogat mosol.", color: Theme.danger)
+                Banner(text: tr("🚰 Folyik a csap! Zárd el, amíg fogat mosol."), color: Theme.danger)
             } else if controller.manual {
-                Banner(text: "⏱️ Kézi időzítő", color: Theme.brand)
+                Banner(text: tr("⏱️ Kézi időzítő"), color: Theme.brand)
             } else {
-                Banner(text: "✅ Fogmosás észlelve · a víz elzárásától mérve", color: Theme.ok)
+                Banner(text: tr("✅ Fogmosás észlelve · a víz elzárásától mérve"), color: Theme.ok)
             }
         case .rinsing:
-            Banner(text: "💧 Öblítés…", color: Theme.brand)
+            Banner(text: tr("💧 Öblítés…"), color: Theme.brand)
         case .water:
-            Banner(text: "🚰 Víz", color: Theme.brand)
+            Banner(text: tr("🚰 Víz"), color: Theme.brand)
         default:
-            if armed { Banner(text: "🔔 Emlékeztetőből indítva: várom a fogmosást", color: Theme.brand) }
+            if armed { Banner(text: tr("🔔 Emlékeztetőből indítva: várom a fogmosást"), color: Theme.brand) }
         }
     }
 
@@ -198,7 +198,7 @@ struct BrushingView: View {
         policy.sessionFinished(t: now())
         LiveActivity.end(durationS: r.durationS >= 5 ? r.durationS : nil)
         guard r.durationS >= 5 else {
-            stopNote = "túl rövid volt (\(Int(r.durationS)) s), nem mentettem"
+            stopNote = tr("túl rövid volt ({0} s), nem mentettem", Int(r.durationS))
             return
         }
         let rec = BrushRecord(profileId: profile.id, start: r.start, durationS: r.durationS,

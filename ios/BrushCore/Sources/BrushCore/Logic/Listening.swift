@@ -35,7 +35,7 @@ public final class ListeningPolicy {
 
     public func appBackgrounded(t: Double) {
         foreground = false
-        if listening && !placed { stop("app háttérbe került, a telefon nincs letéve") }
+        if listening && !placed { stop(tr("app háttérbe került, a telefon nincs letéve")) }
     }
 
     public func appForegrounded(t: Double) {
@@ -48,7 +48,7 @@ public final class ListeningPolicy {
         let span = (motionSamples.last?.0 ?? t) - (motionSamples.first?.0 ?? t)
         let wasPlaced = placed
         placed = span >= stillWindowS * 0.9 && flatAndStill()
-        if wasPlaced && !flat(gx, gy, gz) && listening && !foreground { stop("felvették a telefont") }
+        if wasPlaced && !flat(gx, gy, gz) && listening && !foreground { stop(tr("felvették a telefont")) }
     }
 
     public func activity(t: Double) { lastActivity = t }
@@ -61,14 +61,14 @@ public final class ListeningPolicy {
     public func tick(t: Double) {
         guard listening else { return }
         if let end = sessionEnd, !foreground, t - end >= afterSessionGraceS {
-            stop("a fogmosás véget ért")
+            stop(tr("a fogmosás véget ért"))
             return
         }
         let timeout = armed ? armedTimeoutS : idleTimeoutS
-        if t - lastActivity >= timeout { stop("hosszú ideig nem hallatszott víz vagy fogmosás") }
+        if t - lastActivity >= timeout { stop(tr("hosszú ideig nem hallatszott víz vagy fogmosás")) }
     }
 
-    public func stopManually() { stop("leállítva") }
+    public func stopManually() { stop(tr("leállítva")) }
 
     public var sessionConfig: SessionConfig { armed ? .armed : SessionConfig() }
 

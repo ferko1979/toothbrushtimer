@@ -41,7 +41,7 @@ enum NotificationScheduler {
                                                   settings: model.settings.reminders, days: 7)
                 for r in plan {
                     let content = UNMutableNotificationContent()
-                    content.title = "🪥 Fogmosás"
+                    content.title = tr("🪥 Fogmosás")
                     content.body = r.text
                     content.sound = .default
                     content.userInfo = ["arm": true, "key": r.key]
@@ -61,8 +61,8 @@ extension NotificationScheduler {
               let day = nextDentistReminder(lastCheckup: me.lastCheckup, lastCleaning: me.lastCleaning, today: Date()) else { return }
         let st = dentistStatus(lastCheckup: me.lastCheckup, lastCleaning: me.lastCleaning, today: day)
         let content = UNMutableNotificationContent()
-        content.title = "🦷 Fogorvos"
-        content.body = (st.message ?? "Esedékes a fogorvosi kontroll.") + " Foglalj időpontot!"
+        content.title = tr("🦷 Fogorvos")
+        content.body = (st.message ?? tr("Esedékes a fogorvosi kontroll.")) + tr(" Foglalj időpontot!")
         content.sound = .default
         content.userInfo = ["arm": false]
         var comps = Calendar.current.dateComponents([.year, .month, .day], from: day)
@@ -103,7 +103,7 @@ final class Speaker {
         var view = String.UnicodeScalarView()
         view.append(contentsOf: text.unicodeScalars.filter { !$0.properties.isEmojiPresentation })
         let u = AVSpeechUtterance(string: String(view))
-        u.voice = AVSpeechSynthesisVoice(language: "hu-HU")
+        u.voice = AVSpeechSynthesisVoice(language: I18n.lang == "hu" ? "hu-HU" : "en-US")
         u.rate = 0.45
         synth.speak(u)
     }

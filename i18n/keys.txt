@@ -1,0 +1,509 @@
+ (ebből erős: {0})
+ ({0} napon erőset)
+ Az átlagember kb. 45 másodpercig mos fogat. A 2 perces fogmosás kb. 26%-kal több lepedéket távolít el.
+ Ez már több az átlagos 45 másodpercnél, így tovább!
+ Foglalj időpontot!
+ Foglalj időpontot! 🦷
+ Nagyjából ugyanannyi, mint a múlt héten.
+ Nem kell ennél sokkal tovább: a túl hosszú, erős súrolás az ínyt is koptathatja.
+ Tipp: mind a 4 fogsornegyedre jusson 30 másodperc (most kb. {0} negyed jutott rá teljesen).
+ {0} másodperccel jobb, mint a múlt héten, szép fejlődés!
+ {0} másodperccel kevesebb, mint a múlt héten. Próbáld meg a negyedenkénti jelzést követni!
+ · gyerek
+ · gyerek, csak képek
+ · 🚰 folyik a csap!
+ Átlagban még {0} másodperc hiányzik a célhoz.
+ – csere!
+%.1f l/perc – elmentve.
+. A tartós érzékenységet érdemes megmutatni a fogorvosnak. {0}
+10 fogmosás elzárt csappal.
+3 havonta, illetve betegség után.
+3 tökéletes nap egymás után.
+30 tökéletes nap egymás után.
+50 fogmosás elzárt csappal.
+7 tökéletes nap egymás után.
+: {0} napos
+A Beállítások és a webes megosztás csak azonosítás után nyílik meg.
+A QR-kód hibás. Kérj új kódot a weboldalon.
+A Statisztikában beolvashatod a Fogmosás weboldal QR-kódját, és a számítógépen nagyobb képernyőn is látod az eredményeidet. Titkosítva, jelszó nélkül.
+A beállítások szülői zárral védettek
+A fogmosás felismeréséhez. A hang csak a telefonon, a memóriában dolgozódik fel.
+A fogorvosok legalább 120 másodpercet javasolnak, a célod ({0} s) ennél rövidebb.
+A fogorvosok legalább {0} másodpercet javasolnak, a célod ({1} s) ennél rövidebb.
+A fogorvosok naponta egyszer javasolják a fogközök tisztítását (fogselyem vagy fogköztisztító kefe). Az utóbbi héten {0} napon volt.
+A fogorvosok naponta kétszer 2 percet javasolnak.
+A fogorvosok naponta kétszeri fogmosást javasolnak (reggel és lefekvés előtt).
+A gyerekeimnek is
+A gyerekek órája és a szülő telefonja között (iCloud, titkosítva).
+A gyerekek órája és a szülő telefonja között.
+A hang csak ezen a készüléken, a memóriában dolgozódik fel. Hangfelvétel nem készül, és semmi nem kerül szerverre. A webes megtekintés csak akkor küld adatot, ha te olvasod be a QR-kódot, és akkor is titkosítva.
+A heti átlagod legalább 15 másodperccel jobb, mint az előző héten.
+A mai fogmosások és a sorozat.
+A matricákat a jutalom indításától számoljuk (egy matrica = egy nap, amikor a napi cél teljesült).
+A mikrofon a fogmosás felismeréséhez kell; a hang csak a telefonon, a memóriában dolgozódik fel. Az értesítések: reggel ébredés után és 15 perccel lefekvés előtt.
+A mikrofon nem indítható.
+A mikrofon nem érhető el.
+A mikrofon-hozzáférés nincs engedélyezve. Beállítások → Adatvédelem → Mikrofon.
+A sorozat és a mai haladás a számlapon.
+A szerver hibát jelzett ({0}).
+A szülő egy helyen látja a gyerekek eredményeit.
+A szülő jutalmat tűzhet ki adott számú matricáért.
+A te csapod: %.1f l/perc
+A víz, a súrolás és a szónikus zúgás alapján indul és áll le a mérés.
+A weboldalon megjelenő QR-kódot beolvasva a statisztikád a böngészőben is látszik. Titkosítva, a szerver nem tárolja.
+Adatfelajánlás a fejlesztéshez
+Adatok
+Adatvédelem
+Akkumulátorkímélő mód
+Alapértékre vissza
+Amióta gyakrabban fogselymezel ({0} → {1} nap / 2 hét), ritkábban vérzik az ínyed ({2} → {3} nap).
+Amióta érzékeny fogra való fogkrémet használsz, ritkábban jelzel érzékenységet ({0} → {1} nap / 2 hét).
+Apple Health: Fogmosás.
+Apple Watch-on is
+Automatikus felismerés
+Az app a hang alapján méri a fogmosásod idejét: a víz elzárásától az öblítésig. Hangfelvétel nem készül, minden a telefonodon marad.
+Az egész családnak
+Az elmúlt héten legalább 3 este kimaradt a fogmosás. Az esti a legfontosabb: éjszaka kevesebb nyál termelődik, ezért a lepedék könnyebben károsít. Kapcsold be a lefekvés előtti emlékeztetőt!
+Az elmúlt héten legalább 3 reggel kimaradt a fogmosás. Próbáld egy meglévő szokáshoz kötni (pl. reggeli után, öltözködés előtt).
+Az elmúlt héten többször folyt a csap fogmosás közben. Nedvesítés után zárd el, és csak öblítéskor nyisd meg újra.
+Az első 3 fogmosásból megtanulja a fogkeféd hangját.
+Az első mért fogmosás.
+Az utóbbi 2 hétben {0} napon jeleztél fogérzékenységet
+Az utóbbi héten {0} másodperccel rövidebbek a fogmosásaid, mint előtte. Tűzz ki egy rövid célt: holnap legalább egyszer a teljes kör!
+Az utóbbi két hétben a fogmosások fele 30 másodpercnél rövidebb volt. Kövesd a negyedenkénti rezgést: minden jelzésnél válts a következő fogsornegyedre.
+Az ínyed az utóbbi 2 hétben {0} napon vérzett. Ha a vérzés 2 hétnél tovább tart, keresd fel a fogorvosodat. {1}
+Az órán is elindíthatod a mérést; az eredmény átkerül a telefonra. A {0} egy pillantással mutatja a mai haladást.
+Betegség után érdemes új {0} használni, hogy ne maradjanak kórokozók a sörtéken.
+Bezárás
+Beállítások
+Biztosan törölsz minden adatot?
+Béka
+Cica
+Csak akkor futtatja a felismerő modellt, ha egyáltalán hallatszik valami.
+Csak magamnak
+Család
+Családi szinkron
+Családi áttekintés
+Csap mérése
+Csap mérése: tegyél a csap alá egy 1 literes palackot, nyisd meg úgy, ahogy fogmosáskor szoktad, nyomd meg az Indítást, és amikor megtelt, a Stopot.
+Csap vízhozamának mérése
+Csillogó mosoly
+Cél
+Cél elérve
+Célba értél
+Célidő: {0}
+Célok és kitüntetések
+Dínó
+Eddig elfolyt
+Edény: %.1f l
+Egy ember napi vízfogyasztásának kb. {0}%-a, a napi ajánlott ivóvíz {1}%-a.
+Egy hét fegyelem
+Egy héten belül esedékes a csere: {0} napja ({1} fogmosás) használod.
+Egy hónap bajnok
+Egy koppintással jelölheted fogmosás után (az ADA naponta egyszer javasolja).
+Egy napon belül minden fogmosás elérte a célidőt.
+Egyedül használod az appot, vagy a gyerekeid fogmosását is mérnéd?
+Egyéb
+Egészség
+Ehhez képernyőzárat (ujjlenyomat, arc vagy PIN) kell beállítani a telefonon.
+Ehhez kódot vagy Face ID-t / Touch ID-t kell beállítani a telefonon.
+Elektromos
+Elektromos fogkefe
+Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.
+Elmentve a naplóba ✔︎
+Első lépés
+Elzárt csappal: {0} fogmosás
+Elzárt csappal: {0} fogmosás, megtakarított víz kb. {1} l
+Először érted el a kitűzött fogmosási időt.
+Emlékeztet
+Emlékeztetők
+Engedélyek
+Engedélyezve ✔︎
+Engedélyezés
+Ennyi matricáért: {0}
+Esedékes a fogorvosi kontroll és a fogkőeltávolítás.
+Esedékes a fogorvosi kontroll.
+Esedékes a félévenkénti fogorvosi kontroll.
+Esedékes az éves fogkőeltávolítás.
+Esti emlékeztető (pl. vacsora után)
+Esti fogmosás: 2 perc, és kész is vagy a mai céllal.
+Exportálás CSV-ként
+Ez a hét
+Ez kb. {0} liter víz (~{1} {2}), kb. {3} {4}.
+Ez nem a Fogmosás weboldal QR-kódja.
+Ez nem orvosi diagnózis.
+Ez nem tűnik reálisnak, próbáld újra.
+Ezen a héten még nincs mért fogmosás.
+Ezt a kódot már felhasználtad. Kérj új kódot a weboldalon.
+Face ID-val vagy Touch ID-val
+Fehérítő
+Fejlődés
+Feloldás
+Felolvasott visszajelzés
+Figurák: {0}
+Figyelek. A telefon maradhat letéve, a képernyő lezárása után is mérek.
+Figyelek. Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted.
+Figyelmeztet, ha visszatérő rossz szokást lát.
+Figyelés letett telefonnal
+Fogkefe
+Fogkefecsere-emlékeztető
+Fogkefefej
+Fogkirály / Fogkirálynő
+Fogkrém
+Fogkrém nyilvántartása
+Fogkrém: 
+Fogkrém: {0}
+Fogkrém…
+Fogköztisztítás és kiegészítők
+Fogköztisztító
+Fogköztisztító kefe / szájzuhany
+Fogköztisztító kefe / szájzuhany: {0} napon
+Fogkő is
+Fogmosás
+Fogmosás feloldása
+Fogmosás folyamatban
+Fogmosás közben
+Fogmosás közben elfolyt víz: kb. {0} l
+Fogmosás után egy koppintással jelölheted, ha érzékeny volt a fogad vagy vérzett az ínyed, és ha fogselymeztél. Ha egy tünet tartós, szól, hogy nézz el a fogorvoshoz.
+Fogmosás után: érzékeny volt-e a fog, vérzett-e az íny. Statisztika és figyelmeztetés, ha tartós.
+Fogmosás – zárolva
+Fogmosás, fogköztisztítás, tünetek és fogkrém egy kinyomtatható PDF-ben.
+Fogmosás, fogselyem, tünetek az utóbbi 30/90 napból.
+Fogmosások: {0} ({1} napon a {2} napból; reggel {3}, este {4})
+Fogmosások: {0} / {1} tervezett ({2} napon; reggel {3}, este {4})
+Fogorvos
+Fogorvosi kontroll emlékeztető
+Fogselyem
+Fogselyem követése
+Fogselyem: {0} napon
+Fogszabályzó
+Fogszabályzó: igen
+Fogszabályzóval a fogorvosok hosszabb, alaposabb fogmosást és a fogközök naponta többszöri tisztítását javasolják.
+Fogszabályzóval különösen fontos.
+Fogtündér barátja
+Fogtündér kedvence
+Fogvédő tanonc
+Fogápolás
+Fogápolási jelentés – {0}
+Fogérzékenység: {0} napon
+Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot.
+Futó idő és haladás az értesítésben és a lezárt képernyőn.
+Félpercenként rezeg, hogy tudd, mikor válts a következő negyedre. A futó idő {0} is látszik.
+Félévente emlékeztet a kontrollra, évente a fogkőeltávolításra. A Statisztikában PDF-jelentést készíthetsz, amit megmutathatsz a fogorvosnak.
+Félévente kontroll, évente fogkőeltávolítás.
+Főoldal
+Gyakran 4 percnél is tovább mosol fogat. A 2–3 perc elég; a túl hosszú, erős súrolás az ínyt és a zománcot koptathatja. Puha sörtéjű fogkefe ajánlott.
+Gyakran jelzel érzékenységet. Kérdezd meg a fogorvosodat, hogy segíthet-e egy érzékeny fogra való fogkrém.
+Gyerek
+Gyerek fogkrém
+Gyerek hozzáadása
+Gyerekeknél felolvassa az üzeneteket.
+Gyerekprofilok saját avatarral; a még nem olvasó gyerekek képes felületet kapnak felolvasással. Matricát gyűjthetnek, a szülő jutalmat tűzhet ki.
+Gyorsabb a cukorkaszörnynél
+Gyorsindítás és hangvezérlés
+Gyógynövényes / fluoridmentes
+Ha a telefon vízszintesen, nyugalomban fekszik, a képernyő lezárása után is figyel.
+Ha fogmosás közben folyik a csap, figyelmeztető ikon jelenik meg, a végén pedig megtudod, hány liter víz folyt el, és mennyibe került.
+Ha folyt volna, kb. {0} liter (~{1} pohár) víz folyt volna el feleslegesen, évente kb. {2} m³.
+Ha minden reggel és este így mosol fogat: évente kb. {0} m³ (~{1} {2}).
+Hamarosan lefekvés: még hiányzik az esti fogmosás. Koppints, és indulhat.
+Hangfelvétel nem készül: a hangot csak a telefon dolgozza fel, a memóriában. Az appot {0} zárolhatod, a beállításokat szülői zárral védheted.
+Hangvezérlés
+Havi fogmosás-összefoglaló – {0}. {1}
+Havi összefoglaló
+Heti átlag: {0} s (cél: {1} s).
+Hiba
+Hogy hívják a gyermeked?
+Hogy szólíthatunk?
+Hogy érezted a fogmosást?
+Hosszabb célidő ({0}), fogköztisztítás a naplóban.
+Hosszan nyomd meg az app ikonját: „Fogmosás indítása”. Vagy: „Hé Google, nyisd meg a Fogmosást”.
+Hurrá! Végig kitartottál, a fogaid ragyognak! ⭐ Kaptál egy matricát.
+Hány éves {0}?
+Három nap sorban
+Hétvégén átlagosan {0} másodperccel rövidebben mosol fogat, mint hétköznap. A fogaidnak nincs hétvégéjük. 😉
+Ideje fogat mosni! 🪥
+Ideje új {0} venni: {1} napja ({2} fogmosás) használod. A fogorvosok 3–4 havonta javasolják a cserét.
+Időpont
+Időzítő
+Igen
+Ikon, ha folyik a csap fogmosás közben, és összesítés a végén.
+Indítás
+Indításkor, 30/60/90 másodpercnél és a célidőnél jelez.
+Ismétlés, ha elmaradt
+Jelentés a fogorvosnak
+Jelentés a fogorvosnak (PDF)
+Jelentés megosztása
+Jutalom
+Jutalom (pl. mozi, fagyi)
+Jutalom indítása
+Jutalom törlése
+Jó estét
+Jó kezdés! A cukorkaszörnyek még bújkálnak. Holnap mosd tovább, amíg a kör be nem telik!
+Jó reggelt
+Jó reggelt! Kezdd a napot 2 perc fogmosással. 🪥
+Jöhet a {0} negyed
+Kalibráció
+Kalibráció újrakezdése
+Kalibráció: a fogkefe hangja még nem egyértelmű, folytatom a tanulást.
+Kalibráció: még {0} fogmosás kell a fogkeféd hangjának megtanulásához.
+Kalibrálva: a fogkeféd {0} Hz-en zúg.
+Kezdd a {0} negyeddel
+Kezdjük!
+Ki mos most fogat?
+Kicsit
+Kiegészítők
+Kihagyás
+Kinyomtatható, a fogorvosnak is megmutatható.
+Kitüntetések
+Kitüntetések és sorozatok
+Koppints az indításhoz
+Kutyus
+Kérlek, ellenőrizd a választ.
+Kész
+Kész, elérted a célidőt! 🎉
+Kész: {0}
+Készült a Fogmosás appal. A tünetek a felhasználó saját jelölései, nem orvosi diagnózis.
+Két perc hős
+Kézi
+Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását (pl. valaki más elektromos fogkeféjét) figyelmen kívül hagyjuk.
+Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását figyelmen kívül hagyjuk.
+Kézi indítás (időzítő)
+Lefekvés
+Lefekvés előtt
+Lefekvés előtt 15 perccel, reggel ébredés után, és ha elmaradt, újra. Ha az emlékeztetőből nyitod meg, azonnal figyel.
+Leghosszabb: {0}, legrövidebb: {1}
+Legutóbbiak
+Leállt: {0}
+Látszik, segít-e az érzékeny fogra való fogkrém.
+Ma
+Ma ezt is csináltam:
+Ma fogkő
+Ma kontroll
+Ma voltam kontrollon
+Ma {0}/{1}
+Ma {0}/{1} · 🔥 {2}
+Ma {0}/{1} · 🔥 {2} nap
+Ma {0}/{1} · 🔥 {2} nap · 🟡 {3} matrica
+Ma: {0}/{1} fogmosás, ebből {2} érte el a {3} s-ot.
+Maci
+Magyarország (liter, Ft)
+Magától méri a fogmosást
+Matricák
+Matricák és jutalmak gyerekeknek
+Megnyitáskor azonosítás kell.
+Megnézem a weben
+Megosztod a weboldallal?
+Megosztás
+Megosztás (pl. a fogorvosnak)
+Megosztás a weboldallal
+Megosztás a weboldallal: {0}
+Mentés a naplóba
+Mentés az Egészség appba
+Mi a célod?
+Mikor voltál utoljára fogorvosnál? Add meg, és szólok, ha esedékes a kontroll.
+Milyen fogkefét használsz?
+Minden tökéletes nap egy matrica, 7 matrica egy figura.
+Mit tud az app?
+Mit tud az app? (bemutató)
+Most: {0} negyed
+Motiváció
+Mára kész!
+Még mindig vár a fogkefe. 😉 Nyisd meg az appot, és kezdheted.
+Még nem
+Még nincs megadva. Állítsd be, és szólok, ha esedékes a következő (félévente kontroll, évente fogkő).
+Még nincs mért fogmosás.
+Még {0} fogmosás van hátra mára.
+Még {0} s hiányzott
+Mégse
+Mértékegység és árak
+Mérés
+Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül).
+Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül). A tüneteket a felhasználó jelölte.
+Nagyon
+Napi cél ({0}× {1}) teljesítve: {2} napon
+Naponta {0}×
+Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted.
+Nem
+Nem sikerült a hangformátum beállítása.
+Nem sikerült elérni a weboldalt. Ellenőrizd az internetkapcsolatot.
+Nem sikerült összeállítani az adatokat.
+Nem, kész
+Normál fluoridos
+Nyelvtisztítás
+Nyelvtisztítás: {0} napon
+Nyisd meg a Fogmosás weboldalát a számítógépen, és olvasd be az ott látható QR-kódot. Az adatok titkosítva mennek át, a szerver nem tárolja őket.
+Nyuszi
+Név
+Névtelen hangjellemzők (hangfelvétel nélkül) a felismerés javításához.
+Névtelen hangjellemzők (hangfelvétel nélkül).
+Oroszlán
+PDF ({0} nap)
+PDF – utóbbi {0} nap
+Pingvin
+Polip
+Profilok
+QR-kód
+QR-kód beolvasása
+Reggel ébredés után és 15 perccel lefekvés előtt. A Beállításokban módosítható.
+Reggel, lefekvés előtt és ismétlés.
+Reggel, ébredés után
+Rezgés a negyedeknél
+Róka
+Sorozat
+Statisztika
+Stop
+Szeretnél még egy gyereket hozzáadni?
+Szia
+Szintlépés
+Szokás-tippek
+Szuper! {0} másodperc, elérted a {1} másodperces célt.
+Szájvíz
+Szájvíz követése
+Szájvíz: {0} napon
+Számlapelem az órán
+Szülői zár
+Tedd le a telefont a csap mellé, és kezdj fogat mosni. Az app a víz elzárásától az öblítésig méri az időt. Felismeri a kézi súrolást és az elektromos fogkefe zúgását is.
+Tegyél a csap alá egy ismert méretű edényt (pl. 1 literes palackot). Nyisd meg a csapot úgy, ahogy fogmosáskor szoktad, és nyomd meg az Indítást; amikor megtelt, a Stopot.
+Tipp
+Tipp: a fogkefe benedvesítése után zárd el a csapot, és csak öblítéskor nyisd meg újra.
+Tovább
+Tovább mostál fogat, mint az átlagember (45 s).
+Tud már {0} önállóan olvasni?
+Tud olvasni
+Típus
+Tökéletes nap
+Tökéletes nap! 🎉
+Tökéletes napok: {0}, leghosszabb sorozat: {1} nap
+Törlés
+Túl rövid volt, nem mentettem.
+Tünetek
+Tünetnapló
+Tünetnapló és fogselyem
+USA (gallon, $)
+USA mértékegységek (gallon, $)
+Unikornis
+Utolsó fogkőeltávolítás
+Utolsó fogkőeltávolítás: {0}
+Utolsó fogorvosi kontroll: {0}
+Utolsó kontroll
+Utolsó kontroll: {0} · fogkőeltávolítás: {1}
+Utolsó ínyvérzés: {0}
+Vigyáz a vízre
+Várom a fogmosást…
+Végigvezet a 2 percen
+Vérzett az íny
+Víz
+Vízcsepp-mentő
+Vízpazarlás-figyelmeztetés
+Víztakarékos
+Vízőr
+Wear OS órán is
+Webcím: {0}\nProfilok: {1}\n\nCsak akkor folytasd, ha ezt a címet te nyitottad meg a saját számítógépeden.
+Weben is
+Webes megtekintés QR-kóddal
+Zárolás Face ID-val / ujjlenyomattal
+a fogmosás véget ért
+a lezárt képernyőn és a Dynamic Islanden
+app háttérbe került, a telefon nincs letéve
+az értesítésben és a lezárt képernyőn
+bal alsó
+bal felső
+cél {0}
+cél: {0}
+elektromos fogkefe
+február
+felvették a telefont
+fogkefét
+folyt a csap
+gyerek · csak képek
+hosszú ideig nem hallatszott víz vagy fogmosás
+iPhone-on a reggeli emlékeztető az ébredés idejére érkezik, és a lezárt képernyőn vár, amíg először kézbe veszed a telefont.
+január
+jobb alsó
+jobb felső
+július
+június
+kézi
+leállítva
+május
+március
+október
+pohár (2,5 dl)
+számlapelem
+szónikus fogkefe (Sonicare-típusú)
+túl rövid volt ({0} s), nem mentettem
+ujjlenyomattal vagy arcfelismeréssel
+{0} ({1} nap)
+{0} / {1} matrica
+{0} beállításai
+{0} másodperc, még {1} másodperc hiányzott a célhoz.
+{0} nap / 2 hét · {1} / 30
+{0} napos, {1} fogmosás. Ha a sörték szétállnak vagy elhajlottak, cseréld hamarabb.
+{0} perc múlva
+{0} perccel előtte
+{0} tökéletes nap sorozatban.
+{0} · fogmosás
+{0} éves
+{0} – {1} ({2} nap)
+{0}, válaszd ki a képedet! Erről fogod megismerni magad.
+{0}. oldal a {1}-ból
+{0}/7 · {1}/30 nap
+{0}: {1} Hz-es zúgás, kb. {2} mozdulat/perc
+Állítsd be, naponta hányszor és meddig mosol fogat. Sorozatokat és kitüntetéseket gyűjthetsz, és tippeket kapsz a fejlődéshez.
+Átlag felett
+Átlagos időtartam: {0} (cél: {1}), célidőt elérte: {2}%
+Átlagos időtartam: {0} s (cél: {1} s), a célidőt elérte: {2}%
+Ébredés
+Életkor
+Élő kijelzés a lezárt képernyőn
+Élő tevékenység a lezárt képernyőn és a Dynamic Islanden.
+Én
+Értesítések
+Érzékeny fog
+Érzékeny fogra
+Érzékeny volt a fogad?
+Érzékenység
+Ínyvédő
+Ínyvérzés
+Ínyvérzés: {0} napon
+Óceán őrzője
+Öblítés…
+Összes adat törlése
+Új fogkefefejet tettem fel
+Új fogkefét kezdtem
+Üdv!
+Ügyes vagy, már több mint félúton jártál! Legközelebb a végéig, és jár a matrica!
+április
+„Hé Siri, fogmosás indul”.
+≈ {0} l
+⏱️ Kézi időzítő
+⚠️ Vízpazarlás: a csap {0} másodpercig folyt
+✅ Fogmosás észlelve · a víz elzárásától mérve
+✔︎ Elküldve, nézd meg a böngészőben.
+✨ Mit tud az app? (bemutató)
+🎁 {0} – megvan!
+🎙️ Mikrofon
+🎙️ Mikrofon és 🔔 értesítések
+🏅 Új kitüntetés: {0}
+💧 Szép munka, elzártad a csapot!
+💧 elzárt csap
+💧 Öblítés…
+📷 QR-kód beolvasása
+🔔 Emlékeztetőből indítva: várom a fogmosást
+🔔 Emlékeztetők
+🔥 {0} nap
+🚰 Folyik a csap – zárd el!
+🚰 Folyik a csap!
+🚰 Folyik a csap! Zárd el, amíg fogat mosol.
+🚰 Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot.
+🚰 Víz
+🚰 folyt a csap
+🟡 {0} matrica · 🦖 {1} figura
+🦷 Fogorvos
+🧵 Fogselyem: ma kipipálva ✔︎
+🧵 Fogselyem: ma még nem volt
+🩸 Vérzett az ínyem
+🪥  Fogmosás indítása
+🪥 Fogmosás
+🪥 {0}: {1} napos

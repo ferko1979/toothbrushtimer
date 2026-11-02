@@ -2,7 +2,7 @@ name: Web (relay + dashboard)
 
 on:
   push:
-    paths: ["web/**", ".github/workflows/web.yml"]
+    paths: ["web/**", "i18n/**", "ios/**", "android/**", ".github/workflows/web.yml"]
   pull_request:
     paths: ["web/**"]
   workflow_dispatch:
@@ -18,6 +18,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Translations complete (every tr() key has an English text)
+        run: python3 ../i18n/extract.py
       - name: Relay + crypto tests
         run: npm test
       - name: Browser end-to-end pairing test

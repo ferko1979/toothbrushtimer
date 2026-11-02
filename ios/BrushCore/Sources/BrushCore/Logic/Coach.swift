@@ -22,10 +22,10 @@ public struct Goals: Codable, Equatable {
     public var warnings: [String] {
         var w: [String] = []
         if targetS < Recommendation.targetS {
-            w.append("A fogorvosok legalább \(Int(Recommendation.targetS)) másodpercet javasolnak, a célod (\(Int(targetS)) s) ennél rövidebb.")
+            w.append(tr("A fogorvosok legalább {0} másodpercet javasolnak, a célod ({1} s) ennél rövidebb.", Int(Recommendation.targetS), Int(targetS)))
         }
         if perDay < Recommendation.perDay {
-            w.append("A fogorvosok naponta kétszeri fogmosást javasolnak (reggel és lefekvés előtt).")
+            w.append(tr("A fogorvosok naponta kétszeri fogmosást javasolnak (reggel és lefekvés előtt)."))
         }
         return w
     }
@@ -60,18 +60,18 @@ public struct Achievement: Equatable, Identifiable {
 }
 
 public enum Achievements {
-    public static let all: [Achievement] = [
-        Achievement(id: "first_brush", title: "Első lépés", description: "Az első mért fogmosás."),
-        Achievement(id: "above_average", title: "Átlag felett", description: "Tovább mostál fogat, mint az átlagember (45 s)."),
-        Achievement(id: "goal_reached", title: "Célba értél", description: "Először érted el a kitűzött fogmosási időt."),
-        Achievement(id: "perfect_day", title: "Tökéletes nap", description: "Egy napon belül minden fogmosás elérte a célidőt."),
-        Achievement(id: "streak_3", title: "Három nap sorban", description: "3 tökéletes nap egymás után."),
-        Achievement(id: "streak_7", title: "Egy hét fegyelem", description: "7 tökéletes nap egymás után."),
-        Achievement(id: "streak_30", title: "Egy hónap bajnok", description: "30 tökéletes nap egymás után."),
-        Achievement(id: "water_saver_10", title: "Víztakarékos", description: "10 fogmosás elzárt csappal."),
-        Achievement(id: "water_saver_50", title: "Vízőr", description: "50 fogmosás elzárt csappal."),
-        Achievement(id: "improver", title: "Fejlődés", description: "A heti átlagod legalább 15 másodperccel jobb, mint az előző héten."),
-    ]
+    public static var all: [Achievement] { [
+        Achievement(id: "first_brush", title: tr("Első lépés"), description: tr("Az első mért fogmosás.")),
+        Achievement(id: "above_average", title: tr("Átlag felett"), description: tr("Tovább mostál fogat, mint az átlagember (45 s).")),
+        Achievement(id: "goal_reached", title: tr("Célba értél"), description: tr("Először érted el a kitűzött fogmosási időt.")),
+        Achievement(id: "perfect_day", title: tr("Tökéletes nap"), description: tr("Egy napon belül minden fogmosás elérte a célidőt.")),
+        Achievement(id: "streak_3", title: tr("Három nap sorban"), description: tr("3 tökéletes nap egymás után.")),
+        Achievement(id: "streak_7", title: tr("Egy hét fegyelem"), description: tr("7 tökéletes nap egymás után.")),
+        Achievement(id: "streak_30", title: tr("Egy hónap bajnok"), description: tr("30 tökéletes nap egymás után.")),
+        Achievement(id: "water_saver_10", title: tr("Víztakarékos"), description: tr("10 fogmosás elzárt csappal.")),
+        Achievement(id: "water_saver_50", title: tr("Vízőr"), description: tr("50 fogmosás elzárt csappal.")),
+        Achievement(id: "improver", title: tr("Fejlődés"), description: tr("A heti átlagod legalább 15 másodperccel jobb, mint az előző héten.")),
+    ] }
 
     public static func byId(_ id: String) -> Achievement? { all.first { $0.id == id } }
 }
@@ -84,21 +84,21 @@ public struct Coach {
     public func sessionFeedback(durationS d: Double, goals: Goals) -> String {
         let t = goals.targetS
         if d >= t {
-            var msg = "Szuper! \(Int(d.rounded())) másodperc, elérted a \(Int(t)) másodperces célt."
+            var msg = tr("Szuper! {0} másodperc, elérted a {1} másodperces célt.", Int(d.rounded()), Int(t))
             if d > 2 * t {
-                msg += " Nem kell ennél sokkal tovább: a túl hosszú, erős súrolás az ínyt is koptathatja."
+                msg += tr(" Nem kell ennél sokkal tovább: a túl hosszú, erős súrolás az ínyt is koptathatja.")
             }
             return msg
         }
         let missing = t - d
         let quadrantsDone = Int(d / Recommendation.quadrantS)
-        var msg = "\(Int(d.rounded())) másodperc, még \(Int(missing.rounded())) másodperc hiányzott a célhoz."
+        var msg = tr("{0} másodperc, még {1} másodperc hiányzott a célhoz.", Int(d.rounded()), Int(missing.rounded()))
         if d >= Recommendation.populationAvgS {
-            msg += " Ez már több az átlagos 45 másodpercnél, így tovább!"
+            msg += tr(" Ez már több az átlagos 45 másodpercnél, így tovább!")
         } else {
-            msg += " Az átlagember kb. 45 másodpercig mos fogat. A 2 perces fogmosás kb. 26%-kal több lepedéket távolít el."
+            msg += tr(" Az átlagember kb. 45 másodpercig mos fogat. A 2 perces fogmosás kb. 26%-kal több lepedéket távolít el.")
         }
-        msg += " Tipp: mind a 4 fogsornegyedre jusson 30 másodperc (most kb. \(quadrantsDone) negyed jutott rá teljesen)."
+        msg += tr(" Tipp: mind a 4 fogsornegyedre jusson 30 másodperc (most kb. {0} negyed jutott rá teljesen).", quadrantsDone)
         return msg
     }
 
@@ -164,32 +164,32 @@ public struct Coach {
         let good = rs.filter { $0.durationS >= goals.targetS }.count
         let left = Swift.max(goals.perDay - rs.count, 0)
         let streak = perfectStreak(records, goals: goals, today: today)
-        var parts = ["Ma: \(rs.count)/\(goals.perDay) fogmosás, ebből \(good) érte el a \(Int(goals.targetS)) s-ot."]
+        var parts = [tr("Ma: {0}/{1} fogmosás, ebből {2} érte el a {3} s-ot.", rs.count, goals.perDay, good, Int(goals.targetS))]
         if left > 0 {
-            parts.append("Még \(left) fogmosás van hátra mára.")
+            parts.append(tr("Még {0} fogmosás van hátra mára.", left))
         } else if good >= goals.perDay {
-            parts.append("Tökéletes nap! 🎉")
+            parts.append(tr("Tökéletes nap! 🎉"))
         }
-        if streak >= 2 { parts.append("\(streak) tökéletes nap sorozatban.") }
+        if streak >= 2 { parts.append(tr("{0} tökéletes nap sorozatban.", streak)) }
         return parts.joined(separator: " ")
     }
 
     public func weeklyProgress(_ records: [BrushRecord], goals: Goals, today: Date) -> String {
         let thisWeek = calendar.date(byAdding: .day, value: -6, to: day(today))!
         let lastWeek = calendar.date(byAdding: .day, value: -7, to: thisWeek)!
-        guard let a = weekAverage(records, start: thisWeek) else { return "Ezen a héten még nincs mért fogmosás." }
-        var msg = "Heti átlag: \(Int(a.rounded())) s (cél: \(Int(goals.targetS)) s)."
+        guard let a = weekAverage(records, start: thisWeek) else { return tr("Ezen a héten még nincs mért fogmosás.") }
+        var msg = tr("Heti átlag: {0} s (cél: {1} s).", Int(a.rounded()), Int(goals.targetS))
         if let b = weekAverage(records, start: lastWeek) {
             let diff = a - b
             if diff >= 5 {
-                msg += " \(Int(diff.rounded())) másodperccel jobb, mint a múlt héten, szép fejlődés!"
+                msg += tr(" {0} másodperccel jobb, mint a múlt héten, szép fejlődés!", Int(diff.rounded()))
             } else if diff <= -5 {
-                msg += " \(Int((-diff).rounded())) másodperccel kevesebb, mint a múlt héten. Próbáld meg a negyedenkénti jelzést követni!"
+                msg += tr(" {0} másodperccel kevesebb, mint a múlt héten. Próbáld meg a negyedenkénti jelzést követni!", Int((-diff).rounded()))
             } else {
-                msg += " Nagyjából ugyanannyi, mint a múlt héten."
+                msg += tr(" Nagyjából ugyanannyi, mint a múlt héten.")
             }
         }
-        if a < goals.targetS { msg += " Átlagban még \(Int((goals.targetS - a).rounded())) másodperc hiányzik a célhoz." }
+        if a < goals.targetS { msg += tr(" Átlagban még {0} másodperc hiányzik a célhoz.", Int((goals.targetS - a).rounded())) }
         return msg
     }
 

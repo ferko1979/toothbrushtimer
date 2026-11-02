@@ -1,8 +1,10 @@
+import BrushCore
 import SwiftUI
 import WidgetKit
 
 @main
 struct FogmosasWatchWidgets: WidgetBundle {
+    init() { I18n.setLanguage(nil) }
     var body: some Widget { ProgressComplication() }
 }
 
@@ -55,8 +57,8 @@ struct ComplicationView: View {
             Text("🪥 \(count)/\(perDay) · 🔥 \(s?.streak ?? 0)")
         default:
             VStack(alignment: .leading, spacing: 2) {
-                Text("🪥 Fogmosás").font(.headline).widgetAccentable()
-                Text("Ma \(count)/\(perDay) · 🔥 \(s?.streak ?? 0) nap").font(.caption)
+                Text(tr("🪥 Fogmosás")).font(.headline).widgetAccentable()
+                Text(tr("Ma {0}/{1} · 🔥 {2} nap", count, perDay, s?.streak ?? 0)).font(.caption)
                 Gauge(value: fraction) { EmptyView() }.gaugeStyle(.accessoryLinearCapacity).tint(brand)
             }
         }
@@ -68,8 +70,8 @@ struct ProgressComplication: Widget {
         StaticConfiguration(kind: "FogmosasProgress", provider: SummaryProvider()) { entry in
             ComplicationView(entry: entry).containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName("Fogmosás")
-        .description("A mai fogmosások és a sorozat.")
+        .configurationDisplayName(tr("Fogmosás"))
+        .description(tr("A mai fogmosások és a sorozat."))
         .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline, .accessoryCorner])
     }
 }

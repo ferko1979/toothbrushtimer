@@ -5,7 +5,7 @@ import Foundation
 struct AppData: Codable {
     var onboarded = false
     var settings = AppSettings()
-    var profiles: [Profile] = [Profile(id: "me", name: "Én")]
+    var profiles: [Profile] = [Profile(id: "me", name: tr("Én"))]
     var activeProfileId = "me"
     var records: [BrushRecord] = []
     var extras: [ExtraRecord] = []
@@ -19,7 +19,7 @@ struct AppData: Codable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         onboarded = try c.decodeIfPresent(Bool.self, forKey: .onboarded) ?? false
         settings = try c.decodeIfPresent(AppSettings.self, forKey: .settings) ?? AppSettings()
-        profiles = try c.decodeIfPresent([Profile].self, forKey: .profiles) ?? [Profile(id: "me", name: "Én")]
+        profiles = try c.decodeIfPresent([Profile].self, forKey: .profiles) ?? [Profile(id: "me", name: tr("Én"))]
         activeProfileId = try c.decodeIfPresent(String.self, forKey: .activeProfileId) ?? "me"
         records = try c.decodeIfPresent([BrushRecord].self, forKey: .records) ?? []
         extras = try c.decodeIfPresent([ExtraRecord].self, forKey: .extras) ?? []
@@ -29,7 +29,12 @@ struct AppData: Codable {
 }
 
 final class AppModel: ObservableObject {
-    @Published var data = AppData() { didSet { save() } }
+    @Published var data = AppData() {
+        didSet {
+            if data.settings.language != oldValue.settings.language { I18n.setLanguage(data.settings.language) }
+            save()
+        }
+    }
     let heads: ModelHeads?
     let coach = Coach()
     private let url: URL
@@ -40,7 +45,12 @@ final class AppModel: ObservableObject {
         url = dir.appendingPathComponent("toothbrushtimer.json")
         heads = try? ModelHeads.bundled()
         if let d = try? Data(contentsOf: url), let decoded = try? JSONDecoder().decode(AppData.self, from: d) {
+            I18n.setLanguage(decoded.settings.language)
             data = decoded
+        } else {
+            // First start: language (and with it the default profile name) from the device.
+            I18n.setLanguage(nil)
+            data = AppData()
         }
         Connectivity.shared.onRecord = { [weak self] rec in self?.add(record: rec) }
         Connectivity.shared.onCare = { [weak self] e in

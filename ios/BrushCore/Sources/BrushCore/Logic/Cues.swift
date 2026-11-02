@@ -2,7 +2,7 @@ import Foundation
 
 /// Haptic cues while brushing (cues.py): start, quadrant changes, goal reached.
 public enum Quadrant {
-    public static let names = ["jobb felső", "bal felső", "bal alsó", "jobb alsó"]
+    public static var names: [String] { [tr("jobb felső"), tr("bal felső"), tr("bal alsó"), tr("jobb alsó")] }
 }
 
 public struct Cue: Equatable {
@@ -18,12 +18,12 @@ public struct Cue: Equatable {
 public func cueSchedule(targetS: Double) -> [Cue] {
     let n = Quadrant.names.count
     let step = targetS / Double(n)
-    var cues = [Cue(atS: 0, kind: .start, quadrant: 1, haptic: .tap, text: "Kezdd a \(Quadrant.names[0]) negyeddel")]
+    var cues = [Cue(atS: 0, kind: .start, quadrant: 1, haptic: .tap, text: tr("Kezdd a {0} negyeddel", Quadrant.names[0]))]
     for k in 1..<n {
         cues.append(Cue(atS: step * Double(k), kind: .quadrant, quadrant: k + 1, haptic: .tap,
-                        text: "Jöhet a \(Quadrant.names[k]) negyed"))
+                        text: tr("Jöhet a {0} negyed", Quadrant.names[k])))
     }
-    cues.append(Cue(atS: targetS, kind: .done, quadrant: n, haptic: .success, text: "Kész, elérted a célidőt! 🎉"))
+    cues.append(Cue(atS: targetS, kind: .done, quadrant: n, haptic: .success, text: tr("Kész, elérted a célidőt! 🎉")))
     return cues
 }
 

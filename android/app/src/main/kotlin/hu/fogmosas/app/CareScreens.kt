@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.fogmosas.core.CareEntry
+import hu.fogmosas.core.I18n
+import hu.fogmosas.core.tr
 import hu.fogmosas.core.CareKind
 import hu.fogmosas.core.Formatting
 import hu.fogmosas.core.Orthodontic
@@ -62,7 +64,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 private val careZone: ZoneId get() = ZoneId.systemDefault()
-private val HU_DATE = DateTimeFormatter.ofPattern("yyyy.MM.dd.")
 
 private fun AppData.extrasFor(p: Profile) = listOfNotNull(
     if (settings.isOn("floss_tracking") || p.orthodontic) CareKind.FLOSS else null,
@@ -98,20 +99,20 @@ fun CareCheckIn(store: AppStore) {
 
     InfoCard {
         if (saved) {
-            Text(if (pictures) "✔︎ 👍" else "Elmentve a naplóba ✔︎", fontWeight = FontWeight.Bold, color = C.ok)
+            Text(if (pictures) "✔︎ 👍" else tr("Elmentve a naplóba ✔︎"), fontWeight = FontWeight.Bold, color = C.ok)
         }
         if (!saved && symptoms) {
-            Text(if (pictures) "🦷 ?" else "Hogy érezted a fogmosást?", fontWeight = FontWeight.Bold)
-            if (!pictures) Text("Érzékeny volt a fogad?", fontSize = 13.sp, color = C.muted)
+            Text(if (pictures) "🦷 ?" else tr("Hogy érezted a fogmosást?"), fontWeight = FontWeight.Bold)
+            if (!pictures) Text(tr("Érzékeny volt a fogad?"), fontSize = 13.sp, color = C.muted)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("😀" to "Nem", "😐" to "Kicsit", "😣" to "Nagyon").forEachIndexed { i, (emoji, label) ->
+                listOf("😀" to tr("Nem"), "😐" to tr("Kicsit"), "😣" to tr("Nagyon")).forEachIndexed { i, (emoji, label) ->
                     FilterChip(selected = sens == i, onClick = { sens = i }, label = { Text(if (pictures) emoji else "$emoji $label", fontSize = if (pictures) 26.sp else 14.sp) })
                 }
             }
-            FilterChip(selected = bleed, onClick = { bleed = !bleed }, label = { Text(if (pictures) "🩸" else "🩸 Vérzett az ínyem", fontSize = if (pictures) 26.sp else 14.sp) })
+            FilterChip(selected = bleed, onClick = { bleed = !bleed }, label = { Text(if (pictures) "🩸" else tr("🩸 Vérzett az ínyem"), fontSize = if (pictures) 26.sp else 14.sp) })
         }
         if (!saved && extras.isNotEmpty()) {
-            if (!pictures) Text("Ma ezt is csináltam:", fontSize = 13.sp, color = C.muted)
+            if (!pictures) Text(tr("Ma ezt is csináltam:"), fontSize = 13.sp, color = C.muted)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 extras.forEach { k ->
                     val on = k in ticked.value
@@ -121,7 +122,7 @@ fun CareCheckIn(store: AppStore) {
             }
         }
         if (!saved && paste && !pictures) {
-            Text("Fogkrém: ${Toothpastes.title(tp)}", fontSize = 13.sp, color = C.muted)
+            Text(tr("Fogkrém: {0}", Toothpastes.title(tp)), fontSize = 13.sp, color = C.muted)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Toothpastes.all.forEach { k -> FilterChip(selected = tp == k.id, onClick = { tp = k.id }, label = { Text(k.title, fontSize = 12.sp) }) }
             }
@@ -133,7 +134,7 @@ fun CareCheckIn(store: AppStore) {
                 tongue = CareKind.TONGUE in t, toothpaste = if (paste) tp else null))
             if (paste && tp != p.toothpaste) store.updateProfile(p.copy(toothpaste = tp))
             saved = true
-        }) { Text(if (pictures) "✔︎" else "Mentés a naplóba") }
+        }) { Text(if (pictures) "✔︎" else tr("Mentés a naplóba")) }
     }
 }
 
@@ -145,14 +146,14 @@ fun DentistHomeCard(store: AppStore) {
     val p = data.activeProfile
     if (!data.settings.isOn("dentist_reminders") || !p.canRead) return
     val st = dentistStatus(p.lastCheckup?.let(LocalDate::parse), p.lastCleaning?.let(LocalDate::parse), LocalDate.now())
-    val msg = st.message ?: if (p.lastCheckup == null) "Mikor voltál utoljára fogorvosnál? Add meg, és szólok, ha esedékes a kontroll." else null
+    val msg = st.message ?: if (p.lastCheckup == null) tr("Mikor voltál utoljára fogorvosnál? Add meg, és szólok, ha esedékes a kontroll.") else null
     if (msg == null) return
     InfoCard {
-        Text("🦷 Fogorvos", fontWeight = FontWeight.Bold)
+        Text(tr("🦷 Fogorvos"), fontWeight = FontWeight.Bold)
         Text(msg, fontSize = 13.sp, color = C.muted)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { store.updateProfile(p.copy(lastCheckup = LocalDate.now().toString())) }) { Text("Ma voltam kontrollon") }
-            if (st.cleaningOverdue || p.lastCleaning == null) TextButton(onClick = { store.updateProfile(p.copy(lastCleaning = LocalDate.now().toString())) }) { Text("Fogkő is") }
+            OutlinedButton(onClick = { store.updateProfile(p.copy(lastCheckup = LocalDate.now().toString())) }) { Text(tr("Ma voltam kontrollon")) }
+            if (st.cleaningOverdue || p.lastCleaning == null) TextButton(onClick = { store.updateProfile(p.copy(lastCleaning = LocalDate.now().toString())) }) { Text(tr("Fogkő is")) }
         }
     }
 }
@@ -163,9 +164,9 @@ fun RewardCard(store: AppStore, p: Profile) {
     if (!data.settings.isOn("kid_rewards")) return
     val r = rewardProgress(data.records(p.id), p.goals, p.reward, p.rewardStickers, p.rewardSinceMs, careZone) ?: return
     InfoCard {
-        Text(if (r.done) "🎁 ${r.text} – megvan!" else "🎁 ${r.text}", fontWeight = FontWeight.Bold)
+        Text(if (r.done) tr("🎁 {0} – megvan!", r.text) else "🎁 ${r.text}", fontWeight = FontWeight.Bold)
         LinearProgressIndicator(progress = { r.fraction.toFloat() }, modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)), color = C.brand2, trackColor = C.track)
-        Text(if (p.canRead) "${r.have} / ${r.need} matrica" else "🟡".repeat(minOf(r.have, 14)), fontSize = 13.sp, color = C.muted)
+        Text(if (p.canRead) tr("{0} / {1} matrica", r.have, r.need) else "🟡".repeat(minOf(r.have, 14)), fontSize = 13.sp, color = C.muted)
     }
 }
 
@@ -181,18 +182,18 @@ fun CareStatsCards(activity: MainActivity, store: AppStore) {
     val ctx = LocalContext.current
 
     if (extras.isNotEmpty() || data.settings.isOn("care_checkin")) InfoCard {
-        Text("Fogápolás", fontWeight = FontWeight.Bold)
+        Text(tr("Fogápolás"), fontWeight = FontWeight.Bold)
         extras.forEach { k ->
             val streak = careStreak(es, k, today, careZone)
             Row {
                 Text("${k.icon} ${k.label}", Modifier.weight(1f))
-                Text("${careCount(es, k, today, 7, careZone)}/7 · ${careCount(es, k, today, 30, careZone)}/30 nap" + if (streak > 1) " · 🔥$streak" else "", fontSize = 13.sp, color = C.muted)
+                Text(tr("{0}/7 · {1}/30 nap", careCount(es, k, today, 7, careZone), careCount(es, k, today, 30, careZone)) + if (streak > 1) " · 🔥$streak" else "", fontSize = 13.sp, color = C.muted)
             }
         }
         if (data.settings.isOn("care_checkin")) {
             for (k in listOf(CareKind.SENSITIVITY, CareKind.BLEEDING)) Row {
                 Text("${k.icon} ${k.label}", Modifier.weight(1f))
-                Text("${careCount(es, k, today, 14, careZone)} nap / 2 hét · ${careCount(es, k, today, 30, careZone)} / 30", fontSize = 13.sp, color = C.muted)
+                Text(tr("{0} nap / 2 hét · {1} / 30", careCount(es, k, today, 14, careZone), careCount(es, k, today, 30, careZone)), fontSize = 13.sp, color = C.muted)
             }
         }
         if (p.orthodontic) Text("🦷 ${Orthodontic.NOTE}", fontSize = 12.sp, color = C.muted)
@@ -204,18 +205,18 @@ fun CareStatsCards(activity: MainActivity, store: AppStore) {
     }
 
     if (data.settings.isOn("dentist_report")) InfoCard {
-        Text("Jelentés a fogorvosnak", fontWeight = FontWeight.Bold)
-        Text("Fogmosás, fogköztisztítás, tünetek és fogkrém egy kinyomtatható PDF-ben.", fontSize = 13.sp, color = C.muted)
+        Text(tr("Jelentés a fogorvosnak"), fontWeight = FontWeight.Bold)
+        Text(tr("Fogmosás, fogköztisztítás, tünetek és fogkrém egy kinyomtatható PDF-ben."), fontSize = 13.sp, color = C.muted)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (days in listOf(30, 90)) OutlinedButton(onClick = {
                 val rep = dentistReport(p, data.records(p.id), es, today, days, careZone, data.settings.waterLocale)
                 ReportPdf.share(ctx, ReportPdf.write(ctx, rep))
-            }) { Text("PDF ($days nap)") }
+            }) { Text(tr("PDF ({0} nap)", days)) }
         }
     }
 
     if (data.settings.isOn("family_overview") && !p.child && data.profiles.any { it.child }) InfoCard {
-        Text("Család", fontWeight = FontWeight.Bold)
+        Text(tr("Család"), fontWeight = FontWeight.Bold)
         data.profiles.filter { it.child }.forEach { k ->
             val rs = data.records(k.id)
             val (st, _) = stickers(rs, k.goals, careZone)
@@ -224,7 +225,7 @@ fun CareStatsCards(activity: MainActivity, store: AppStore) {
                 Spacer(Modifier.size(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(k.name, fontWeight = FontWeight.SemiBold)
-                    Text("Ma ${store.coach.todayCount(rs, today)}/${k.goals.perDay} · 🔥 ${store.coach.perfectStreak(rs, k.goals, today)} nap · 🟡 $st matrica" +
+                    Text(tr("Ma {0}/{1} · 🔥 {2} nap · 🟡 {3} matrica", store.coach.todayCount(rs, today), k.goals.perDay, store.coach.perfectStreak(rs, k.goals, today), st) +
                         (if (careDoneToday(data.care(k.id), CareKind.FLOSS, today, careZone)) " · 🧵" else ""), fontSize = 12.sp, color = C.muted)
                     rewardProgress(rs, k.goals, k.reward, k.rewardStickers, k.rewardSinceMs, careZone)?.let {
                         Text("🎁 ${it.text}: ${it.have}/${it.need}", fontSize = 12.sp, color = C.muted)
@@ -243,16 +244,16 @@ private fun WebLinkCard(activity: MainActivity, store: AppStore) {
     var pairing by remember { mutableStateOf<WebLink.Pairing?>(null) }
     var status by remember { mutableStateOf<String?>(null) }
     InfoCard {
-        Text("Megnézem a weben", fontWeight = FontWeight.Bold)
-        Text("Nyisd meg a Fogmosás weboldalát a számítógépen, és olvasd be az ott látható QR-kódot. Az adatok titkosítva mennek át, a szerver nem tárolja őket.", fontSize = 13.sp, color = C.muted)
+        Text(tr("Megnézem a weben"), fontWeight = FontWeight.Bold)
+        Text(tr("Nyisd meg a Fogmosás weboldalát a számítógépen, és olvasd be az ott látható QR-kódot. Az adatok titkosítva mennek át, a szerver nem tárolja őket."), fontSize = 13.sp, color = C.muted)
         Button(onClick = {
             status = null
             WebShare.scan(activity) { text ->
                 if (text == null) return@scan
                 val pr = WebLink.parse(text)
-                if (pr == null) status = "Ez nem a Fogmosás weboldal QR-kódja." else pairing = pr
+                if (pr == null) status = tr("Ez nem a Fogmosás weboldal QR-kódja.") else pairing = pr
             }
-        }) { Text("📷 QR-kód beolvasása") }
+        }) { Text(tr("📷 QR-kód beolvasása")) }
         status?.let { Text(it, fontSize = 13.sp, color = if (it.startsWith("✔")) C.ok else C.danger) }
     }
     pairing?.let { pr ->
@@ -260,19 +261,19 @@ private fun WebLinkCard(activity: MainActivity, store: AppStore) {
         val who = if (d.activeProfile.child) d.activeProfile.name else d.profiles.joinToString(", ") { it.name }
         AlertDialog(
             onDismissRequest = { pairing = null },
-            title = { Text("Megosztod a weboldallal?") },
-            text = { Text("Webcím: ${pr.host}\nProfilok: $who\n\nCsak akkor folytasd, ha ezt a címet te nyitottad meg a saját számítógépeden.") },
+            title = { Text(tr("Megosztod a weboldallal?")) },
+            text = { Text(tr("Webcím: {0}\nProfilok: {1}\n\nCsak akkor folytasd, ha ezt a címet te nyitottad meg a saját számítógépeden.", pr.host, who)) },
             confirmButton = { TextButton(onClick = {
                 pairing = null
-                DeviceAuth.authenticate(activity, "Megosztás a weboldallal", pr.host) { ok ->
+                DeviceAuth.authenticate(activity, tr("Megosztás a weboldallal"), pr.host) { ok ->
                     if (!ok) return@authenticate
                     scope.launch {
                         val err = WebShare.send(pr, WebShare.snapshotJson(store.data.value))
-                        status = err ?: "✔︎ Elküldve, nézd meg a böngészőben."
+                        status = err ?: tr("✔︎ Elküldve, nézd meg a böngészőben.")
                     }
                 }
-            }) { Text("Megosztás") } },
-            dismissButton = { TextButton(onClick = { pairing = null }) { Text("Mégse") } },
+            }) { Text(tr("Megosztás")) } },
+            dismissButton = { TextButton(onClick = { pairing = null }) { Text(tr("Mégse")) } },
         )
     }
 }
@@ -282,28 +283,28 @@ private fun WebLinkCard(activity: MainActivity, store: AppStore) {
 @Composable
 fun ProfileCareSettings(store: AppStore, p: Profile, onGoalsChanged: () -> Unit) {
     val data by store.data.collectAsStateWithLifecycle()
-    SwitchRow("Fogszabályzó", "Hosszabb célidő (${Formatting.clock(Orthodontic.TARGET_S)}), fogköztisztítás a naplóban.", p.orthodontic) { on ->
+    SwitchRow(tr("Fogszabályzó"), tr("Hosszabb célidő ({0}), fogköztisztítás a naplóban.", Formatting.clock(Orthodontic.TARGET_S)), p.orthodontic) { on ->
         val g = if (on && p.goals.targetS < Orthodontic.TARGET_S) p.goals.copy(targetS = Orthodontic.TARGET_S) else p.goals
         store.updateProfile(p.copy(orthodontic = on, goals = g))
         onGoalsChanged()
     }
     if (data.settings.isOn("dentist_reminders")) {
-        Text("Utolsó kontroll: ${p.lastCheckup?.let { LocalDate.parse(it).format(HU_DATE) } ?: "—"} · fogkőeltávolítás: ${p.lastCleaning?.let { LocalDate.parse(it).format(HU_DATE) } ?: "—"}", fontSize = 13.sp, color = C.muted)
+        Text(tr("Utolsó kontroll: {0} · fogkőeltávolítás: {1}", p.lastCheckup?.let { I18n.date(LocalDate.parse(it)) } ?: "—", p.lastCleaning?.let { I18n.date(LocalDate.parse(it)) } ?: "—"), fontSize = 13.sp, color = C.muted)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { store.updateProfile(p.copy(lastCheckup = LocalDate.now().toString())) }) { Text("Ma kontroll") }
-            OutlinedButton(onClick = { store.updateProfile(p.copy(lastCleaning = LocalDate.now().toString())) }) { Text("Ma fogkő") }
+            OutlinedButton(onClick = { store.updateProfile(p.copy(lastCheckup = LocalDate.now().toString())) }) { Text(tr("Ma kontroll")) }
+            OutlinedButton(onClick = { store.updateProfile(p.copy(lastCleaning = LocalDate.now().toString())) }) { Text(tr("Ma fogkő")) }
         }
     }
     if (p.child && data.settings.isOn("kid_rewards")) {
         var text by remember(p.id) { mutableStateOf(p.reward ?: "") }
-        OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text("Jutalom (pl. mozi, fagyi)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        Stepper("Ennyi matricáért: ${p.rewardStickers}", { store.updateProfile(p.copy(rewardStickers = maxOf(3, p.rewardStickers - 1))) },
+        OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text(tr("Jutalom (pl. mozi, fagyi)")) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        Stepper(tr("Ennyi matricáért: {0}", p.rewardStickers), { store.updateProfile(p.copy(rewardStickers = maxOf(3, p.rewardStickers - 1))) },
             { store.updateProfile(p.copy(rewardStickers = minOf(60, p.rewardStickers + 1))) })
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { store.updateProfile(p.copy(reward = text.trim().ifEmpty { null }, rewardSinceMs = System.currentTimeMillis())) }) { Text("Jutalom indítása") }
-            if (p.reward != null) TextButton(onClick = { text = ""; store.updateProfile(p.copy(reward = null, rewardSinceMs = null)) }) { Text("Törlés") }
+            Button(onClick = { store.updateProfile(p.copy(reward = text.trim().ifEmpty { null }, rewardSinceMs = System.currentTimeMillis())) }) { Text(tr("Jutalom indítása")) }
+            if (p.reward != null) TextButton(onClick = { text = ""; store.updateProfile(p.copy(reward = null, rewardSinceMs = null)) }) { Text(tr("Törlés")) }
         }
-        Text("A matricákat a jutalom indításától számoljuk (egy matrica = egy nap, amikor a napi cél teljesült).", fontSize = 12.sp, color = C.muted)
+        Text(tr("A matricákat a jutalom indításától számoljuk (egy matrica = egy nap, amikor a napi cél teljesült)."), fontSize = 12.sp, color = C.muted)
     }
 }
 
@@ -315,7 +316,7 @@ fun LockScreen(title: String, onUnlock: () -> Unit) {
         Text("🔒", fontSize = 64.sp)
         Text(title, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onUnlock) { Text("Feloldás") }
+        Button(onClick = onUnlock) { Text(tr("Feloldás")) }
     }
 }
 

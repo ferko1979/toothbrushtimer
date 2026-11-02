@@ -13,7 +13,7 @@ public struct WaterLocale: Equatable, Codable {
 
     public static let litresPerGallon = 3.785411784
     public static let hu = WaterLocale(id: "hu", flowLPerMin: 8.0, pricePerLitre: 0.653, currency: "Ft",
-                                       dailyUsePerPersonL: 105, glassL: 0.25, glassName: "pohár (2,5 dl)", imperial: false)
+                                       dailyUsePerPersonL: 105, glassL: 0.25, glassName: tr("pohár (2,5 dl)"), imperial: false)
     public static let us = WaterLocale(id: "us", flowLPerMin: 2.2 * litresPerGallon,
                                        pricePerLitre: 0.0125 / litresPerGallon, currency: "$",
                                        dailyUsePerPersonL: 82 * litresPerGallon, glassL: 0.2366,
@@ -73,15 +73,15 @@ public func waterMessage(brushingS: Double, waterRunningS: Double, locale: Water
     }
     if wasted {
         let r = WaterReport(seconds: waterRunningS, locale: locale)
-        return ("⚠️ Vízpazarlás: a csap \(Int(waterRunningS)) másodpercig folyt", [
-            "Ez kb. \(Formatting.hu(r.litres)) liter víz (~\(Formatting.hu(r.glasses, digits: 0)) \(locale.glassName)), kb. \(Formatting.hu(r.cost)) \(locale.currency).",
-            "Egy ember napi vízfogyasztásának kb. \(Formatting.hu(r.pctDailyUse, digits: 0))%-a, a napi ajánlott ivóvíz \(Formatting.hu(r.pctDrinking, digits: 0))%-a.",
-            "Ha minden reggel és este így mosol fogat: évente kb. \(Formatting.hu(r.litresPerYear / 1000)) m³ (~\(Formatting.hu(r.costPerYear, digits: 0)) \(locale.currency)).",
-            "Tipp: a fogkefe benedvesítése után zárd el a csapot, és csak öblítéskor nyisd meg újra.",
+        return (tr("⚠️ Vízpazarlás: a csap {0} másodpercig folyt", Int(waterRunningS)), [
+            tr("Ez kb. {0} liter víz (~{1} {2}), kb. {3} {4}.", Formatting.hu(r.litres), Formatting.hu(r.glasses, digits: 0), locale.glassName, Formatting.hu(r.cost), locale.currency),
+            tr("Egy ember napi vízfogyasztásának kb. {0}%-a, a napi ajánlott ivóvíz {1}%-a.", Formatting.hu(r.pctDailyUse, digits: 0), Formatting.hu(r.pctDrinking, digits: 0)),
+            tr("Ha minden reggel és este így mosol fogat: évente kb. {0} m³ (~{1} {2}).", Formatting.hu(r.litresPerYear / 1000), Formatting.hu(r.costPerYear, digits: 0), locale.currency),
+            tr("Tipp: a fogkefe benedvesítése után zárd el a csapot, és csak öblítéskor nyisd meg újra."),
         ], true)
     }
     let r = WaterReport(seconds: brushingS, locale: locale)
-    return ("💧 Szép munka, elzártad a csapot!", [
-        "Ha folyt volna, kb. \(Formatting.hu(r.litres)) liter (~\(Formatting.hu(r.glasses, digits: 0)) pohár) víz folyt volna el feleslegesen, évente kb. \(Formatting.hu(r.litresPerYear / 1000)) m³.",
+    return (tr("💧 Szép munka, elzártad a csapot!"), [
+        tr("Ha folyt volna, kb. {0} liter (~{1} pohár) víz folyt volna el feleslegesen, évente kb. {2} m³.", Formatting.hu(r.litres), Formatting.hu(r.glasses, digits: 0), Formatting.hu(r.litresPerYear / 1000)),
     ], false)
 }

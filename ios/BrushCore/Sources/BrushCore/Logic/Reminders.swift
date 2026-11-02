@@ -39,10 +39,10 @@ public struct PlannedReminder: Equatable {
 }
 
 public enum ReminderTexts {
-    public static let morning = "Jó reggelt! Kezdd a napot 2 perc fogmosással. 🪥"
-    public static let bedtime = "Hamarosan lefekvés: még hiányzik az esti fogmosás. Koppints, és indulhat."
-    public static let evening = "Esti fogmosás: 2 perc, és kész is vagy a mai céllal."
-    public static let followup = "Még mindig vár a fogkefe. 😉 Nyisd meg az appot, és kezdheted."
+    public static var morning: String { tr("Jó reggelt! Kezdd a napot 2 perc fogmosással. 🪥") }
+    public static var bedtime: String { tr("Hamarosan lefekvés: még hiányzik az esti fogmosás. Koppints, és indulhat.") }
+    public static var evening: String { tr("Esti fogmosás: 2 perc, és kész is vagy a mai céllal.") }
+    public static var followup: String { tr("Még mindig vár a fogkefe. 😉 Nyisd meg az appot, és kezdheted.") }
 }
 
 public struct ReminderPlanner {

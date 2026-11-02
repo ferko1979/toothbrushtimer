@@ -28,9 +28,9 @@ public struct BrushCalibration: Codable, Equatable {
     }
 
     public var statusText: String {
-        if let f0 = brushF0 { return "Kalibrálva: a fogkeféd \(Int(f0.rounded())) Hz-en zúg." }
-        if remaining > 0 { return "Kalibráció: még \(remaining) fogmosás kell a fogkeféd hangjának megtanulásához." }
-        return "Kalibráció: a fogkefe hangja még nem egyértelmű, folytatom a tanulást."
+        if let f0 = brushF0 { return tr("Kalibrálva: a fogkeféd {0} Hz-en zúg.", Int(f0.rounded())) }
+        if remaining > 0 { return tr("Kalibráció: még {0} fogmosás kell a fogkeféd hangjának megtanulásához.", remaining) }
+        return tr("Kalibráció: a fogkefe hangja még nem egyértelmű, folytatom a tanulást.")
     }
 }
 

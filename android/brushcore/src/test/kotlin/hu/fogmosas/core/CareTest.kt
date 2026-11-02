@@ -142,3 +142,24 @@ class TourTest {
         assertTrue(Tour.pages("android").any { "csempe" in it.text })
     }
 }
+
+class I18nTest {
+    @Test fun englishAndPlurals() {
+        try {
+            I18n.setLanguage("en")
+            assertEquals("Floss: 1 day", tr("Fogselyem: {0} napon", 1))
+            assertEquals("Floss: 3 days", tr("Fogselyem: {0} napon", 3))
+            assertEquals("Upper right".lowercase(), Quadrants.names[0])
+            assertEquals("1,234.5", Formatting.hu(1234.5))
+            assertEquals(11, Tour.pages("android").size)
+            assertTrue(Tour.pages("android").first().title.startsWith("Times"))
+            assertTrue(Feature.byId("care_checkin")!!.title == "Symptom journal")
+            assertEquals("Unknown text {0}", tr("Unknown text {0}"))
+            assertEquals("May 10, 2026", I18n.date(LocalDate.of(2026, 5, 10)))
+        } finally {
+            I18n.setLanguage("hu")
+        }
+        assertEquals("Fogselyem: 3 napon", tr("Fogselyem: {0} napon", 3))
+        assertEquals("1 234,5", Formatting.hu(1234.5))
+    }
+}

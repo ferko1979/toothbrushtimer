@@ -69,6 +69,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import hu.fogmosas.core.tr
 
 private val zone: ZoneId get() = ZoneId.systemDefault()
 
@@ -99,10 +100,10 @@ fun QuestionFlow(flow: OnboardingFlow, stopAtMore: Boolean = false, onFinish: ()
                     Text(label, fontSize = 17.sp)
                 }
             }
-            "text" -> OutlinedTextField(text, { text = it }, label = { Text("Név") }, modifier = Modifier.fillMaxWidth())
+            "text" -> OutlinedTextField(text, { text = it }, label = { Text(tr("Név")) }, modifier = Modifier.fillMaxWidth())
             "number" -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedButton(onClick = { if (age > 1) age-- }) { Text("–", fontSize = 22.sp) }
-                Text("$age éves", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                Text(tr("{0} éves", age), fontSize = 26.sp, fontWeight = FontWeight.Bold)
                 OutlinedButton(onClick = { if (age < 17) age++ }) { Text("+", fontSize = 22.sp) }
             }
             "avatar" -> LazyVerticalGrid(GridCells.Fixed(3), Modifier.height(380.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -117,11 +118,11 @@ fun QuestionFlow(flow: OnboardingFlow, stopAtMore: Boolean = false, onFinish: ()
         Button(
             onClick = {
                 val v = when (q.kind) { "text" -> text; "number" -> age.toString(); else -> selected ?: "" }
-                try { flow.answer(v); version++ } catch (e: Exception) { error = "Kérlek, ellenőrizd a választ." }
+                try { flow.answer(v); version++ } catch (e: Exception) { error = tr("Kérlek, ellenőrizd a választ.") }
             },
             enabled = !(q.kind == "choice" || q.kind == "avatar") || selected != null,
             modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) { Text(if (q.pictureOnly) "✔︎" else "Tovább", fontSize = 18.sp) }
+        ) { Text(if (q.pictureOnly) "✔︎" else tr("Tovább"), fontSize = 18.sp) }
     }
 }
 
@@ -137,41 +138,41 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
         0 -> Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Spacer(Modifier.weight(1f))
             Text("🪥", fontSize = 70.sp)
-            Text("Üdv!", fontSize = 32.sp, fontWeight = FontWeight.Bold)
-            Text("Az app a hang alapján méri a fogmosásod idejét: a víz elzárásától az öblítésig. Hangfelvétel nem készül, minden a telefonodon marad.",
+            Text(tr("Üdv!"), fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Text(tr("Az app a hang alapján méri a fogmosásod idejét: a víz elzárásától az öblítésig. Hangfelvétel nem készül, minden a telefonodon marad."),
                 textAlign = TextAlign.Center, color = C.muted)
-            OutlinedTextField(name, { name = it }, label = { Text("Hogy szólíthatunk?") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(name, { name = it }, label = { Text(tr("Hogy szólíthatunk?")) }, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.weight(1f))
-            Button(onClick = { flow = OnboardingFlow(name.trim().ifEmpty { "Én" }); step = 1 }, Modifier.fillMaxWidth().height(52.dp)) { Text("Tovább") }
+            Button(onClick = { flow = OnboardingFlow(name.trim().ifEmpty { tr("Én") }); step = 1 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
         1 -> QuestionFlow(flow) { step = 2 }
         2 -> Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Milyen fogkefét használsz?", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(tr("Milyen fogkefét használsz?"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(!electric, { electric = false }, SegmentedButtonDefaults.itemShape(0, 2)) { Text("Kézi") }
-                SegmentedButton(electric, { electric = true }, SegmentedButtonDefaults.itemShape(1, 2)) { Text("Elektromos") }
+                SegmentedButton(!electric, { electric = false }, SegmentedButtonDefaults.itemShape(0, 2)) { Text(tr("Kézi")) }
+                SegmentedButton(electric, { electric = true }, SegmentedButtonDefaults.itemShape(1, 2)) { Text(tr("Elektromos")) }
             }
-            Text(if (electric) "Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját."
-                 else "Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását figyelmen kívül hagyjuk.", color = C.muted)
+            Text(if (electric) tr("Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.")
+                 else tr("Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását figyelmen kívül hagyjuk."), color = C.muted)
             Spacer(Modifier.weight(1f))
-            Button(onClick = { step = 3 }, Modifier.fillMaxWidth().height(52.dp)) { Text("Tovább") }
+            Button(onClick = { step = 3 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
         3 -> Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Mi a célod?", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Text("A fogorvosok naponta kétszer 2 percet javasolnak.", color = C.muted)
-            Stepper("Naponta ${goals.perDay}×", { goals = goals.copy(perDay = goals.perDay - 1).clamped() }, { goals = goals.copy(perDay = goals.perDay + 1).clamped() })
-            Stepper("Célidő: ${Formatting.clock(goals.targetS)}", { goals = goals.copy(targetS = goals.targetS - 15).clamped() }, { goals = goals.copy(targetS = goals.targetS + 15).clamped() })
+            Text(tr("Mi a célod?"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(tr("A fogorvosok naponta kétszer 2 percet javasolnak."), color = C.muted)
+            Stepper(tr("Naponta {0}×", goals.perDay), { goals = goals.copy(perDay = goals.perDay - 1).clamped() }, { goals = goals.copy(perDay = goals.perDay + 1).clamped() })
+            Stepper(tr("Célidő: {0}", Formatting.clock(goals.targetS)), { goals = goals.copy(targetS = goals.targetS - 15).clamped() }, { goals = goals.copy(targetS = goals.targetS + 15).clamped() })
             goals.warnings.forEach { Text(it, color = C.warn, fontSize = 13.sp) }
             Spacer(Modifier.weight(1f))
-            Button(onClick = { step = 4 }, Modifier.fillMaxWidth().height(52.dp)) { Text("Tovább") }
+            Button(onClick = { step = 4 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
         else -> Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Engedélyek", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(tr("Engedélyek"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             InfoCard {
-                Text("🎙️ Mikrofon és 🔔 értesítések", fontWeight = FontWeight.Bold)
-                Text("A mikrofon a fogmosás felismeréséhez kell; a hang csak a telefonon, a memóriában dolgozódik fel. Az értesítések: reggel ébredés után és 15 perccel lefekvés előtt.",
+                Text(tr("🎙️ Mikrofon és 🔔 értesítések"), fontWeight = FontWeight.Bold)
+                Text(tr("A mikrofon a fogmosás felismeréséhez kell; a hang csak a telefonon, a memóriában dolgozódik fel. Az értesítések: reggel ébredés után és 15 perccel lefekvés előtt."),
                     color = C.muted, fontSize = 14.sp)
-                OutlinedButton(onClick = { activity.requestPermissions() }) { Text("Engedélyezés") }
+                OutlinedButton(onClick = { activity.requestPermissions() }) { Text(tr("Engedélyezés")) }
             }
             Spacer(Modifier.weight(1f))
             Button(onClick = {
@@ -180,7 +181,7 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
                 store.update { it.copy(profiles = ps, activeProfileId = "me", onboarded = true) }
                 ReminderScheduler.reschedule(activity)
                 WearSync.pushGoals(activity, goals)
-            }, Modifier.fillMaxWidth().height(52.dp)) { Text("Kezdjük!") }
+            }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Kezdjük!")) }
         }
     }
 }
@@ -206,10 +207,10 @@ fun HomeScreen(store: AppStore, onStart: () -> Unit) {
     val coach = store.coach
     Column(Modifier.fillMaxSize().background(C.bg).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         val h = java.time.LocalTime.now().hour
-        val part = if (h < 10) "Jó reggelt" else if (h < 18) "Szia" else "Jó estét"
+        val part = if (h < 10) tr("Jó reggelt") else if (h < 18) tr("Szia") else tr("Jó estét")
         Text(if (p.canRead) "$part, ${p.name}!" else p.avatarEmoji, fontSize = 30.sp, fontWeight = FontWeight.Bold)
         if (data.profiles.size > 1) {
-            Text("Ki mos most fogat?", color = C.muted)
+            Text(tr("Ki mos most fogat?"), color = C.muted)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 data.profiles.forEach { pr ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -219,27 +220,27 @@ fun HomeScreen(store: AppStore, onStart: () -> Unit) {
                 }
             }
         }
-        BigButton("🪥  Fogmosás indítása", onStart)
+        BigButton(tr("🪥  Fogmosás indítása"), onStart)
         InfoCard {
             Row(Modifier.fillMaxWidth()) {
                 Column(Modifier.weight(1f)) {
-                    Text("Ma", color = C.muted)
+                    Text(tr("Ma"), color = C.muted)
                     Text("${coach.todayCount(rs, today)} / ${p.goals.perDay}", fontSize = 28.sp, fontWeight = FontWeight.Bold)
                 }
                 if (data.settings.isOn("achievements")) Column(horizontalAlignment = Alignment.End) {
-                    Text("Sorozat", color = C.muted)
-                    Text("🔥 ${coach.perfectStreak(rs, p.goals, today)} nap", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Text(tr("Sorozat"), color = C.muted)
+                    Text(tr("🔥 {0} nap", coach.perfectStreak(rs, p.goals, today)), fontSize = 28.sp, fontWeight = FontWeight.Bold)
                 }
             }
             if (p.canRead) Text(coach.dailySummary(rs, p.goals, today), fontSize = 12.sp, color = C.muted)
         }
         if (data.settings.isOn("habit_tips")) detectHabits(rs, p.goals, today, zone).firstOrNull()?.let { tip ->
-            InfoCard { Text("Tipp", fontWeight = FontWeight.Bold); Text(tip.message, color = C.muted, fontSize = 14.sp) }
+            InfoCard { Text(tr("Tipp"), fontWeight = FontWeight.Bold); Text(tip.message, color = C.muted, fontSize = 14.sp) }
         }
         if (data.settings.isOn("brush_head_reminder")) {
             val st = brushHeadStatus(LocalDate.parse(p.brushHeadInstalled), p.electric, rs, today, zone)
             InfoCard {
-                Text("🪥 ${if (p.electric) "Fogkefefej" else "Fogkefe"}: ${st.ageDays} napos" + if (st.due) " – csere!" else "")
+                Text(tr("🪥 {0}: {1} napos", if (p.electric) tr("Fogkefefej") else tr("Fogkefe"), st.ageDays) + if (st.due) tr(" – csere!") else "")
                 if (st.due || st.soon) Text(st.message, fontSize = 12.sp, color = C.muted)
             }
         }
@@ -249,8 +250,8 @@ fun HomeScreen(store: AppStore, onStart: () -> Unit) {
             val done = careDoneToday(data.care(p.id), CareKind.FLOSS, today, zone)
             InfoCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (done) "🧵 Fogselyem: ma kipipálva ✔︎" else "🧵 Fogselyem: ma még nem volt", Modifier.weight(1f))
-                    if (!done) TextButton(onClick = { store.addExtra("floss") }) { Text("Kész") }
+                    Text(if (done) tr("🧵 Fogselyem: ma kipipálva ✔︎") else tr("🧵 Fogselyem: ma még nem volt"), Modifier.weight(1f))
+                    if (!done) TextButton(onClick = { store.addExtra("floss") }) { Text(tr("Kész")) }
                 }
             }
         }
@@ -274,49 +275,49 @@ fun BrushingScreen(activity: MainActivity, store: AppStore, onClose: () -> Unit)
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         when {
-            s.phase == BrushingEngine.Phase.BRUSHING && s.wasteIcon && data.settings.isOn("water_warnings") -> Banner("🚰 Folyik a csap! Zárd el, amíg fogat mosol.", C.danger)
-            s.phase == BrushingEngine.Phase.BRUSHING && s.manual -> Banner("⏱️ Kézi időzítő", C.brand)
-            s.phase == BrushingEngine.Phase.BRUSHING -> Banner("✅ Fogmosás észlelve · a víz elzárásától mérve", C.ok)
-            s.phase == BrushingEngine.Phase.RINSING -> Banner("💧 Öblítés…", C.brand)
-            s.phase == BrushingEngine.Phase.WATER -> Banner("🚰 Víz", C.brand)
-            s.armed -> Banner("🔔 Emlékeztetőből indítva: várom a fogmosást", C.brand)
+            s.phase == BrushingEngine.Phase.BRUSHING && s.wasteIcon && data.settings.isOn("water_warnings") -> Banner(tr("🚰 Folyik a csap! Zárd el, amíg fogat mosol."), C.danger)
+            s.phase == BrushingEngine.Phase.BRUSHING && s.manual -> Banner(tr("⏱️ Kézi időzítő"), C.brand)
+            s.phase == BrushingEngine.Phase.BRUSHING -> Banner(tr("✅ Fogmosás észlelve · a víz elzárásától mérve"), C.ok)
+            s.phase == BrushingEngine.Phase.RINSING -> Banner(tr("💧 Öblítés…"), C.brand)
+            s.phase == BrushingEngine.Phase.WATER -> Banner(tr("🚰 Víz"), C.brand)
+            s.armed -> Banner(tr("🔔 Emlékeztetőből indítva: várom a fogmosást"), C.brand)
         }
         when (s.phase) {
             BrushingEngine.Phase.BRUSHING, BrushingEngine.Phase.RINSING -> {
                 val pr = brushProgress(s.elapsedS, p.goals.targetS)
                 if (p.child) AvatarCircle(p.avatarEmoji, 70.dp)
-                ProgressRing(pr.fraction, Formatting.clock(s.elapsedS), "cél: ${Formatting.clock(p.goals.targetS)}",
+                ProgressRing(pr.fraction, Formatting.clock(s.elapsedS), tr("cél: {0}", Formatting.clock(p.goals.targetS)),
                     if (s.wasteIcon) C.warn else C.brand)
-                if (p.canRead) Text("Most: ${pr.quadrantName} negyed", fontWeight = FontWeight.Bold)
+                if (p.canRead) Text(tr("Most: {0} negyed", pr.quadrantName), fontWeight = FontWeight.Bold)
                 QuadrantGrid(pr.quadrant, p.canRead)
                 val f0 = s.liveF0
                 if (p.electric && f0 != null && p.canRead) Text("🔊 " + SonicDetector.describe(f0), fontSize = 13.sp, color = C.muted)
                 if (s.wasteIcon && data.settings.isOn("water_warnings")) InfoCard {
-                    Text("Eddig elfolyt", color = C.muted)
-                    Text("≈ ${Formatting.hu(WaterReport(s.waterRunningS, data.settings.waterLocale).litres)} l", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = C.danger)
+                    Text(tr("Eddig elfolyt"), color = C.muted)
+                    Text(tr("≈ {0} l", Formatting.hu(WaterReport(s.waterRunningS, data.settings.waterLocale).litres)), fontSize = 26.sp, fontWeight = FontWeight.Bold, color = C.danger)
                 }
             }
             BrushingEngine.Phase.FAILED -> {
-                Text(s.error ?: "Hiba", textAlign = TextAlign.Center, color = C.muted)
-                Button(onClick = { BrushingEngine.startManual(activity) }) { Text("Kézi indítás (időzítő)") }
+                Text(s.error ?: tr("Hiba"), textAlign = TextAlign.Center, color = C.muted)
+                Button(onClick = { BrushingEngine.startManual(activity) }) { Text(tr("Kézi indítás (időzítő)")) }
             }
             else -> {
                 Spacer(Modifier.weight(1f))
                 Text(if (p.child) "🚰 → 🪥" else "🪥", fontSize = 64.sp)
                 if (p.canRead) Text(when (s.phase) {
-                    BrushingEngine.Phase.WATER -> "Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot."
-                    BrushingEngine.Phase.ARMED -> "Várom a fogmosást…"
-                    else -> if (s.placed) "Figyelek. A telefon maradhat letéve, a képernyő lezárása után is mérek."
-                            else "Figyelek. Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted."
+                    BrushingEngine.Phase.WATER -> tr("Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot.")
+                    BrushingEngine.Phase.ARMED -> tr("Várom a fogmosást…")
+                    else -> if (s.placed) tr("Figyelek. A telefon maradhat letéve, a képernyő lezárása után is mérek.")
+                            else tr("Figyelek. Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted.")
                 }, textAlign = TextAlign.Center, color = C.muted)
-                s.stopNote?.let { Text("Leállt: $it", color = C.warn, fontSize = 13.sp) }
-                if (r != null && r.durationS < 5) Text("Túl rövid volt, nem mentettem.", color = C.warn)
-                if (s.active) OutlinedButton(onClick = { BrushingEngine.startManual(activity) }) { Text("Kézi indítás (időzítő)") }
+                s.stopNote?.let { Text(tr("Leállt: {0}", it), color = C.warn, fontSize = 13.sp) }
+                if (r != null && r.durationS < 5) Text(tr("Túl rövid volt, nem mentettem."), color = C.warn)
+                if (s.active) OutlinedButton(onClick = { BrushingEngine.startManual(activity) }) { Text(tr("Kézi indítás (időzítő)")) }
             }
         }
         Spacer(Modifier.weight(1f))
-        if (s.active) OutlinedButton(onClick = { BrushingEngine.stop() }, Modifier.fillMaxWidth().height(52.dp)) { Text("Kész", fontSize = 18.sp) }
-        else Button(onClick = onClose, Modifier.fillMaxWidth().height(52.dp)) { Text("Bezárás") }
+        if (s.active) OutlinedButton(onClick = { BrushingEngine.stop() }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Kész"), fontSize = 18.sp) }
+        else Button(onClick = onClose, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Bezárás")) }
     }
 }
 
@@ -338,7 +339,7 @@ fun ResultScreen(activity: MainActivity, store: AppStore, durationS: Double, wat
             val (st, figs) = stickers(data.records(p.id), p.goals, zone)
             InfoCard {
                 Text("🟡".repeat(st % 7) + "⚪".repeat(7 - st % 7), fontSize = 24.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-                if (p.canRead) Text("Figurák: $figs", fontSize = 12.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                if (p.canRead) Text(tr("Figurák: {0}", figs), fontSize = 12.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
             }
             if (p.canRead) Text(fb.text, textAlign = TextAlign.Center) else TextButton(onClick = { activity.speaker.say(fb.text) }) { Text("🔊", fontSize = 40.sp) }
         } else {
@@ -355,12 +356,12 @@ fun ResultScreen(activity: MainActivity, store: AppStore, durationS: Double, wat
         }
         if (data.settings.isOn("achievements")) achievements.forEach { id ->
             InfoCard {
-                Text("🏅 Új kitüntetés: ${achievementTitle(id, p)}", fontWeight = FontWeight.Bold)
+                Text(tr("🏅 Új kitüntetés: {0}", achievementTitle(id, p)), fontWeight = FontWeight.Bold)
                 if (p.canRead) Text(Achievements.byId(id)?.description ?: "", fontSize = 14.sp, color = C.muted)
             }
         }
         CareCheckIn(store)
-        Button(onClick = onClose, Modifier.fillMaxWidth().height(52.dp)) { Text("Kész") }
+        Button(onClick = onClose, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Kész")) }
     }
 }
 
@@ -374,7 +375,7 @@ fun StatsScreen(activity: MainActivity, store: AppStore) {
     val today = LocalDate.now()
     val fmt = DateTimeFormatter.ofPattern("MM.dd. HH:mm")
     LazyColumn(Modifier.fillMaxSize().background(C.bg).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { Text("Statisztika", fontSize = 28.sp, fontWeight = FontWeight.Bold) }
+        item { Text(tr("Statisztika"), fontSize = 28.sp, fontWeight = FontWeight.Bold) }
         item {
             InfoCard {
                 Text(store.coach.weeklyProgress(rs, p.goals, today), fontSize = 14.sp)
@@ -387,7 +388,7 @@ fun StatsScreen(activity: MainActivity, store: AppStore) {
                             val hgt = (80 * (avg / maxOf(p.goals.targetS * 1.2, 1.0))).coerceIn(4.0, 90.0)
                             Box(Modifier.fillMaxWidth().height(hgt.dp).clip(RoundedCornerShape(6.dp))
                                 .background(if (avg >= p.goals.targetS) C.brand else if (avg > 0) C.warn else C.track))
-                            Text(d.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, java.util.Locale("hu")), fontSize = 10.sp, color = C.muted)
+                            Text(d.dayOfWeek.getDisplayName(java.time.format.TextStyle.NARROW, hu.fogmosas.core.I18n.locale), fontSize = 10.sp, color = C.muted)
                         }
                     }
                 }
@@ -396,17 +397,17 @@ fun StatsScreen(activity: MainActivity, store: AppStore) {
         if (data.settings.isOn("monthly_report")) item {
             val text = monthlyReportText(rs, p.goals, today.year, today.monthValue, data.settings.waterLocale, zone, p.name)
             InfoCard {
-                Text("Havi összefoglaló", fontWeight = FontWeight.Bold)
+                Text(tr("Havi összefoglaló"), fontWeight = FontWeight.Bold)
                 Text(text, fontSize = 13.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = { share(activity, text) }) { Text("Megosztás") }
+                    OutlinedButton(onClick = { share(activity, text) }) { Text(tr("Megosztás")) }
                     OutlinedButton(onClick = { share(activity, recordsCsv(rs)) }) { Text("CSV") }
                 }
             }
         }
         item { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { CareStatsCards(activity, store) } }
-        item { Text("Legutóbbiak", fontWeight = FontWeight.Bold) }
-        if (rs.isEmpty()) item { Text("Még nincs mért fogmosás.", color = C.muted) }
+        item { Text(tr("Legutóbbiak"), fontWeight = FontWeight.Bold) }
+        if (rs.isEmpty()) item { Text(tr("Még nincs mért fogmosás."), color = C.muted) }
         items(rs.sortedByDescending { it.startMs }.take(30)) { r ->
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).padding(12.dp)) {
                 Text(Instant.ofEpochMilli(r.startMs).atZone(zone).format(fmt), Modifier.weight(1f))
@@ -420,7 +421,7 @@ fun StatsScreen(activity: MainActivity, store: AppStore) {
 
 private fun share(activity: MainActivity, text: String) {
     val i = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
-    activity.startActivity(Intent.createChooser(i, "Megosztás"))
+    activity.startActivity(Intent.createChooser(i, tr("Megosztás")))
 }
 
 @Composable
@@ -430,10 +431,10 @@ fun AchievementsScreen(store: AppStore) {
     val rs = data.records(p.id)
     val earned = store.coach.earnedAchievements(rs, p.goals, LocalDate.now())
     LazyColumn(Modifier.fillMaxSize().background(C.bg).padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        item { Text("Kitüntetések", fontSize = 28.sp, fontWeight = FontWeight.Bold) }
+        item { Text(tr("Kitüntetések"), fontSize = 28.sp, fontWeight = FontWeight.Bold) }
         if (p.child) item {
             val (st, figs) = stickers(rs, p.goals, zone)
-            InfoCard { Text("🟡 $st matrica · 🦖 $figs figura", fontWeight = FontWeight.Bold); Text("Minden tökéletes nap egy matrica, 7 matrica egy figura.", fontSize = 12.sp, color = C.muted) }
+            InfoCard { Text(tr("🟡 {0} matrica · 🦖 {1} figura", st, figs), fontWeight = FontWeight.Bold); Text(tr("Minden tökéletes nap egy matrica, 7 matrica egy figura."), fontSize = 12.sp, color = C.muted) }
         }
         if (p.child) item { RewardCard(store, p) }
         items(Achievements.all) { a ->

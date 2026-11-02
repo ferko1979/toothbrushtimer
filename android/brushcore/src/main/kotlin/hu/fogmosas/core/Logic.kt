@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
 
 object Formatting {
     fun grouped(n: Int): String {
-        val s = abs(n).toString().reversed().chunked(3).joinToString(" ").reversed()
+        val s = abs(n).toString().reversed().chunked(3).joinToString(if (I18n.lang == "hu") " " else ",").reversed()
         return if (n < 0) "-$s" else s
     }
 
@@ -26,7 +26,7 @@ object Formatting {
         val s = String.format(Locale.US, "%.${digits}f", x)
         val parts = s.split(".")
         val g = grouped(parts[0].toIntOrNull() ?: 0)
-        return if (parts.size > 1) "$g,${parts[1]}" else g
+        return if (parts.size > 1) g + (if (I18n.lang == "hu") "," else ".") + parts[1] else g
     }
 
     fun clock(seconds: Double): String {
@@ -50,8 +50,8 @@ data class Goals(val perDay: Int = Recommendation.PER_DAY, val targetS: Double =
 
     val warnings: List<String>
         get() = buildList {
-            if (targetS < Recommendation.TARGET_S) add("A fogorvosok legalább 120 másodpercet javasolnak, a célod (${targetS.toInt()} s) ennél rövidebb.")
-            if (perDay < Recommendation.PER_DAY) add("A fogorvosok naponta kétszeri fogmosást javasolnak (reggel és lefekvés előtt).")
+            if (targetS < Recommendation.TARGET_S) add(tr("A fogorvosok legalább 120 másodpercet javasolnak, a célod ({0} s) ennél rövidebb.", targetS.toInt()))
+            if (perDay < Recommendation.PER_DAY) add(tr("A fogorvosok naponta kétszeri fogmosást javasolnak (reggel és lefekvés előtt)."))
         }
 }
 
@@ -72,17 +72,17 @@ data class BrushRecord(
 data class Achievement(val id: String, val title: String, val description: String)
 
 object Achievements {
-    val all = listOf(
-        Achievement("first_brush", "Első lépés", "Az első mért fogmosás."),
-        Achievement("above_average", "Átlag felett", "Tovább mostál fogat, mint az átlagember (45 s)."),
-        Achievement("goal_reached", "Célba értél", "Először érted el a kitűzött fogmosási időt."),
-        Achievement("perfect_day", "Tökéletes nap", "Egy napon belül minden fogmosás elérte a célidőt."),
-        Achievement("streak_3", "Három nap sorban", "3 tökéletes nap egymás után."),
-        Achievement("streak_7", "Egy hét fegyelem", "7 tökéletes nap egymás után."),
-        Achievement("streak_30", "Egy hónap bajnok", "30 tökéletes nap egymás után."),
-        Achievement("water_saver_10", "Víztakarékos", "10 fogmosás elzárt csappal."),
-        Achievement("water_saver_50", "Vízőr", "50 fogmosás elzárt csappal."),
-        Achievement("improver", "Fejlődés", "A heti átlagod legalább 15 másodperccel jobb, mint az előző héten."),
+    val all get() = listOf(
+        Achievement("first_brush", tr("Első lépés"), tr("Az első mért fogmosás.")),
+        Achievement("above_average", tr("Átlag felett"), tr("Tovább mostál fogat, mint az átlagember (45 s).")),
+        Achievement("goal_reached", tr("Célba értél"), tr("Először érted el a kitűzött fogmosási időt.")),
+        Achievement("perfect_day", tr("Tökéletes nap"), tr("Egy napon belül minden fogmosás elérte a célidőt.")),
+        Achievement("streak_3", tr("Három nap sorban"), tr("3 tökéletes nap egymás után.")),
+        Achievement("streak_7", tr("Egy hét fegyelem"), tr("7 tökéletes nap egymás után.")),
+        Achievement("streak_30", tr("Egy hónap bajnok"), tr("30 tökéletes nap egymás után.")),
+        Achievement("water_saver_10", tr("Víztakarékos"), tr("10 fogmosás elzárt csappal.")),
+        Achievement("water_saver_50", tr("Vízőr"), tr("50 fogmosás elzárt csappal.")),
+        Achievement("improver", tr("Fejlődés"), tr("A heti átlagod legalább 15 másodperccel jobb, mint az előző héten.")),
     )
 
     fun byId(id: String) = all.firstOrNull { it.id == id }
@@ -94,14 +94,14 @@ class Coach(val zone: ZoneId = ZoneId.systemDefault()) {
     fun sessionFeedback(d: Double, goals: Goals): String {
         val t = goals.targetS
         if (d >= t) {
-            var msg = "Szuper! ${d.roundToInt()} másodperc, elérted a ${t.toInt()} másodperces célt."
-            if (d > 2 * t) msg += " Nem kell ennél sokkal tovább: a túl hosszú, erős súrolás az ínyt is koptathatja."
+            var msg = tr("Szuper! {0} másodperc, elérted a {1} másodperces célt.", d.roundToInt(), t.toInt())
+            if (d > 2 * t) msg += tr(" Nem kell ennél sokkal tovább: a túl hosszú, erős súrolás az ínyt is koptathatja.")
             return msg
         }
-        var msg = "${d.roundToInt()} másodperc, még ${(t - d).roundToInt()} másodperc hiányzott a célhoz."
-        msg += if (d >= Recommendation.POPULATION_AVG_S) " Ez már több az átlagos 45 másodpercnél, így tovább!"
-        else " Az átlagember kb. 45 másodpercig mos fogat. A 2 perces fogmosás kb. 26%-kal több lepedéket távolít el."
-        msg += " Tipp: mind a 4 fogsornegyedre jusson 30 másodperc (most kb. ${(d / Recommendation.QUADRANT_S).toInt()} negyed jutott rá teljesen)."
+        var msg = tr("{0} másodperc, még {1} másodperc hiányzott a célhoz.", d.roundToInt(), (t - d).roundToInt())
+        msg += if (d >= Recommendation.POPULATION_AVG_S) tr(" Ez már több az átlagos 45 másodpercnél, így tovább!")
+        else tr(" Az átlagember kb. 45 másodpercig mos fogat. A 2 perces fogmosás kb. 26%-kal több lepedéket távolít el.")
+        msg += tr(" Tipp: mind a 4 fogsornegyedre jusson 30 másodperc (most kb. {0} negyed jutott rá teljesen).", (d / Recommendation.QUADRANT_S).toInt())
         return msg
     }
 
@@ -153,41 +153,41 @@ class Coach(val zone: ZoneId = ZoneId.systemDefault()) {
         val good = todays.count { it.durationS >= goals.targetS }
         val left = max(goals.perDay - todays.size, 0)
         val streak = perfectStreak(rs, goals, today)
-        val parts = mutableListOf("Ma: ${todays.size}/${goals.perDay} fogmosás, ebből $good érte el a ${goals.targetS.toInt()} s-ot.")
-        if (left > 0) parts += "Még $left fogmosás van hátra mára." else if (good >= goals.perDay) parts += "Tökéletes nap! 🎉"
-        if (streak >= 2) parts += "$streak tökéletes nap sorozatban."
+        val parts = mutableListOf(tr("Ma: {0}/{1} fogmosás, ebből {2} érte el a {3} s-ot.", todays.size, goals.perDay, good, goals.targetS.toInt()))
+        if (left > 0) parts += tr("Még {0} fogmosás van hátra mára.", left) else if (good >= goals.perDay) parts += tr("Tökéletes nap! 🎉")
+        if (streak >= 2) parts += tr("{0} tökéletes nap sorozatban.", streak)
         return parts.joinToString(" ")
     }
 
     fun weeklyProgress(rs: List<BrushRecord>, goals: Goals, today: LocalDate): String {
         val thisWeek = today.minusDays(6)
-        val a = weekAvg(rs, thisWeek) ?: return "Ezen a héten még nincs mért fogmosás."
-        var msg = "Heti átlag: ${a.roundToInt()} s (cél: ${goals.targetS.toInt()} s)."
+        val a = weekAvg(rs, thisWeek) ?: return tr("Ezen a héten még nincs mért fogmosás.")
+        var msg = tr("Heti átlag: {0} s (cél: {1} s).", a.roundToInt(), goals.targetS.toInt())
         val b = weekAvg(rs, thisWeek.minusDays(7))
         if (b != null) {
             val diff = a - b
             msg += when {
-                diff >= 5 -> " ${diff.roundToInt()} másodperccel jobb, mint a múlt héten, szép fejlődés!"
-                diff <= -5 -> " ${(-diff).roundToInt()} másodperccel kevesebb, mint a múlt héten. Próbáld meg a negyedenkénti jelzést követni!"
-                else -> " Nagyjából ugyanannyi, mint a múlt héten."
+                diff >= 5 -> tr(" {0} másodperccel jobb, mint a múlt héten, szép fejlődés!", diff.roundToInt())
+                diff <= -5 -> tr(" {0} másodperccel kevesebb, mint a múlt héten. Próbáld meg a negyedenkénti jelzést követni!", (-diff).roundToInt())
+                else -> tr(" Nagyjából ugyanannyi, mint a múlt héten.")
             }
         }
-        if (a < goals.targetS) msg += " Átlagban még ${(goals.targetS - a).roundToInt()} másodperc hiányzik a célhoz."
+        if (a < goals.targetS) msg += tr(" Átlagban még {0} másodperc hiányzik a célhoz.", (goals.targetS - a).roundToInt())
         return msg
     }
 }
 
 // ---------------------------------------------------------------- cues
 
-object Quadrants { val names = listOf("jobb felső", "bal felső", "bal alsó", "jobb alsó") }
+object Quadrants { val names get() = listOf(tr("jobb felső"), tr("bal felső"), tr("bal alsó"), tr("jobb alsó")) }
 
 data class Cue(val atS: Double, val kind: String, val quadrant: Int, val haptic: String, val text: String)
 
 fun cueSchedule(targetS: Double): List<Cue> {
     val step = targetS / 4
-    val out = mutableListOf(Cue(0.0, "start", 1, "tap", "Kezdd a ${Quadrants.names[0]} negyeddel"))
-    for (k in 1 until 4) out += Cue(step * k, "quadrant", k + 1, "tap", "Jöhet a ${Quadrants.names[k]} negyed")
-    out += Cue(targetS, "done", 4, "success", "Kész, elérted a célidőt! 🎉")
+    val out = mutableListOf(Cue(0.0, "start", 1, "tap", tr("Kezdd a {0} negyeddel", Quadrants.names[0])))
+    for (k in 1 until 4) out += Cue(step * k, "quadrant", k + 1, "tap", tr("Jöhet a {0} negyed", Quadrants.names[k]))
+    out += Cue(targetS, "done", 4, "success", tr("Kész, elérted a célidőt! 🎉"))
     return out
 }
 
@@ -217,7 +217,7 @@ data class WaterLocale(
 ) {
     companion object {
         const val L_PER_GAL = 3.785411784
-        val HU = WaterLocale("hu", 8.0, 0.653, "Ft", 105.0, 0.25, "pohár (2,5 dl)", false)
+        val HU = WaterLocale("hu", 8.0, 0.653, "Ft", 105.0, 0.25, tr("pohár (2,5 dl)"), false)
         val US = WaterLocale("us", 2.2 * L_PER_GAL, 0.0125 / L_PER_GAL, "$", 82 * L_PER_GAL, 0.2366, "8 oz glass", true)
         fun named(id: String) = if (id == "us") US else HU
     }
@@ -257,16 +257,16 @@ fun waterMessage(brushingS: Double, waterRunningS: Double, locale: WaterLocale):
     }
     if (wasted) {
         val r = WaterReport(waterRunningS, locale)
-        return WaterMessage("⚠️ Vízpazarlás: a csap ${waterRunningS.toInt()} másodpercig folyt", listOf(
-            "Ez kb. ${Formatting.hu(r.litres)} liter víz (~${Formatting.hu(r.glasses, 0)} ${locale.glassName}), kb. ${Formatting.hu(r.cost)} ${locale.currency}.",
-            "Egy ember napi vízfogyasztásának kb. ${Formatting.hu(r.pctDailyUse, 0)}%-a, a napi ajánlott ivóvíz ${Formatting.hu(r.pctDrinking, 0)}%-a.",
-            "Ha minden reggel és este így mosol fogat: évente kb. ${Formatting.hu(r.litresPerYear / 1000)} m³ (~${Formatting.hu(r.costPerYear, 0)} ${locale.currency}).",
-            "Tipp: a fogkefe benedvesítése után zárd el a csapot, és csak öblítéskor nyisd meg újra.",
+        return WaterMessage(tr("⚠️ Vízpazarlás: a csap {0} másodpercig folyt", waterRunningS.toInt()), listOf(
+            tr("Ez kb. {0} liter víz (~{1} {2}), kb. {3} {4}.", Formatting.hu(r.litres), Formatting.hu(r.glasses, 0), locale.glassName, Formatting.hu(r.cost), locale.currency),
+            tr("Egy ember napi vízfogyasztásának kb. {0}%-a, a napi ajánlott ivóvíz {1}%-a.", Formatting.hu(r.pctDailyUse, 0), Formatting.hu(r.pctDrinking, 0)),
+            tr("Ha minden reggel és este így mosol fogat: évente kb. {0} m³ (~{1} {2}).", Formatting.hu(r.litresPerYear / 1000), Formatting.hu(r.costPerYear, 0), locale.currency),
+            tr("Tipp: a fogkefe benedvesítése után zárd el a csapot, és csak öblítéskor nyisd meg újra."),
         ), true)
     }
     val r = WaterReport(brushingS, locale)
-    return WaterMessage("💧 Szép munka, elzártad a csapot!", listOf(
-        "Ha folyt volna, kb. ${Formatting.hu(r.litres)} liter (~${Formatting.hu(r.glasses, 0)} pohár) víz folyt volna el feleslegesen, évente kb. ${Formatting.hu(r.litresPerYear / 1000)} m³.",
+    return WaterMessage(tr("💧 Szép munka, elzártad a csapot!"), listOf(
+        tr("Ha folyt volna, kb. {0} liter (~{1} pohár) víz folyt volna el feleslegesen, évente kb. {2} m³.", Formatting.hu(r.litres), Formatting.hu(r.glasses, 0), Formatting.hu(r.litresPerYear / 1000)),
     ), false)
 }
 
@@ -299,10 +299,10 @@ data class ReminderSettings(
 data class PlannedReminder(val id: String, val key: String, val fireAt: LocalDateTime, val text: String)
 
 object ReminderTexts {
-    const val MORNING = "Jó reggelt! Kezdd a napot 2 perc fogmosással. 🪥"
-    const val BEDTIME = "Hamarosan lefekvés: még hiányzik az esti fogmosás. Koppints, és indulhat."
-    const val EVENING = "Esti fogmosás: 2 perc, és kész is vagy a mai céllal."
-    const val FOLLOWUP = "Még mindig vár a fogkefe. 😉 Nyisd meg az appot, és kezdheted."
+    val MORNING get() = tr("Jó reggelt! Kezdd a napot 2 perc fogmosással. 🪥")
+    val BEDTIME get() = tr("Hamarosan lefekvés: még hiányzik az esti fogmosás. Koppints, és indulhat.")
+    val EVENING get() = tr("Esti fogmosás: 2 perc, és kész is vagy a mai céllal.")
+    val FOLLOWUP get() = tr("Még mindig vár a fogkefe. 😉 Nyisd meg az appot, és kezdheted.")
 }
 
 object ReminderPlanner {
@@ -368,7 +368,7 @@ class ListeningPolicy {
 
     fun appBackgrounded(t: Double) {
         foreground = false
-        if (listening && !placed) stop("app háttérbe került, a telefon nincs letéve")
+        if (listening && !placed) stop(tr("app háttérbe került, a telefon nincs letéve"))
     }
 
     fun appForegrounded(t: Double) { foreground = true }
@@ -379,7 +379,7 @@ class ListeningPolicy {
         val span = motion.last()[0] - motion.first()[0]
         val was = placed
         placed = span >= stillWindowS * 0.9 && flatAndStill()
-        if (was && !flat(gx, gy, gz) && listening && !foreground) stop("felvették a telefont")
+        if (was && !flat(gx, gy, gz) && listening && !foreground) stop(tr("felvették a telefont"))
     }
 
     fun activity(t: Double) { lastActivity = t }
@@ -388,11 +388,11 @@ class ListeningPolicy {
     fun tick(t: Double) {
         if (!listening) return
         val end = sessionEnd
-        if (end != null && !foreground && t - end >= afterSessionGraceS) { stop("a fogmosás véget ért"); return }
-        if (t - lastActivity >= (if (armed) armedTimeoutS else idleTimeoutS)) stop("hosszú ideig nem hallatszott víz vagy fogmosás")
+        if (end != null && !foreground && t - end >= afterSessionGraceS) { stop(tr("a fogmosás véget ért")); return }
+        if (t - lastActivity >= (if (armed) armedTimeoutS else idleTimeoutS)) stop(tr("hosszú ideig nem hallatszott víz vagy fogmosás"))
     }
 
-    fun stopManually() = stop("leállítva")
+    fun stopManually() = stop(tr("leállítva"))
     val sessionConfig get() = if (armed) SessionConfig.ARMED else SessionConfig()
 
     private fun stop(reason: String) { listening = false; armed = false; stopReason = reason }
@@ -416,12 +416,12 @@ data class BrushHeadStatus(val ageDays: Int, val uses: Int, val due: Boolean, va
 fun brushHeadStatus(installed: LocalDate, electric: Boolean, records: List<BrushRecord>, today: LocalDate, zone: ZoneId, afterIllness: Boolean = false): BrushHeadStatus {
     val age = ChronoUnit.DAYS.between(installed, today).toInt()
     val uses = records.count { !it.start(zone).toLocalDate().isBefore(installed) }
-    val thing = if (electric) "fogkefefejet" else "fogkefét"
+    val thing = if (electric) tr("fogkefefejet") else tr("fogkefét")
     return when {
-        afterIllness -> BrushHeadStatus(age, uses, true, false, "Betegség után érdemes új $thing használni, hogy ne maradjanak kórokozók a sörtéken.")
-        age >= 90 -> BrushHeadStatus(age, uses, true, false, "Ideje új $thing venni: $age napja ($uses fogmosás) használod. A fogorvosok 3–4 havonta javasolják a cserét.")
-        age >= 83 -> BrushHeadStatus(age, uses, false, true, "Egy héten belül esedékes a csere: $age napja ($uses fogmosás) használod.")
-        else -> BrushHeadStatus(age, uses, false, false, "$age napos, $uses fogmosás. Ha a sörték szétállnak vagy elhajlottak, cseréld hamarabb.")
+        afterIllness -> BrushHeadStatus(age, uses, true, false, tr("Betegség után érdemes új {0} használni, hogy ne maradjanak kórokozók a sörtéken.", thing))
+        age >= 90 -> BrushHeadStatus(age, uses, true, false, tr("Ideje új {0} venni: {1} napja ({2} fogmosás) használod. A fogorvosok 3–4 havonta javasolják a cserét.", thing, age, uses))
+        age >= 83 -> BrushHeadStatus(age, uses, false, true, tr("Egy héten belül esedékes a csere: {0} napja ({1} fogmosás) használod.", age, uses))
+        else -> BrushHeadStatus(age, uses, false, false, tr("{0} napos, {1} fogmosás. Ha a sörték szétállnak vagy elhajlottak, cseréld hamarabb.", age, uses))
     }
 }
 
@@ -444,9 +444,9 @@ data class BrushCalibration(val f0s: List<Double> = emptyList(), val sessionsNee
     val remaining get() = max(sessionsNeeded - f0s.size, 0)
     fun sonicConfig() = brushF0?.let { SonicConfig.calibrated(it) } ?: SonicConfig()
     val statusText: String
-        get() = brushF0?.let { "Kalibrálva: a fogkeféd ${it.roundToInt()} Hz-en zúg." }
-            ?: if (remaining > 0) "Kalibráció: még $remaining fogmosás kell a fogkeféd hangjának megtanulásához."
-            else "Kalibráció: a fogkefe hangja még nem egyértelmű, folytatom a tanulást."
+        get() = brushF0?.let { tr("Kalibrálva: a fogkeféd {0} Hz-en zúg.", it.roundToInt()) }
+            ?: if (remaining > 0) tr("Kalibráció: még {0} fogmosás kell a fogkeféd hangjának megtanulásához.", remaining)
+            else tr("Kalibráció: a fogkefe hangja még nem egyértelmű, folytatom a tanulást.")
 }
 
 fun tapFlowFromMeasurement(litres: Double, seconds: Double): Double {
@@ -475,31 +475,31 @@ fun detectHabits(rs: List<BrushRecord>, goals: Goals, today: LocalDate, zone: Zo
     val last14 = window(14)
     val last7 = window(7)
     if (last14.size >= 4) {
-        if (last14.count { it.durationS < 30 }.toDouble() / last14.size >= 0.5) out += Habit("rushing", "Az utóbbi két hétben a fogmosások fele 30 másodpercnél rövidebb volt. Kövesd a negyedenkénti rezgést: minden jelzésnél válts a következő fogsornegyedre.")
-        if (last14.count { it.durationS > 240 }.toDouble() / last14.size >= 0.5) out += Habit("overbrushing", "Gyakran 4 percnél is tovább mosol fogat. A 2–3 perc elég; a túl hosszú, erős súrolás az ínyt és a zománcot koptathatja. Puha sörtéjű fogkefe ajánlott.")
+        if (last14.count { it.durationS < 30 }.toDouble() / last14.size >= 0.5) out += Habit("rushing", tr("Az utóbbi két hétben a fogmosások fele 30 másodpercnél rövidebb volt. Kövesd a negyedenkénti rezgést: minden jelzésnél válts a következő fogsornegyedre."))
+        if (last14.count { it.durationS > 240 }.toDouble() / last14.size >= 0.5) out += Habit("overbrushing", tr("Gyakran 4 percnél is tovább mosol fogat. A 2–3 perc elég; a túl hosszú, erős súrolás az ínyt és a zománcot koptathatja. Puha sörtéjű fogkefe ajánlott."))
     }
     if (rs.isNotEmpty() && goals.perDay >= 2) {
-        if (daysMissing(ReminderPlanner.EVENING) >= 3) out += Habit("evening_skipped", "Az elmúlt héten legalább 3 este kimaradt a fogmosás. Az esti a legfontosabb: éjszaka kevesebb nyál termelődik, ezért a lepedék könnyebben károsít. Kapcsold be a lefekvés előtti emlékeztetőt!")
-        if (daysMissing(ReminderPlanner.MORNING) >= 3) out += Habit("morning_skipped", "Az elmúlt héten legalább 3 reggel kimaradt a fogmosás. Próbáld egy meglévő szokáshoz kötni (pl. reggeli után, öltözködés előtt).")
+        if (daysMissing(ReminderPlanner.EVENING) >= 3) out += Habit("evening_skipped", tr("Az elmúlt héten legalább 3 este kimaradt a fogmosás. Az esti a legfontosabb: éjszaka kevesebb nyál termelődik, ezért a lepedék könnyebben károsít. Kapcsold be a lefekvés előtti emlékeztetőt!"))
+        if (daysMissing(ReminderPlanner.MORNING) >= 3) out += Habit("morning_skipped", tr("Az elmúlt héten legalább 3 reggel kimaradt a fogmosás. Próbáld egy meglévő szokáshoz kötni (pl. reggeli után, öltözködés előtt)."))
     }
-    if (last7.count { !it.tapOff } >= 3) out += Habit("tap_running", "Az elmúlt héten többször folyt a csap fogmosás közben. Nedvesítés után zárd el, és csak öblítéskor nyisd meg újra.")
+    if (last7.count { !it.tapOff } >= 3) out += Habit("tap_running", tr("Az elmúlt héten többször folyt a csap fogmosás közben. Nedvesítés után zárd el, és csak öblítéskor nyisd meg újra."))
     val weekday = last14.filter { day(it).dayOfWeek !in setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) }
     val weekend = last14.filter { day(it).dayOfWeek in setOf(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY) }
     if (weekday.size >= 2 && weekend.size >= 2) {
         val a = weekday.map { it.durationS }.average()
         val b = weekend.map { it.durationS }.average()
-        if (b < a - 20) out += Habit("weekend_dip", "Hétvégén átlagosan ${(a - b).roundToInt()} másodperccel rövidebben mosol fogat, mint hétköznap. A fogaidnak nincs hétvégéjük. 😉")
+        if (b < a - 20) out += Habit("weekend_dip", tr("Hétvégén átlagosan {0} másodperccel rövidebben mosol fogat, mint hétköznap. A fogaidnak nincs hétvégéjük. 😉", (a - b).roundToInt()))
     }
     val prev7 = window(7, 7)
     if (last7.size >= 3 && prev7.size >= 3) {
         val a = last7.map { it.durationS }.average()
         val b = prev7.map { it.durationS }.average()
-        if (a < b - 15) out += Habit("declining", "Az utóbbi héten ${(b - a).roundToInt()} másodperccel rövidebbek a fogmosásaid, mint előtte. Tűzz ki egy rövid célt: holnap legalább egyszer a teljes kör!")
+        if (a < b - 15) out += Habit("declining", tr("Az utóbbi héten {0} másodperccel rövidebbek a fogmosásaid, mint előtte. Tűzz ki egy rövid célt: holnap legalább egyszer a teljes kör!", (b - a).roundToInt()))
     }
     return out
 }
 
-val MONTHS_HU = listOf("január", "február", "március", "április", "május", "június", "július", "augusztus", "szeptember", "október", "november", "december")
+val MONTHS_HU get() = listOf(tr("január"), tr("február"), tr("március"), tr("április"), tr("május"), tr("június"), tr("július"), tr("augusztus"), tr("szeptember"), tr("október"), tr("november"), tr("december"))
 
 fun monthlyReportText(rs: List<BrushRecord>, goals: Goals, year: Int, month: Int, locale: WaterLocale, zone: ZoneId, name: String = ""): String {
     val coach = Coach(zone)
@@ -518,14 +518,14 @@ fun monthlyReportText(rs: List<BrushRecord>, goals: Goals, year: Int, month: Int
     val saved = tapOff.sumOf { it.durationS } * flowPerS
     val wasted = m.sumOf { it.waterRunningS } * flowPerS
     val lines = mutableListOf(
-        "Havi fogmosás-összefoglaló – $year. ${MONTHS_HU[month - 1]}" + (if (name.isEmpty()) "" else " – $name"),
-        "Fogmosások: ${m.size} / ${ndays * goals.perDay} tervezett (${days.size} napon; reggel $morning, este $evening)",
-        "Átlagos időtartam: ${avg.roundToInt()} s (cél: ${goals.targetS.toInt()} s), a célidőt elérte: ${pct.roundToInt()}%",
-        "Tökéletes napok: ${perfect.size}, leghosszabb sorozat: $best nap",
-        "Elzárt csappal: ${tapOff.size} fogmosás, megtakarított víz kb. ${saved.roundToInt()} l",
+        tr("Havi fogmosás-összefoglaló – {0}. {1}", year, MONTHS_HU[month - 1]) + (if (name.isEmpty()) "" else " – $name"),
+        tr("Fogmosások: {0} / {1} tervezett ({2} napon; reggel {3}, este {4})", m.size, ndays * goals.perDay, days.size, morning, evening),
+        tr("Átlagos időtartam: {0} s (cél: {1} s), a célidőt elérte: {2}%", avg.roundToInt(), goals.targetS.toInt(), pct.roundToInt()),
+        tr("Tökéletes napok: {0}, leghosszabb sorozat: {1} nap", perfect.size, best),
+        tr("Elzárt csappal: {0} fogmosás, megtakarított víz kb. {1} l", tapOff.size, saved.roundToInt()),
     )
-    if (wasted >= 1) lines += "Fogmosás közben elfolyt víz: kb. ${wasted.roundToInt()} l"
-    lines += "Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül)."
+    if (wasted >= 1) lines += tr("Fogmosás közben elfolyt víz: kb. {0} l", wasted.roundToInt())
+    lines += tr("Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül).")
     return lines.joinToString("\n")
 }
 

@@ -25,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import hu.fogmosas.core.SonicConfig
 import hu.fogmosas.shared.AppStore
 import hu.fogmosas.shared.BrushingEngine
+import hu.fogmosas.core.tr
 
 @Composable
 fun AppRoot(activity: MainActivity, store: AppStore) {
@@ -62,8 +63,8 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
 
         when {
             data.onboarded && data.settings.isOn("app_lock", "android") && !activity.unlocked.value && !engine.active ->
-                LockScreen("Fogmosás – zárolva") {
-                    DeviceAuth.authenticate(activity, "Fogmosás feloldása") { ok -> if (ok) activity.unlocked.value = true }
+                LockScreen(tr("Fogmosás – zárolva")) {
+                    DeviceAuth.authenticate(activity, tr("Fogmosás feloldása")) { ok -> if (ok) activity.unlocked.value = true }
                 }
             !data.onboarded -> OnboardingScreen(activity, store)
             !data.tourSeen && !engine.active -> TourScreen { store.update { it.copy(tourSeen = true) } }
@@ -75,10 +76,10 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 var tab by rememberSaveable { mutableIntStateOf(0) }
                 Scaffold(bottomBar = {
                     NavigationBar {
-                        NavigationBarItem(tab == 0, { tab = 0 }, { Icon(Icons.Filled.Home, null) }, label = { Text("Főoldal") })
-                        NavigationBarItem(tab == 1, { tab = 1 }, { Icon(Icons.Filled.Info, null) }, label = { Text("Statisztika") })
-                        NavigationBarItem(tab == 2, { tab = 2 }, { Icon(Icons.Filled.Star, null) }, label = { Text("Kitüntetések") })
-                        NavigationBarItem(tab == 3, { tab = 3 }, { Icon(Icons.Filled.Settings, null) }, label = { Text("Beállítások") })
+                        NavigationBarItem(tab == 0, { tab = 0 }, { Icon(Icons.Filled.Home, null) }, label = { Text(tr("Főoldal")) })
+                        NavigationBarItem(tab == 1, { tab = 1 }, { Icon(Icons.Filled.Info, null) }, label = { Text(tr("Statisztika")) })
+                        NavigationBarItem(tab == 2, { tab = 2 }, { Icon(Icons.Filled.Star, null) }, label = { Text(tr("Kitüntetések")) })
+                        NavigationBarItem(tab == 3, { tab = 3 }, { Icon(Icons.Filled.Settings, null) }, label = { Text(tr("Beállítások")) })
                     }
                 }) { pad ->
                     Box(Modifier.padding(pad)) {

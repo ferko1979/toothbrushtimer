@@ -17,6 +17,7 @@ import hu.fogmosas.shared.AppStore
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import hu.fogmosas.core.tr
 
 /** Wear OS tile: today's brushings and the streak; tap opens the app. */
 class ProgressTileService : TileService() {
@@ -59,9 +60,9 @@ class ProgressTileService : TileService() {
         val column = LayoutElementBuilders.Column.Builder()
             .setHorizontalAlignment(LayoutElementBuilders.HORIZONTAL_ALIGN_CENTER)
             .addContent(text(if (done) "🎉" else "🪥", 28f))
-            .addContent(text("Ma $count/${goals.perDay}", 22f, bold = true))
-            .addContent(text("🔥 $streak nap", 14f, 0xFFB8C7CF.toInt()))
-            .addContent(text(if (done) "Mára kész!" else "Koppints az indításhoz", 12f, 0xFF57C5B6.toInt()))
+            .addContent(text(tr("Ma {0}/{1}", count, goals.perDay), 22f, bold = true))
+            .addContent(text(tr("🔥 {0} nap", streak), 14f, 0xFFB8C7CF.toInt()))
+            .addContent(text(if (done) tr("Mára kész!") else tr("Koppints az indításhoz"), 12f, 0xFF57C5B6.toInt()))
             .build()
 
         val root = LayoutElementBuilders.Box.Builder()

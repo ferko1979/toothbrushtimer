@@ -6,14 +6,14 @@ public struct Avatar: Identifiable, Equatable {
     public let emoji: String   // placeholder for the illustrated artwork
     public let label: String
 
-    public static let all: [Avatar] = [
-        Avatar(id: "lion", emoji: "🦁", label: "Oroszlán"), Avatar(id: "bear", emoji: "🐻", label: "Maci"),
-        Avatar(id: "bunny", emoji: "🐰", label: "Nyuszi"), Avatar(id: "unicorn", emoji: "🦄", label: "Unikornis"),
-        Avatar(id: "dog", emoji: "🐶", label: "Kutyus"), Avatar(id: "cat", emoji: "🐱", label: "Cica"),
-        Avatar(id: "fox", emoji: "🦊", label: "Róka"), Avatar(id: "panda", emoji: "🐼", label: "Panda"),
-        Avatar(id: "frog", emoji: "🐸", label: "Béka"), Avatar(id: "penguin", emoji: "🐧", label: "Pingvin"),
-        Avatar(id: "dino", emoji: "🦖", label: "Dínó"), Avatar(id: "octopus", emoji: "🐙", label: "Polip"),
-    ]
+    public static var all: [Avatar] { [
+        Avatar(id: "lion", emoji: "🦁", label: tr("Oroszlán")), Avatar(id: "bear", emoji: "🐻", label: tr("Maci")),
+        Avatar(id: "bunny", emoji: "🐰", label: tr("Nyuszi")), Avatar(id: "unicorn", emoji: "🦄", label: tr("Unikornis")),
+        Avatar(id: "dog", emoji: "🐶", label: tr("Kutyus")), Avatar(id: "cat", emoji: "🐱", label: tr("Cica")),
+        Avatar(id: "fox", emoji: "🦊", label: tr("Róka")), Avatar(id: "panda", emoji: "🐼", label: "Panda"),
+        Avatar(id: "frog", emoji: "🐸", label: tr("Béka")), Avatar(id: "penguin", emoji: "🐧", label: tr("Pingvin")),
+        Avatar(id: "dino", emoji: "🦖", label: tr("Dínó")), Avatar(id: "octopus", emoji: "🐙", label: tr("Polip")),
+    ] }
 
     public static func emoji(for id: String?) -> String {
         guard let id = id, let a = all.first(where: { $0.id == id }) else { return "🧑" }
@@ -74,13 +74,13 @@ public struct Profile: Codable, Equatable, Identifiable {
 }
 
 public enum KidTitles {
-    public static let map: [String: String] = [
-        "first_brush": "Fogvédő tanonc", "above_average": "Gyorsabb a cukorkaszörnynél",
-        "goal_reached": "Két perc hős", "perfect_day": "Csillogó mosoly",
-        "streak_3": "Fogtündér barátja", "streak_7": "Fogtündér kedvence",
-        "streak_30": "Fogkirály / Fogkirálynő", "water_saver_10": "Vízcsepp-mentő",
-        "water_saver_50": "Óceán őrzője", "improver": "Szintlépés",
-    ]
+    public static var map: [String: String] { [
+        "first_brush": tr("Fogvédő tanonc"), "above_average": tr("Gyorsabb a cukorkaszörnynél"),
+        "goal_reached": tr("Két perc hős"), "perfect_day": tr("Csillogó mosoly"),
+        "streak_3": tr("Fogtündér barátja"), "streak_7": tr("Fogtündér kedvence"),
+        "streak_30": tr("Fogkirály / Fogkirálynő"), "water_saver_10": tr("Vízcsepp-mentő"),
+        "water_saver_50": tr("Óceán őrzője"), "improver": tr("Szintlépés"),
+    ] }
 }
 
 public func achievementTitle(_ id: String, for profile: Profile) -> String {
@@ -95,9 +95,9 @@ public struct Feedback: Equatable {
 }
 
 public func childFeedbackText(durationS d: Double, goals: Goals) -> String {
-    if d >= goals.targetS { return "Hurrá! Végig kitartottál, a fogaid ragyognak! ⭐ Kaptál egy matricát." }
-    if d >= goals.targetS / 2 { return "Ügyes vagy, már több mint félúton jártál! Legközelebb a végéig, és jár a matrica!" }
-    return "Jó kezdés! A cukorkaszörnyek még bújkálnak. Holnap mosd tovább, amíg a kör be nem telik!"
+    if d >= goals.targetS { return tr("Hurrá! Végig kitartottál, a fogaid ragyognak! ⭐ Kaptál egy matricát.") }
+    if d >= goals.targetS / 2 { return tr("Ügyes vagy, már több mint félúton jártál! Legközelebb a végéig, és jár a matrica!") }
+    return tr("Jó kezdés! A cukorkaszörnyek még bújkálnak. Holnap mosd tovább, amíg a kör be nem telik!")
 }
 
 public func feedback(for profile: Profile, durationS d: Double, coach: Coach = Coach()) -> Feedback {

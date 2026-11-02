@@ -39,6 +39,7 @@ targets:
       properties:
         CFBundleDisplayName: Fogmosás
         CFBundleDevelopmentRegion: hu
+        CFBundleLocalizations: [hu, en]
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [audio]
@@ -75,6 +76,7 @@ targets:
       properties:
         CFBundleDisplayName: Fogmosás
         CFBundleDevelopmentRegion: hu
+        CFBundleLocalizations: [hu, en]
         WKApplication: true
         WKCompanionAppBundleIdentifier: ${BUNDLE_PREFIX}.toothbrushtimer
         WKBackgroundModes: [self-care]
@@ -95,6 +97,8 @@ targets:
     sources:
       - Widgets
       - LiveActivity
+    dependencies:
+      - package: BrushCore
     info:
       path: Widgets/Info.plist
       properties:
@@ -115,6 +119,8 @@ targets:
     sources:
       - WatchWidgets
       - WatchShared
+    dependencies:
+      - package: BrushCore
     entitlements:
       path: WatchWidgets/ToothbrushTimerWatchWidgets.entitlements
       properties:

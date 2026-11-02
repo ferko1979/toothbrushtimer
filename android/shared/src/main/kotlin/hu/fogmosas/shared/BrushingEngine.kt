@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import hu.fogmosas.core.tr
 
 /** One listening period: microphone -> StreamingDetector -> session, as observable state. */
 object BrushingEngine {
@@ -105,7 +106,7 @@ object BrushingEngine {
             audio = AudioEngine { buf, n -> det.append(buf, n) }.also { it.start(ctx) }
         } catch (e: Exception) {
             detector = null
-            _state.value = State(phase = Phase.FAILED, error = e.message ?: "A mikrofon nem indítható.")
+            _state.value = State(phase = Phase.FAILED, error = e.message ?: tr("A mikrofon nem indítható."))
             return
         }
         startService(ctx, cfg.keepListeningWhenPlaced)

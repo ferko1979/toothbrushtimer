@@ -6,6 +6,7 @@ import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.MediaRecorder
+import hu.fogmosas.core.tr
 
 /**
  * Microphone -> 16 kHz mono float chunks on a background thread. Uses the
@@ -26,7 +27,7 @@ class AudioEngine(private val onSamples: (FloatArray, Int) -> Unit) {
         val rate = 16000
         val minBuf = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_FLOAT)
         val r = AudioRecord(source, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_FLOAT, maxOf(minBuf, rate * 4))
-        check(r.state == AudioRecord.STATE_INITIALIZED) { "A mikrofon nem érhető el." }
+        check(r.state == AudioRecord.STATE_INITIALIZED) { tr("A mikrofon nem érhető el.") }
         r.startRecording()
         record = r
         running = true

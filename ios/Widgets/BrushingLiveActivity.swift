@@ -1,9 +1,11 @@
 import ActivityKit
+import BrushCore
 import SwiftUI
 import WidgetKit
 
 @main
 struct FogmosasWidgets: WidgetBundle {
+    init() { I18n.setLanguage(nil) }
     var body: some Widget {
         BrushingLiveActivity()
     }
@@ -33,7 +35,7 @@ struct BrushingLiveActivity: Widget {
                     if let st = ctx.state.startedAt {
                         ProgressView(timerInterval: st...st.addingTimeInterval(ctx.attributes.targetS), countsDown: false) { EmptyView() } currentValueLabel: { EmptyView() }
                             .tint(ctx.state.waterRunning ? warn : brand)
-                        if ctx.state.waterRunning { Text("🚰 Folyik a csap – zárd el!").font(.caption).foregroundStyle(warn) }
+                        if ctx.state.waterRunning { Text(tr("🚰 Folyik a csap – zárd el!")).font(.caption).foregroundStyle(warn) }
                     } else {
                         Text(PhaseText.text(ctx.state)).font(.caption)
                     }
@@ -58,10 +60,10 @@ struct BrushingLiveActivity: Widget {
 enum PhaseText {
     static func text(_ s: BrushingAttributes.ContentState) -> String {
         switch s.phase {
-        case "water": return "🚰 Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot."
-        case "armed": return "Várom a fogmosást…"
-        case "done": return s.durationS.map { "Kész: \(clock($0))" } ?? "Kész"
-        default: return "Figyelek. Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted."
+        case "water": return tr("🚰 Folyik a víz… Nedvesítsd a fogkefét, majd zárd el a csapot.")
+        case "armed": return tr("Várom a fogmosást…")
+        case "done": return s.durationS.map { tr("Kész: {0}", clock($0)) } ?? tr("Kész")
+        default: return tr("Figyelek. Nedvesítsd a fogkefét, zárd el a csapot, és kezdheted.")
         }
     }
 }
@@ -74,16 +76,16 @@ struct LockScreenView: View {
         HStack(spacing: 14) {
             Text(state.phase == "done" ? "🎉" : "🪥").font(.system(size: 40))
             VStack(alignment: .leading, spacing: 6) {
-                Text(attrs.child ? attrs.name : "Fogmosás").font(.headline).foregroundStyle(.white)
+                Text(attrs.child ? attrs.name : tr("Fogmosás")).font(.headline).foregroundStyle(.white)
                 if let st = state.startedAt {
                     HStack {
                         Text(st, style: .timer).font(.title.monospacedDigit().bold()).foregroundStyle(.white)
                         Spacer()
-                        Text("cél \(clock(attrs.targetS))").font(.caption).foregroundStyle(.white.opacity(0.7))
+                        Text(tr("cél {0}", clock(attrs.targetS))).font(.caption).foregroundStyle(.white.opacity(0.7))
                     }
                     ProgressView(timerInterval: st...st.addingTimeInterval(attrs.targetS), countsDown: false) { EmptyView() } currentValueLabel: { EmptyView() }
                         .tint(state.waterRunning ? warn : brand)
-                    if state.waterRunning { Text("🚰 Folyik a csap – zárd el!").font(.caption).foregroundStyle(warn) }
+                    if state.waterRunning { Text(tr("🚰 Folyik a csap – zárd el!")).font(.caption).foregroundStyle(warn) }
                 } else {
                     Text(PhaseText.text(state)).font(.subheadline).foregroundStyle(.white.opacity(0.85))
                 }
