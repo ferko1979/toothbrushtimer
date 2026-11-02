@@ -28,6 +28,13 @@ data class Profile(
     val avatar: String? = null,
     val brushHeadInstalled: String = LocalDate.now().toString(),
     val calibration: BrushCalibration = BrushCalibration(),
+    val orthodontic: Boolean = false,
+    val toothpaste: String? = null,
+    val lastCheckup: String? = null,      // ISO date
+    val lastCleaning: String? = null,     // ISO date
+    val reward: String? = null,           // parent-set reward for a child, e.g. "Mozi"
+    val rewardStickers: Int = 14,
+    val rewardSinceMs: Long? = null,
 ) {
     val avatarEmoji get() = Avatar.emoji(avatar)
     val electric get() = brushType == "electric"
@@ -146,14 +153,25 @@ data class Feature(
             Feature("water_warnings", "Vízpazarlás-figyelmeztetés", "Ikon, ha folyik a csap fogmosás közben, és összesítés a végén.", true, "Víz"),
             Feature("notifications", "Emlékeztetők", "Reggel, lefekvés előtt és ismétlés.", true, "Értesítések"),
             Feature("brush_head_reminder", "Fogkefecsere-emlékeztető", "3 havonta, illetve betegség után.", true, "Értesítések"),
+            Feature("dentist_reminders", "Fogorvosi kontroll emlékeztető", "Félévente kontroll, évente fogkőeltávolítás.", true, "Értesítések"),
             Feature("achievements", "Kitüntetések és sorozatok", "", true, "Motiváció"),
+            Feature("kid_rewards", "Matricák és jutalmak gyerekeknek", "A szülő jutalmat tűzhet ki adott számú matricáért.", true, "Motiváció"),
+            Feature("family_overview", "Családi áttekintés", "A szülő egy helyen látja a gyerekek eredményeit.", true, "Motiváció"),
             Feature("habit_tips", "Szokás-tippek", "Figyelmeztet, ha visszatérő rossz szokást lát.", true, "Motiváció"),
             Feature("watch_complication", "Számlapelem az órán", "A sorozat és a mai haladás a számlapon.", true, "Motiváció", setOf("watchos", "wearos"), available = false),
             Feature("floss_tracking", "Fogselyem követése", "Egy koppintással jelölheted fogmosás után (az ADA naponta egyszer javasolja).", false, "Kiegészítők"),
             Feature("mouthwash_tracking", "Szájvíz követése", "", false, "Kiegészítők"),
+            Feature("interdental_tracking", "Fogköztisztító kefe / szájzuhany", "Fogszabályzóval különösen fontos.", false, "Kiegészítők"),
+            Feature("tongue_tracking", "Nyelvtisztítás", "", false, "Kiegészítők"),
             Feature("voice_shortcuts", "Hangvezérlés", "„Hé Google, fogmosás indítása”.", true, "Kiegészítők", available = false),
             Feature("health_sync", "Mentés az Egészség appba", "Apple Health: Fogmosás.", false, "Adatok", setOf("ios", "watchos")),
+            Feature("care_checkin", "Tünetnapló", "Fogmosás után: érzékeny volt-e a fog, vérzett-e az íny. Statisztika és figyelmeztetés, ha tartós.", true, "Egészség"),
+            Feature("toothpaste_tracking", "Fogkrém nyilvántartása", "Látszik, segít-e az érzékeny fogra való fogkrém.", false, "Egészség"),
             Feature("monthly_report", "Havi összefoglaló", "Kinyomtatható, a fogorvosnak is megmutatható.", true, "Adatok"),
+            Feature("dentist_report", "Jelentés a fogorvosnak (PDF)", "Fogmosás, fogselyem, tünetek az utóbbi 30/90 napból.", true, "Adatok"),
+            Feature("web_link", "Webes megtekintés QR-kóddal", "A weboldalon megjelenő QR-kódot beolvasva a statisztikád a böngészőben is látszik. Titkosítva, a szerver nem tárolja.", true, "Adatok", setOf("ios", "android")),
+            Feature("app_lock", "Zárolás Face ID-val / ujjlenyomattal", "Megnyitáskor azonosítás kell.", false, "Adatvédelem", setOf("ios", "android")),
+            Feature("parent_lock", "Szülői zár", "A Beállítások és a webes megosztás csak azonosítás után nyílik meg.", false, "Adatvédelem", setOf("ios", "android")),
             Feature("family_sync", "Családi szinkron", "A gyerekek órája és a szülő telefonja között.", false, "Adatok", available = false),
             Feature("data_donation", "Adatfelajánlás a fejlesztéshez", "Névtelen hangjellemzők (hangfelvétel nélkül).", false, "Adatok", available = false),
         )

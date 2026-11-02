@@ -1,0 +1,13 @@
+{
+  "sid": "fogmosasTestSession01x",
+  "webPrivate": "WMmKh8Tj2ZxGCFQF5DGridYuaRxo2oYYROnl1sX_izQ",
+  "webPublic": "BFYgx_HgJyEJ1bR5OEfqF-c1H19zwowAMuht4y13PIn8NRslpCJa34dhKZbSf5j2gyumvuSBKBKpMu4Uaakzat8",
+  "phonePrivate": "imgUpnCy18ILL2-nqShNzueOt-RGO8kDiEqe05ojQHk",
+  "phonePublic": "BK3PxXKc-b-pxa3HwuzThCzjTOwPppRx6slvvdsfkCxY3vM1So1cMG_mqGMJayUvpMtzVM60kAwylxRiFGM2eXg",
+  "nonce": "AAECAwQFBgcICQoL",
+  "sharedSecret": "1IEbAfhMVC5b8sy7K527cQQy2_zXdCZzo0qB_42XvaQ",
+  "key": "0V5HWuZUEwVetIs2aUxNlo3VpHvp5nJPV-ZA483XGpU",
+  "plaintext": "{\"hello\":\"fogmosás\",\"n\":2}",
+  "envelope": "BK3PxXKc-b-pxa3HwuzThCzjTOwPppRx6slvvdsfkCxY3vM1So1cMG_mqGMJayUvpMtzVM60kAwylxRiFGM2eXgAAQIDBAUGBwgJCgtmvnmIAdDZRdWJOksglkZ4r5r0Zl6bixL2R6YDfm4kzykx86kbHt0Gb67G",
+  "qr": "https://fogmosas.example/l#fogmosasTestSession01x.BFYgx_HgJyEJ1bR5OEfqF-c1H19zwowAMuht4y13PIn8NRslpCJa34dhKZbSf5j2gyumvuSBKBKpMu4Uaakzat8"
+}

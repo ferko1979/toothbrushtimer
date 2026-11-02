@@ -1,0 +1,13 @@
+{
+  "name": "fogmosas-web",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Fogmosás web dashboard and end-to-end encrypted relay (QR pairing)",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/relay.test.mjs",
+    "e2e": "node test/e2e.mjs"
+  }
+}

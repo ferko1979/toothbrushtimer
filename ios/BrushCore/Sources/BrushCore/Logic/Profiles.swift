@@ -34,6 +34,13 @@ public struct Profile: Codable, Equatable, Identifiable {
     public var avatar: String? = nil
     public var brushHeadInstalled: Date = Date()
     public var calibration = BrushCalibration()
+    public var orthodontic = false
+    public var toothpaste: String? = nil
+    public var lastCheckup: Date? = nil
+    public var lastCleaning: Date? = nil
+    public var reward: String? = nil          // parent-set reward for a child, e.g. "Mozi"
+    public var rewardStickers = 14
+    public var rewardSince: Date? = nil
 
     public init(id: String, name: String, child: Bool = false, age: Int? = nil, canRead: Bool = true,
                 avatar: String? = nil, brushType: BrushType = .manual) {
@@ -42,6 +49,28 @@ public struct Profile: Codable, Equatable, Identifiable {
     }
 
     public var avatarEmoji: String { Avatar.emoji(for: avatar) }
+
+    // Older files: missing keys fall back to defaults.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        child = try c.decodeIfPresent(Bool.self, forKey: .child) ?? false
+        goals = try c.decodeIfPresent(Goals.self, forKey: .goals) ?? Goals()
+        brushType = try c.decodeIfPresent(BrushType.self, forKey: .brushType) ?? .manual
+        age = try c.decodeIfPresent(Int.self, forKey: .age)
+        canRead = try c.decodeIfPresent(Bool.self, forKey: .canRead) ?? true
+        avatar = try c.decodeIfPresent(String.self, forKey: .avatar)
+        brushHeadInstalled = try c.decodeIfPresent(Date.self, forKey: .brushHeadInstalled) ?? Date()
+        calibration = try c.decodeIfPresent(BrushCalibration.self, forKey: .calibration) ?? BrushCalibration()
+        orthodontic = try c.decodeIfPresent(Bool.self, forKey: .orthodontic) ?? false
+        toothpaste = try c.decodeIfPresent(String.self, forKey: .toothpaste)
+        lastCheckup = try c.decodeIfPresent(Date.self, forKey: .lastCheckup)
+        lastCleaning = try c.decodeIfPresent(Date.self, forKey: .lastCleaning)
+        reward = try c.decodeIfPresent(String.self, forKey: .reward)
+        rewardStickers = try c.decodeIfPresent(Int.self, forKey: .rewardStickers) ?? 14
+        rewardSince = try c.decodeIfPresent(Date.self, forKey: .rewardSince)
+    }
 }
 
 public enum KidTitles {
