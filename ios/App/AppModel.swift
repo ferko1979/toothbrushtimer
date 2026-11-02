@@ -10,6 +10,7 @@ struct AppData: Codable {
     var records: [BrushRecord] = []
     var extras: [ExtraRecord] = []
     var care: [CareEntry] = []
+    var tourSeen = false
 
     init() {}
 
@@ -23,6 +24,7 @@ struct AppData: Codable {
         records = try c.decodeIfPresent([BrushRecord].self, forKey: .records) ?? []
         extras = try c.decodeIfPresent([ExtraRecord].self, forKey: .extras) ?? []
         care = try c.decodeIfPresent([CareEntry].self, forKey: .care) ?? []
+        tourSeen = try c.decodeIfPresent(Bool.self, forKey: .tourSeen) ?? false
     }
 }
 

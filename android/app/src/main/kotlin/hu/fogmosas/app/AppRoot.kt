@@ -66,6 +66,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                     DeviceAuth.authenticate(activity, "Fogmosás feloldása") { ok -> if (ok) activity.unlocked.value = true }
                 }
             !data.onboarded -> OnboardingScreen(activity, store)
+            !data.tourSeen && !engine.active -> TourScreen { store.update { it.copy(tourSeen = true) } }
             showBrushing || engine.active || engine.result != null -> BrushingScreen(activity, store) {
                 BrushingEngine.reset()
                 showBrushing = false

@@ -130,3 +130,15 @@ class WebLinkTest {
         assertEquals(65 + 12 + s("plaintext").toByteArray().size + 16, WebLink.seal(b("webPublic"), s("sid"), s("plaintext").toByteArray()).size)
     }
 }
+
+class TourTest {
+    @Test fun pagesArePlatformSpecificAndComplete() {
+        for (pf in listOf("ios", "android")) {
+            val ps = Tour.pages(pf)
+            assertEquals(11, ps.size)
+            assertTrue(ps.none { it.text.contains("{") || it.title.isBlank() })
+        }
+        assertTrue(Tour.pages("ios").any { "Face ID" in it.text })
+        assertTrue(Tour.pages("android").any { "csempe" in it.text })
+    }
+}

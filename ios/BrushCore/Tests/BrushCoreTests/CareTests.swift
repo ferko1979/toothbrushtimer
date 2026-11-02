@@ -138,3 +138,14 @@ final class WebLinkTests: XCTestCase {
     }
     #endif
 }
+
+final class TourTests: XCTestCase {
+    func testPages() {
+        for pf in [Platform.ios, .android] {
+            let ps = Tour.pages(platform: pf)
+            XCTAssertEqual(ps.count, 11)
+            XCTAssertFalse(ps.contains { $0.text.contains("{") || $0.title.isEmpty })
+        }
+        XCTAssertTrue(Tour.pages(platform: .ios).contains { $0.text.contains("Face ID") })
+    }
+}

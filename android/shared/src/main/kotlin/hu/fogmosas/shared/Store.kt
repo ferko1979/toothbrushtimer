@@ -25,6 +25,7 @@ data class AppData(
     val records: List<BrushRecord> = emptyList(),
     val extras: List<ExtraRecord> = emptyList(),
     val care: List<CareEntry> = emptyList(),
+    val tourSeen: Boolean = false,
 ) {
     val activeProfile get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.first()
     fun profile(id: String) = profiles.firstOrNull { it.id == id }

@@ -47,6 +47,12 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
     var confirmDelete by remember { mutableStateOf(false) }
     var tapStart by remember { mutableStateOf<Long?>(null) }
     var tapResult by remember { mutableStateOf<String?>(null) }
+    var touring by remember { mutableStateOf(false) }
+
+    if (touring) {
+        TourScreen { touring = false }
+        return
+    }
 
     if (addingChild) {
         val flow = remember { OnboardingFlow().also { it.answer("family") } }
@@ -76,6 +82,7 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
     val p = data.activeProfile
     Column(Modifier.fillMaxSize().background(C.bg).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Beállítások", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        OutlinedButton(onClick = { touring = true }, modifier = Modifier.fillMaxWidth()) { Text("✨ Mit tud az app? (bemutató)") }
 
         Section("Profilok")
         InfoCard {

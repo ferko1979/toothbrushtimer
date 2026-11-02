@@ -5,6 +5,7 @@ struct SettingsView: View {
     @EnvironmentObject var model: AppModel
     @State private var addingChild = false
     @State private var confirmDelete = false
+    @State private var touring = false
     @ObservedObject private var lock = AppLock.shared
 
     var body: some View {
@@ -18,6 +19,9 @@ struct SettingsView: View {
     private var settingsForm: some View {
         NavigationStack {
             Form {
+                Section {
+                    Button { touring = true } label: { Label("Mit tud az app? (bemutató)", systemImage: "sparkles") }
+                }
                 profilesSection
                 remindersSection
                 let groups = model.settings.groups(platform: .ios)
@@ -36,6 +40,7 @@ struct SettingsView: View {
             .navigationTitle("Beállítások")
             .onChange(of: model.data.settings) { _, _ in NotificationScheduler.reschedule(model: model) }
             .sheet(isPresented: $addingChild) { AddChildView().environmentObject(model) }
+            .fullScreenCover(isPresented: $touring) { TourView { touring = false } }
             .confirmationDialog("Biztosan törölsz minden adatot?", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("Törlés", role: .destructive) { model.data = AppData() }
             }

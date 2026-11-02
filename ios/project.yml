@@ -69,7 +69,7 @@ targets:
     entitlements:
       path: Watch/ToothbrushTimerWatch.entitlements
       properties:
-        com.apple.security.application-groups: [group.${BUNDLE_PREFIX}.toothbrushtimer]
+        com.apple.security.application-groups: ["group.${BUNDLE_PREFIX}.toothbrushtimer"]
     info:
       path: Watch/Info.plist
       properties:
@@ -78,7 +78,7 @@ targets:
         WKApplication: true
         WKCompanionAppBundleIdentifier: ${BUNDLE_PREFIX}.toothbrushtimer
         WKBackgroundModes: [self-care]
-        FogmosasAppGroup: group.${BUNDLE_PREFIX}.toothbrushtimer
+        FogmosasAppGroup: "group.${BUNDLE_PREFIX}.toothbrushtimer"
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: "A fogmosás felismeréséhez figyeli a hangot. Hangfelvétel nem készül."
     settings:
@@ -118,13 +118,13 @@ targets:
     entitlements:
       path: WatchWidgets/ToothbrushTimerWatchWidgets.entitlements
       properties:
-        com.apple.security.application-groups: [group.${BUNDLE_PREFIX}.toothbrushtimer]
+        com.apple.security.application-groups: ["group.${BUNDLE_PREFIX}.toothbrushtimer"]
     info:
       path: WatchWidgets/Info.plist
       properties:
         CFBundleDisplayName: Fogmosás
         CFBundleDevelopmentRegion: hu
-        FogmosasAppGroup: group.${BUNDLE_PREFIX}.toothbrushtimer
+        FogmosasAppGroup: "group.${BUNDLE_PREFIX}.toothbrushtimer"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
