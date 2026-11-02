@@ -32,8 +32,9 @@ enum NotificationScheduler {
     static func reschedule(model: AppModel) {
         let center = UNUserNotificationCenter.current()
         center.getPendingNotificationRequests { pending in
-            center.removePendingNotificationRequests(withIdentifiers: pending.map(\.identifier).filter { $0.hasPrefix("rem.") })
+            center.removePendingNotificationRequests(withIdentifiers: pending.map(\.identifier).filter { $0.hasPrefix("rem.") || $0 == "dentist" })
             DispatchQueue.main.async {
+                scheduleDentist(model: model, center: center)
                 guard model.settings.isOn("notifications") else { return }
                 let me = model.profile("me") ?? model.activeProfile
                 let plan = ReminderPlanner().plan(now: Date(), records: model.records(for: me.id), goals: me.goals,
@@ -50,6 +51,24 @@ enum NotificationScheduler {
                 }
             }
         }
+    }
+}
+
+extension NotificationScheduler {
+    /// One notification at 10:00 on the day the main profile's checkup / cleaning is due.
+    static func scheduleDentist(model: AppModel, center: UNUserNotificationCenter) {
+        guard model.settings.isOn("dentist_reminders"), let me = model.profile("me"),
+              let day = nextDentistReminder(lastCheckup: me.lastCheckup, lastCleaning: me.lastCleaning, today: Date()) else { return }
+        let st = dentistStatus(lastCheckup: me.lastCheckup, lastCleaning: me.lastCleaning, today: day)
+        let content = UNMutableNotificationContent()
+        content.title = "🦷 Fogorvos"
+        content.body = (st.message ?? "Esedékes a fogorvosi kontroll.") + " Foglalj időpontot!"
+        content.sound = .default
+        content.userInfo = ["arm": false]
+        var comps = Calendar.current.dateComponents([.year, .month, .day], from: day)
+        comps.hour = 10
+        center.add(UNNotificationRequest(identifier: "dentist", content: content,
+                                         trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))
     }
 }
 

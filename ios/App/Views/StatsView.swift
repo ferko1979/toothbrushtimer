@@ -27,6 +27,7 @@ struct StatsView: View {
                         ShareLink(item: recordsCSV(records)) { Label("Exportálás CSV-ként", systemImage: "tablecells") }
                     }
                 }
+                CareStatsSections()
                 Section("Legutóbbiak") {
                     if records.isEmpty { Text("Még nincs mért fogmosás.").foregroundStyle(.secondary) }
                     ForEach(records.sorted { $0.start > $1.start }.prefix(30)) { r in

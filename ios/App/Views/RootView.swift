@@ -10,10 +10,14 @@ struct RootView: View {
     @EnvironmentObject var model: AppModel
     @EnvironmentObject var router: AppRouter
     @State private var brushing: BrushingRequest?
+    @ObservedObject private var lock = AppLock.shared
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         Group {
-            if model.data.onboarded {
+            if model.data.onboarded && model.settings.isOn("app_lock", platform: .ios) && !lock.unlocked && brushing == nil {
+                LockView(title: "Fogmosás – zárolva", reason: "Fogmosás feloldása") { lock.unlocked = true }
+            } else if model.data.onboarded {
                 TabView {
                     HomeView().tabItem { Label("Főoldal", systemImage: "house") }
                     StatsView().tabItem { Label("Statisztika", systemImage: "chart.bar") }
@@ -34,5 +38,9 @@ struct RootView: View {
                 .environmentObject(model)
         }
         .onAppear { NotificationScheduler.reschedule(model: model) }
+        .onChange(of: scenePhase) { _, phase in
+            // Lock again in the background, but never in the middle of a brushing.
+            if phase == .background && brushing == nil { lock.lock() }
+        }
     }
 }

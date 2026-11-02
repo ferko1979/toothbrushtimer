@@ -5,8 +5,17 @@ struct SettingsView: View {
     @EnvironmentObject var model: AppModel
     @State private var addingChild = false
     @State private var confirmDelete = false
+    @ObservedObject private var lock = AppLock.shared
 
     var body: some View {
+        if model.settings.isOn("parent_lock", platform: .ios) && !lock.parentUnlocked {
+            LockView(title: "A beállítások szülői zárral védettek", reason: "Szülői zár") { lock.parentUnlocked = true }
+        } else {
+            settingsForm
+        }
+    }
+
+    private var settingsForm: some View {
         NavigationStack {
             Form {
                 profilesSection
@@ -19,7 +28,7 @@ struct SettingsView: View {
                 }
                 waterSection
                 Section("Adatvédelem") {
-                    Text("A hang csak ezen a készüléken, a memóriában dolgozódik fel. Hangfelvétel nem készül, és semmi nem kerül szerverre.")
+                    Text("A hang csak ezen a készüléken, a memóriában dolgozódik fel. Hangfelvétel nem készül, és semmi nem kerül szerverre. A webes megtekintés csak akkor küld adatot, ha te olvasod be a QR-kódot, és akkor is titkosítva.")
                         .font(.footnote).foregroundStyle(.secondary)
                     Button("Összes adat törlése", role: .destructive) { confirmDelete = true }
                 }
@@ -90,14 +99,25 @@ struct SettingsView: View {
     @ViewBuilder
     private func featureToggle(_ f: Feature) -> some View {
         if f.available {
+            let isLock = f.id == "app_lock" || f.id == "parent_lock"
             Toggle(isOn: Binding(get: { model.settings.isOn(f.id) }, set: { on in
+                if isLock {
+                    DeviceAuth.authenticate(reason: f.title) { ok in
+                        guard ok else { return }
+                        model.data.settings.set(f.id, on)
+                        lock.unlocked = true
+                        lock.parentUnlocked = true
+                    }
+                    return
+                }
                 model.data.settings.set(f.id, on)
                 if f.id == "health_sync" && on { HealthSync.shared.requestAuthorization { _ in } }
                 if f.id == "notifications" && on { NotificationScheduler.requestAuthorization() }
             })) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(f.title)
-                    if !f.description.isEmpty { Text(f.description).font(.caption).foregroundStyle(.secondary) }
+                    let desc = isLock && !DeviceAuth.available ? "Ehhez kódot vagy Face ID-t / Touch ID-t kell beállítani a telefonon." : f.description
+                    if !desc.isEmpty { Text(desc).font(.caption).foregroundStyle(.secondary) }
                 }
             }
         } else {
@@ -157,6 +177,7 @@ struct ProfileEditView: View {
                         Button("Kalibráció újrakezdése") { var q = p; q.calibration = BrushCalibration(); model.updateProfile(q) }
                     }
                 }
+                ProfileCareSection(profileId: p.id)
                 if p.child {
                     Section("Gyerek") {
                         Toggle("Tud olvasni", isOn: Binding(get: { p.canRead }, set: { v in var q = p; q.canRead = v; model.updateProfile(q) }))

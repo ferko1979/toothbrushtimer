@@ -46,15 +46,7 @@ struct ResultView: View {
                         }
                     }
                 }
-                if settings.isOn("floss_tracking") || settings.isOn("mouthwash_tracking") {
-                    Card {
-                        Text("Kiegészítők ma").font(.subheadline.bold())
-                        HStack {
-                            if settings.isOn("floss_tracking") { ExtraButton(kind: .floss, title: "🧵 Fogselyem") }
-                            if settings.isOn("mouthwash_tracking") { ExtraButton(kind: .mouthwash, title: "🫧 Szájvíz") }
-                        }
-                    }
-                }
+                CareCheckInCard(profile: profile)
                 Button("Kész", action: onDone).buttonStyle(.borderedProminent).controlSize(.large).padding(.top)
             }
             .padding()

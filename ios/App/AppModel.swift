@@ -9,6 +9,21 @@ struct AppData: Codable {
     var activeProfileId = "me"
     var records: [BrushRecord] = []
     var extras: [ExtraRecord] = []
+    var care: [CareEntry] = []
+
+    init() {}
+
+    // Older files: missing keys fall back to defaults.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        onboarded = try c.decodeIfPresent(Bool.self, forKey: .onboarded) ?? false
+        settings = try c.decodeIfPresent(AppSettings.self, forKey: .settings) ?? AppSettings()
+        profiles = try c.decodeIfPresent([Profile].self, forKey: .profiles) ?? [Profile(id: "me", name: "Én")]
+        activeProfileId = try c.decodeIfPresent(String.self, forKey: .activeProfileId) ?? "me"
+        records = try c.decodeIfPresent([BrushRecord].self, forKey: .records) ?? []
+        extras = try c.decodeIfPresent([ExtraRecord].self, forKey: .extras) ?? []
+        care = try c.decodeIfPresent([CareEntry].self, forKey: .care) ?? []
+    }
 }
 
 final class AppModel: ObservableObject {
@@ -78,8 +93,15 @@ final class AppModel: ObservableObject {
     }
 
     func addExtra(_ kind: ExtraRecord.Kind) {
-        data.extras.append(ExtraRecord(profileId: data.activeProfileId, date: Date(), kind: kind))
+        data.care.append(CareEntry(profileId: data.activeProfileId, date: Date(), floss: kind == .floss, mouthwash: kind == .mouthwash))
     }
+
+    /// Journal entries of a profile, including old floss / mouthwash ticks.
+    func care(for profileId: String) -> [CareEntry] {
+        data.care.filter { $0.profileId == profileId } + extras(for: profileId).map(\.asCare)
+    }
+
+    func addCare(_ e: CareEntry) { data.care.append(e) }
 
     func pushContextToWatch() {
         let me = profile("me") ?? data.profiles[0]

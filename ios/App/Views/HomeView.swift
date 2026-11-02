@@ -36,8 +36,10 @@ struct HomeView: View {
                             if st.due || st.soon { Text(st.message).font(.caption).foregroundStyle(.secondary) }
                         }
                     }
+                    if profile.child { RewardCard(profile: profile) }
+                    DentistHomeCard()
                     if model.settings.isOn("floss_tracking") {
-                        let done = extrasDoneToday(model.extras(for: profile.id), kind: .floss, today: Date())
+                        let done = careDoneToday(model.care(for: profile.id), .floss, today: Date())
                         Card {
                             HStack {
                                 Text(done ? "🧵 Fogselyem: ma kipipálva ✔︎" : "🧵 Fogselyem: ma még nem volt").font(.subheadline)

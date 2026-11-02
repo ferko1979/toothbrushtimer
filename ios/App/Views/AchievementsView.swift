@@ -17,6 +17,9 @@ struct AchievementsView: View {
                         Text("Minden tökéletes nap egy matrica, 7 matrica egy figura.").font(.caption).foregroundStyle(.secondary)
                     }
                 }
+                if profile.child && profile.reward != nil {
+                    Section("Jutalom") { RewardCard(profile: profile).listRowInsets(EdgeInsets()) }
+                }
                 Section("Kitüntetések") {
                     ForEach(Achievements.all) { a in
                         HStack(spacing: 12) {
