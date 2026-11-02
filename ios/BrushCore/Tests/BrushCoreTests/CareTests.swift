@@ -168,3 +168,34 @@ final class I18nTests: XCTestCase {
         XCTAssertEqual(Formatting.hu(1234.5), "1 234,5")
     }
 }
+
+final class HoldUntilGoalTests: XCTestCase {
+    private func run(_ cfg: SessionConfig) -> [BrushingSession] {
+        let det = SessionDetector(cfg: cfg)
+        var t = 0.0
+        func feed(_ secs: Double, _ w: Double, _ b: Double) {
+            for _ in 0..<Int(secs / 0.5) { det.update(t: t + 0.25, water: w, brush: b, sonic: 0, dt: 0.5); t += 0.5 }
+        }
+        feed(2, 0, 0); feed(3, 1, 0); feed(30, 0, 1); feed(20, 0, 0); feed(60, 0, 1); feed(20, 0, 0)
+        return det.finish()
+    }
+
+    func testDefaultStopsOnSilence() {
+        let s = run(SessionConfig())
+        XCTAssertEqual(s.first?.endReason, "quiet")
+        XCTAssertLessThan(s.first?.durationS ?? 0, 40)
+    }
+
+    func testHoldUntilGoalKeepsGoing() {
+        var c = SessionConfig()
+        c.holdUntilS = 120
+        let s = run(c)
+        XCTAssertEqual(s.count, 1)
+        XCTAssertGreaterThan(s.first?.durationS ?? 0, 100)
+    }
+
+    func testFeedbackTunesTolerance() {
+        XCTAssertEqual(adjustedQuietExtra(0, reason: "too_early"), 10)
+        XCTAssertEqual(adjustedQuietExtra(10, reason: "too_late"), 5)
+    }
+}

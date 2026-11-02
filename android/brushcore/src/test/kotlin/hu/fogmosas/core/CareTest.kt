@@ -163,3 +163,34 @@ class I18nTest {
         assertEquals("1 234,5", Formatting.hu(1234.5))
     }
 }
+
+class HoldUntilGoalTest {
+    /** Brush 30 s, then 20 s with no brushing sound, then brush again: with the goal hold it is one session. */
+    private fun run(cfg: SessionConfig): List<BrushingSession> {
+        val det = SessionDetector(cfg)
+        var t = 0.0
+        fun feed(secs: Double, w: Double, b: Double) { repeat((secs / 0.5).toInt()) { det.update(t + 0.25, w, b, 0.0, 0.5); t += 0.5 } }
+        feed(2.0, 0.0, 0.0); feed(3.0, 1.0, 0.0); feed(30.0, 0.0, 1.0); feed(20.0, 0.0, 0.0); feed(60.0, 0.0, 1.0); feed(20.0, 0.0, 0.0)
+        return det.finish()
+    }
+
+    @Test fun defaultStopsOnSilence() {
+        val s = run(SessionConfig())
+        assertEquals("quiet", s.first().endReason)
+        assertTrue(s.first().durationS < 40)
+    }
+
+    @Test fun holdUntilGoalKeepsGoing() {
+        val s = run(SessionConfig(holdUntilS = 120.0))
+        assertEquals(1, s.size)
+        assertTrue(s.first().durationS > 100, "duration ${s.first().durationS}")
+        assertEquals("quiet", s.first().endReason)   // the final 20 s silence after the goal ends it
+    }
+
+    @Test fun feedbackTunesTolerance() {
+        assertEquals(10.0, adjustedQuietExtra(0.0, "too_early"))
+        assertEquals(45.0, adjustedQuietExtra(40.0, "too_early"))
+        assertEquals(5.0, adjustedQuietExtra(10.0, "too_late"))
+        assertEquals(0.0, adjustedQuietExtra(0.0, "too_late"))
+    }
+}

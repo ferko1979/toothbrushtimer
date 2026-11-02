@@ -55,6 +55,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 targetS = p.goals.targetS,
                 cues = s.isOn("quadrant_cues"),
                 keepListeningWhenPlaced = s.isOn("keep_listening_when_placed", "android"),
+                quietExtraS = p.quietExtraS,
             ))
             showBrushing = true
         }

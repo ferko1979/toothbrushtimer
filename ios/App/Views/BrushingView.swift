@@ -18,6 +18,7 @@ struct BrushingView: View {
     @State private var record: BrushRecord?
     @State private var achievements: [Achievement] = []
     @State private var stopNote: String?
+    @State private var lastResult: BrushingController.Result?
 
     private var kid: Bool { profile.child }
     private var settings: AppSettings { model.settings }
@@ -26,7 +27,9 @@ struct BrushingView: View {
         NavigationStack {
             Group {
                 if let rec = record {
-                    ResultView(profile: profile, record: rec, achievements: achievements) { dismiss() }
+                    ResultView(profile: profile, record: rec, achievements: achievements,
+                               endReason: lastResult?.endReason ?? "finish", manual: lastResult?.manual ?? false,
+                               onResume: { resume(rec) }) { dismiss() }
                 } else {
                     listening
                 }
@@ -170,7 +173,12 @@ struct BrushingView: View {
             return
         }
         let sonicCfg = settings.isOn("calibration") ? profile.calibration.sonicConfig() : SonicConfig()
-        controller.start(heads: heads, sessionConfig: policy.sessionConfig, sonicConfig: sonicCfg,
+        // Until the goal is reached, stop only after a long silence or a clear rinse; tolerance learned from feedback.
+        var sc = policy.sessionConfig
+        sc.holdUntilS = profile.goals.targetS
+        sc.endQuietS += profile.quietExtraS
+        sc.holdQuietS += profile.quietExtraS
+        controller.start(heads: heads, sessionConfig: sc, sonicConfig: sonicCfg,
                          useSonic: profile.brushType == .electric, batterySaver: settings.isOn("battery_saver"))
     }
 
@@ -187,6 +195,14 @@ struct BrushingView: View {
         LiveActivity.update(phase: name, elapsedS: controller.elapsedS, waterRunning: controller.wasteIcon)
     }
 
+    /// "Még mostam – folytatás": drop the saved record and keep timing from where it stopped.
+    private func resume(_ rec: BrushRecord) {
+        model.data.records.removeAll { $0.id == rec.id }
+        record = nil
+        achievements = []
+        controller.startManual(resumeFrom: rec.durationS)
+    }
+
     private func end() {
         LiveActivity.end(durationS: nil)
         ticker?.invalidate()
@@ -201,6 +217,7 @@ struct BrushingView: View {
             stopNote = tr("túl rövid volt ({0} s), nem mentettem", Int(r.durationS))
             return
         }
+        lastResult = r
         let rec = BrushRecord(profileId: profile.id, start: r.start, durationS: r.durationS,
                               waterRunningS: r.waterRunningS, source: r.manual ? "manual" : "phone", brushF0: r.brushF0)
         achievements = model.add(record: rec)

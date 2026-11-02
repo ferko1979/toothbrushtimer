@@ -392,6 +392,7 @@ fun ResultScreen(activity: MainActivity, store: AppStore, durationS: Double, wat
                 if (p.canRead) Text(Achievements.byId(id)?.description ?: "", fontSize = 14.sp, color = C.muted)
             }
         }
+        MeasurementFeedbackCard(activity, store) { BrushingEngine.resume(activity, durationS) }
         CareCheckIn(store)
         Button(onClick = onClose, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Kész")) }
     }

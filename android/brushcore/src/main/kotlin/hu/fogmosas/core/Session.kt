@@ -10,6 +10,8 @@ data class SessionConfig(
     val armS: Double = 20.0, val brushConfirmS: Double = 2.0, val fallbackS: Double = 6.0,
     val endQuietS: Double = 15.0, val rinseMinS: Double = 2.0, val resumeS: Double = 5.0,
     val rinseDoneS: Double = 5.0, val minBrushingBeforeRinseS: Double = 10.0, val wasteIconS: Double = 5.0,
+    /** App: until the session is this long (the goal), stop only after a long silence or a clear rinse. */
+    val holdUntilS: Double? = null, val holdQuietS: Double = 45.0, val rinseMinEarlyS: Double = 4.0,
 ) {
     companion object {
         /** Opened from a reminder: start sooner, wait longer for the water cue. */
@@ -25,6 +27,8 @@ enum class SessionEvent(val id: String) {
 
 class BrushingSession(var start: Double, var cue: String = "water") {
     var end = 0.0
+    /** Why the session ended: "rinse", "quiet" or "finish" (listening stopped). */
+    var endReason = "finish"
     var waterRunningS = 0.0
     val events = ArrayList<Pair<Double, SessionEvent>>()
     val durationS get() = max(end - start, 0.0)
@@ -69,8 +73,9 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
         event(time, SessionEvent.BRUSHING_DETECTED)
     }
 
-    private fun endSession(time: Double, end: Double) {
+    private fun endSession(time: Double, end: Double, reason: String = "finish") {
         sessions.last().end = end
+        sessions.last().endReason = reason
         if (wasteIcon) { wasteIcon = false; event(time, SessionEvent.WASTE_ICON_OFF) }
         event(time, SessionEvent.SESSION_END)
         state = State.LISTENING
@@ -121,7 +126,9 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
                 val s = sessions.last()
                 if (brushing >= c.off) { lastBrush = time; quietRun = 0.0 } else quietRun += dt
                 if (isWater) s.waterRunningS += dt
-                if (waterRun >= c.rinseMinS && !wasteIcon && dryBeforeWater >= c.wasteIconS &&
+                val early = c.holdUntilS != null && time - s.start < c.holdUntilS
+                val rinseMin = if (early) maxOf(c.rinseMinS, c.rinseMinEarlyS) else c.rinseMinS
+                if (waterRun >= rinseMin && !wasteIcon && dryBeforeWater >= c.wasteIconS &&
                     time - s.start >= c.minBrushingBeforeRinseS
                 ) {
                     rinseStart = time - waterRun
@@ -135,7 +142,7 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
                     wasteIcon = false
                     event(time, SessionEvent.WASTE_ICON_OFF)
                 }
-                if (state == State.BRUSHING && quietRun >= c.endQuietS) endSession(time, lastBrush)
+                if (state == State.BRUSHING && quietRun >= (if (early) maxOf(c.endQuietS, c.holdQuietS) else c.endQuietS)) endSession(time, lastBrush, "quiet")
             }
             State.RINSE -> {
                 val s = sessions.last()
@@ -145,7 +152,7 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
                     event(time, SessionEvent.BRUSHING_RESUMED)
                 } else if (dryRun >= c.rinseDoneS) {
                     s.waterRunningS = max(s.waterRunningS - rinseWater, 0.0)
-                    endSession(time, rinseStart)
+                    endSession(time, rinseStart, "rinse")
                 }
             }
         }

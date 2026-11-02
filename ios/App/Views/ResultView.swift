@@ -6,6 +6,9 @@ struct ResultView: View {
     let profile: Profile
     let record: BrushRecord
     let achievements: [Achievement]
+    var endReason = "finish"
+    var manual = false
+    var onResume: () -> Void = {}
     let onDone: () -> Void
 
     var body: some View {
@@ -46,6 +49,7 @@ struct ResultView: View {
                         }
                     }
                 }
+                MeasurementFeedbackCard(profile: profile, record: record, endReason: endReason, manual: manual, onResume: onResume)
                 CareCheckInCard(profile: profile)
                 Button(tr("Kész"), action: onDone).buttonStyle(.borderedProminent).controlSize(.large).padding(.top)
             }

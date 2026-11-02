@@ -18,6 +18,10 @@ public struct SessionConfig: Equatable {
     public var rinseDoneS = 5.0
     public var minBrushingBeforeRinseS = 10.0
     public var wasteIconS = 5.0
+    /// App: until the session is this long (the goal), stop only after a long silence or a clear rinse.
+    public var holdUntilS: Double? = nil
+    public var holdQuietS = 45.0
+    public var rinseMinEarlyS = 4.0
 
     public init() {}
 
@@ -47,6 +51,8 @@ public struct BrushingSession: Equatable {
     public var cue: String = "water"  // "water" or "no_water"
     public var waterRunningS: Double = 0
     public var events: [(Double, SessionEvent)] = []
+    /// Why the session ended: "rinse", "quiet" or "finish" (listening stopped).
+    public var endReason = "finish"
 
     public var durationS: Double { Swift.max(end - start, 0) }
     public var wastedWater: Bool { waterRunningS >= 5.0 }
@@ -101,8 +107,9 @@ public final class SessionDetector {
         event(time, .brushingDetected)
     }
 
-    private func endSession(_ time: Double, end: Double) {
+    private func endSession(_ time: Double, end: Double, reason: String = "finish") {
         sessions[sessions.count - 1].end = end
+        sessions[sessions.count - 1].endReason = reason
         if wasteIcon {
             wasteIcon = false
             event(time, .wasteIconOff)
@@ -165,7 +172,9 @@ public final class SessionDetector {
                 quietRun += dt
             }
             if isWater { sessions[idx].waterRunningS += dt }
-            if waterRun >= c.rinseMinS && !wasteIcon && dryBeforeWater >= c.wasteIconS
+            let early = c.holdUntilS.map { time - sessions[idx].start < $0 } ?? false
+            let rinseMin = early ? Swift.max(c.rinseMinS, c.rinseMinEarlyS) : c.rinseMinS
+            if waterRun >= rinseMin && !wasteIcon && dryBeforeWater >= c.wasteIconS
                 && time - sessions[idx].start >= c.minBrushingBeforeRinseS {
                 rinseStart = time - waterRun
                 rinseWater = waterRun
@@ -178,8 +187,8 @@ public final class SessionDetector {
                 wasteIcon = false
                 event(time, .wasteIconOff)
             }
-            if state == .brushing && quietRun >= c.endQuietS {
-                endSession(time, end: lastBrush)
+            if state == .brushing && quietRun >= (early ? Swift.max(c.endQuietS, c.holdQuietS) : c.endQuietS) {
+                endSession(time, end: lastBrush, reason: "quiet")
             }
 
         case .rinse:
@@ -193,7 +202,7 @@ public final class SessionDetector {
                 event(time, .brushingResumed)
             } else if dryRun >= c.rinseDoneS {
                 sessions[idx].waterRunningS = Swift.max(sessions[idx].waterRunningS - rinseWater, 0)
-                endSession(time, end: rinseStart)
+                endSession(time, end: rinseStart, reason: "rinse")
             }
         }
     }

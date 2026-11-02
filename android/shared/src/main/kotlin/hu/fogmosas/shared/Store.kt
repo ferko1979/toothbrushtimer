@@ -31,6 +31,7 @@ data class AppData(
     /** Set after the first successful transfer to the DentHub website (QR link). */
     val denthubLinkedMs: Long? = null,
     val denthubHost: String? = null,
+    val feedback: List<hu.fogmosas.core.FeedbackEntry> = emptyList(),
 ) {
     val activeProfile get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.first()
     fun profile(id: String) = profiles.firstOrNull { it.id == id }
@@ -100,4 +101,13 @@ class AppStore private constructor(context: Context) {
     }
 
     fun addCare(e: CareEntry) = update { d -> d.copy(care = d.care + e) }
+
+    /** Saves "Pontos volt a mérés?" feedback; "too early / too late" tunes the profile's silence tolerance. */
+    fun addFeedback(e: hu.fogmosas.core.FeedbackEntry) = update { d ->
+        d.copy(feedback = (d.feedback + e).takeLast(200), profiles = d.profiles.map {
+            if (it.id == e.profileId) it.copy(quietExtraS = hu.fogmosas.core.adjustedQuietExtra(it.quietExtraS, e.reason)) else it
+        })
+    }
+
+    fun removeRecord(id: String) = update { d -> d.copy(records = d.records.filter { it.id != id }) }
 }

@@ -345,3 +345,66 @@ fun LockScreen(title: String, onUnlock: () -> Unit) {
 }
 
 fun toast(ctx: android.content.Context, text: String) = Toast.makeText(ctx, text, Toast.LENGTH_SHORT).show()
+
+// ------------------------------------------------------------------ measurement feedback
+
+/** After a brushing: why it stopped, "Még mostam – folytatás", and "Pontos volt a mérés?". */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun MeasurementFeedbackCard(activity: MainActivity, store: AppStore, onResume: () -> Unit) {
+    val r = hu.fogmosas.shared.BrushingEngine.state.collectAsStateWithLifecycle().value.result ?: return
+    val data by store.data.collectAsStateWithLifecycle()
+    val p = data.activeProfile
+    if (!p.canRead) return
+    var answer by remember(r) { mutableStateOf<Boolean?>(null) }
+    var reason by remember(r) { mutableStateOf<String?>(null) }
+    var note by remember(r) { mutableStateOf("") }
+    var saved by remember(r) { mutableStateOf<hu.fogmosas.core.FeedbackEntry?>(null) }
+    val ctx = LocalContext.current
+
+    InfoCard {
+        if (!r.manual) Text(hu.fogmosas.core.endReasonText(r.endReason), fontSize = 13.sp, color = C.muted)
+        if (!r.manual && r.endReason != "user" && r.durationS < p.goals.targetS) {
+            OutlinedButton(onClick = {
+                activity.lastRecordId?.let { store.removeRecord(it) }
+                activity.lastRecordId = null
+                onResume()
+            }) { Text(tr("↩️ Még mostam – folytatás")) }
+        }
+        val s = saved
+        if (s != null) {
+            Text(tr("Köszönjük a visszajelzést!"), fontWeight = FontWeight.Bold, color = C.ok)
+            if (!s.ok) {
+                Text(tr("A következő méréseknél figyelembe veszem. A fejlesztőknek is elküldheted, hogy javíthassuk a felismerést."), fontSize = 13.sp, color = C.muted)
+                OutlinedButton(onClick = {
+                    val prof = store.data.value.profile(s.profileId)
+                    val text = hu.fogmosas.core.feedbackReport(s, "android", ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "", prof?.quietExtraS ?: 0.0)
+                    val i = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+                        .putExtra(android.content.Intent.EXTRA_SUBJECT, "DentHub-Brush feedback").putExtra(android.content.Intent.EXTRA_TEXT, text)
+                    ctx.startActivity(android.content.Intent.createChooser(i, tr("Visszajelzés küldése")))
+                }) { Text(tr("Küldés a fejlesztőknek")) }
+            }
+        } else {
+            Text(tr("Pontos volt a mérés?"), fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = answer == true, onClick = { answer = true }, label = { Text(tr("👍 Igen")) })
+                FilterChip(selected = answer == false, onClick = { answer = false }, label = { Text(tr("👎 Nem")) })
+            }
+            if (answer == false) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    hu.fogmosas.core.FeedbackReasons.all.forEach { rs ->
+                        FilterChip(selected = reason == rs.id, onClick = { reason = rs.id }, label = { Text(rs.title, fontSize = 13.sp) })
+                    }
+                }
+                OutlinedTextField(value = note, onValueChange = { note = it }, label = { Text(tr("Mi történt? (nem kötelező)")) }, modifier = Modifier.fillMaxWidth())
+            }
+            if (answer != null) Button(onClick = {
+                val e = hu.fogmosas.core.FeedbackEntry(dateMs = System.currentTimeMillis(), profileId = p.id, ok = answer == true,
+                    reason = if (answer == true) null else reason, note = note.trim(), durationS = r.durationS, endReason = r.endReason,
+                    cue = r.cue, waterRunningS = r.waterRunningS, brushType = p.brushType, targetS = p.goals.targetS)
+                store.addFeedback(e)
+                saved = e
+            }, enabled = answer == true || reason != null) { Text(tr("Mentés")) }
+        }
+    }
+}

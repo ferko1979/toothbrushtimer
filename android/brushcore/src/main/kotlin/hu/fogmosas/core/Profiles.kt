@@ -35,6 +35,8 @@ data class Profile(
     val reward: String? = null,           // parent-set reward for a child, e.g. "Mozi"
     val rewardStickers: Int = 14,
     val rewardSinceMs: Long? = null,
+    /** Learned from feedback: extra seconds of silence before the measurement stops. */
+    val quietExtraS: Double = 0.0,
 ) {
     val avatarEmoji get() = Avatar.emoji(avatar)
     val electric get() = brushType == "electric"

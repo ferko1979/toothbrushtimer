@@ -29,7 +29,7 @@ object BrushingEngine {
     enum class Phase { IDLE, LISTENING, WATER, ARMED, BRUSHING, RINSING, FINISHED, FAILED }
 
     data class Result(val startMs: Long, val durationS: Double, val waterRunningS: Double, val cue: String,
-                      val brushF0: Double?, val manual: Boolean)
+                      val brushF0: Double?, val manual: Boolean, val endReason: String = "finish")
 
     data class State(
         val phase: Phase = Phase.IDLE,
@@ -57,6 +57,8 @@ object BrushingEngine {
         val targetS: Double,
         val cues: Boolean,
         val keepListeningWhenPlaced: Boolean,
+        /** Learned from feedback: extra seconds of silence before the measurement stops. */
+        val quietExtraS: Double = 0.0,
     )
 
     private val _state = MutableStateFlow(State())
@@ -78,6 +80,7 @@ object BrushingEngine {
     private val f0s = ArrayList<Double>()
     private var listenStartMs = 0L
     private var manualStartMs: Long? = null
+    @Volatile private var userStop = false
     private var ticker: Job? = null
     private val t0 = System.currentTimeMillis()
     private fun now() = (System.currentTimeMillis() - t0) / 1000.0
@@ -97,7 +100,12 @@ object BrushingEngine {
             startManual(ctx)
             return
         }
-        val det = StreamingDetector(heads, policy.sessionConfig, cfg.sonicConfig, cfg.useSonic, cfg.batterySaver)
+        // Until the goal is reached, stop only after a long silence or a clear rinse.
+        val sc = policy.sessionConfig.let {
+            it.copy(holdUntilS = cfg.targetS, endQuietS = it.endQuietS + cfg.quietExtraS, holdQuietS = it.holdQuietS + cfg.quietExtraS)
+        }
+        userStop = false
+        val det = StreamingDetector(heads, sc, cfg.sonicConfig, cfg.useSonic, cfg.batterySaver)
         det.onRow = { row -> onRow(row, det) }
         det.session.onEvent = { _, e -> onEvent(e, det) }
         detector = det
@@ -113,13 +121,16 @@ object BrushingEngine {
         startTicker()
     }
 
-    fun startManual(context: Context) {
+    fun startManual(context: Context) = resume(context, 0.0)
+
+    /** Timer continuing from fromS seconds ("Még mostam – folytatás" after an early stop, or manual start). */
+    fun resume(context: Context, fromS: Double) {
         val ctx = context.applicationContext
         appContext = ctx
         stopAudio()
         detector = null
-        manualStartMs = System.currentTimeMillis()
-        cueTracker = CueTracker(targetS)
+        manualStartMs = System.currentTimeMillis() - (fromS * 1000).toLong()
+        cueTracker = CueTracker(targetS).also { if (fromS > 0) it.update(fromS) }
         _state.value = State(phase = Phase.BRUSHING, manual = true)
         startService(ctx, false)
         startTicker()
@@ -130,9 +141,10 @@ object BrushingEngine {
         val ms = manualStartMs
         if (ms != null) {
             manualStartMs = null
-            finish(Result(ms, (System.currentTimeMillis() - ms) / 1000.0, 0.0, "manual", null, true))
+            finish(Result(ms, (System.currentTimeMillis() - ms) / 1000.0, 0.0, "manual", null, true, "user"))
             return
         }
+        userStop = true
         stopAudio()
         val det = detector ?: run { if (_state.value.result == null) _state.update { it.copy(phase = Phase.IDLE) }; stopTicker(); return }
         det.finish()   // may emit SESSION_END -> finish()
@@ -230,8 +242,9 @@ object BrushingEngine {
             SessionEvent.SESSION_END -> {
                 val session = det.session.sessions.last()
                 val f0 = synchronized(f0s) { if (f0s.size >= 4) f0s.sorted()[f0s.size / 2] else null }
+                val reason = if (session.endReason == "finish" && userStop) "user" else session.endReason
                 val r = Result(listenStartMs + (session.start * 1000).toLong(), session.durationS, session.waterRunningS,
-                    session.cue, f0, false)
+                    session.cue, f0, false, reason)
                 scope.launch {
                     stopAudio()
                     detector = null

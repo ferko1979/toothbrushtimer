@@ -18,6 +18,8 @@ class MainActivity : FragmentActivity() {
     /** Set when opened from a reminder: start listening right away, brushing is expected. */
     val armRequest = mutableStateOf(false)
     val newAchievements = mutableStateOf<List<String>>(emptyList())
+    /** Record saved for the last result (replaced when the user resumes an early-stopped brushing). */
+    var lastRecordId: String? = null
     /** App lock / parent lock state; locks again when the app goes to the background (not while brushing). */
     val unlocked = mutableStateOf(false)
     val parentUnlocked = mutableStateOf(false)
@@ -34,6 +36,7 @@ class MainActivity : FragmentActivity() {
                 val d = store.data.value
                 val rec = BrushRecord(profileId = d.activeProfileId, startMs = r.startMs, durationS = r.durationS,
                     waterRunningS = r.waterRunningS, source = if (r.manual) "manual" else "phone", brushF0 = r.brushF0)
+                lastRecordId = rec.id
                 newAchievements.value = store.addRecord(rec)
                 ReminderScheduler.reschedule(this)
             }

@@ -13,6 +13,8 @@ final class BrushingController: ObservableObject {
         let cue: String
         let brushF0: Double?
         let manual: Bool
+        /// rinse, quiet, user or finish
+        var endReason = "finish"
     }
 
     @Published private(set) var phase: Phase = .idle
@@ -37,6 +39,7 @@ final class BrushingController: ObservableObject {
     private var listenStarted = Date()
     private var manualStart: Date?
     private var manualTimer: Timer?
+    private var userStop = false
 
     var isListening: Bool { capture.isRunning || manualStart != nil }
 
@@ -55,6 +58,7 @@ final class BrushingController: ObservableObject {
             self?.handle(event: e, at: t, detector: det)
         }
         detector = det
+        userStop = false
         listenStarted = Date()
         AudioCapture.requestPermission { [weak self] granted in
             guard let self = self else { return }
@@ -79,6 +83,7 @@ final class BrushingController: ObservableObject {
             stopManual()
             return
         }
+        userStop = true
         capture.stop()
         guard let det = detector else { return }
         queue.async { [weak self] in
@@ -92,13 +97,14 @@ final class BrushingController: ObservableObject {
     }
 
     /// Fallback: plain timer without detection ("Kézi indítás").
-    func startManual() {
+    func startManual(resumeFrom fromS: Double = 0) {
         capture.stop()
         detector = nil
         reset()
         manual = true
-        manualStart = Date()
+        manualStart = Date().addingTimeInterval(-fromS)
         cueTracker = CueTracker(targetS: targetS)
+        if fromS > 0 { _ = cueTracker?.update(elapsedS: fromS) }
         phase = .brushing
         manualTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             guard let self = self, let st = self.manualStart else { return }
@@ -113,7 +119,7 @@ final class BrushingController: ObservableObject {
         manualTimer = nil
         manualStart = nil
         let r = Result(start: st, durationS: Date().timeIntervalSince(st), waterRunningS: 0, cue: "manual",
-                       brushF0: nil, manual: true)
+                       brushF0: nil, manual: true, endReason: "user")
         finish(with: r)
     }
 
@@ -173,8 +179,9 @@ final class BrushingController: ObservableObject {
             guard let session = det.session.sessions.last else { return }
             let f0 = f0s.count >= 4 ? f0s.sorted()[f0s.count / 2] : nil
             let start = listenStarted.addingTimeInterval(session.start)
+            let reason = session.endReason == "finish" && userStop ? "user" : session.endReason
             let r = Result(start: start, durationS: session.durationS, waterRunningS: session.waterRunningS,
-                           cue: session.cue, brushF0: f0, manual: false)
+                           cue: session.cue, brushF0: f0, manual: false, endReason: reason)
             DispatchQueue.main.async {
                 self.capture.stop()
                 self.finish(with: r)

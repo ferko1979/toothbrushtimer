@@ -14,6 +14,7 @@ struct AppData: Codable {
     /// Set after the first successful transfer to the DentHub website (QR link).
     var denthubLinkedAt: Date?
     var denthubHost: String?
+    var feedback: [FeedbackEntry] = []
 
     init() {}
 
@@ -30,6 +31,7 @@ struct AppData: Codable {
         tourSeen = try c.decodeIfPresent(Bool.self, forKey: .tourSeen) ?? false
         denthubLinkedAt = try c.decodeIfPresent(Date.self, forKey: .denthubLinkedAt)
         denthubHost = try c.decodeIfPresent(String.self, forKey: .denthubHost)
+        feedback = try c.decodeIfPresent([FeedbackEntry].self, forKey: .feedback) ?? []
     }
 }
 

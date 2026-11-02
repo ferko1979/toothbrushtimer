@@ -41,6 +41,8 @@ public struct Profile: Codable, Equatable, Identifiable {
     public var reward: String? = nil          // parent-set reward for a child, e.g. "Mozi"
     public var rewardStickers = 14
     public var rewardSince: Date? = nil
+    /// Learned from feedback: extra seconds of silence before the measurement stops.
+    public var quietExtraS = 0.0
 
     public init(id: String, name: String, child: Bool = false, age: Int? = nil, canRead: Bool = true,
                 avatar: String? = nil, brushType: BrushType = .manual) {
@@ -70,6 +72,7 @@ public struct Profile: Codable, Equatable, Identifiable {
         reward = try c.decodeIfPresent(String.self, forKey: .reward)
         rewardStickers = try c.decodeIfPresent(Int.self, forKey: .rewardStickers) ?? 14
         rewardSince = try c.decodeIfPresent(Date.self, forKey: .rewardSince)
+        quietExtraS = try c.decodeIfPresent(Double.self, forKey: .quietExtraS) ?? 0
     }
 }
 

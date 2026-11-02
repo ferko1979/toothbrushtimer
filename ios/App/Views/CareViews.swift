@@ -384,3 +384,73 @@ struct LockView: View {
         .onAppear { DeviceAuth.authenticate(reason: reason) { if $0 { onUnlock() } } }
     }
 }
+
+// MARK: - Measurement feedback
+
+/// After a brushing: why it stopped, "Még mostam – folytatás", and "Pontos volt a mérés?".
+struct MeasurementFeedbackCard: View {
+    @EnvironmentObject var model: AppModel
+    let profile: Profile
+    let record: BrushRecord
+    let endReason: String
+    let manual: Bool
+    let onResume: () -> Void
+    @State private var answer: Bool?
+    @State private var reason: String?
+    @State private var note = ""
+    @State private var saved: FeedbackEntry?
+    @State private var sharing = false
+
+    var body: some View {
+        if profile.canRead {
+            Card {
+                if !manual { Text(endReasonText(endReason)).font(.caption).foregroundStyle(.secondary) }
+                if !manual && endReason != "user" && record.durationS < profile.goals.targetS {
+                    Button(tr("↩️ Még mostam – folytatás"), action: onResume).buttonStyle(.bordered)
+                }
+                if let s = saved {
+                    Text(tr("Köszönjük a visszajelzést!")).font(.headline).foregroundStyle(Theme.ok)
+                    if !s.ok {
+                        Text(tr("A következő méréseknél figyelembe veszem. A fejlesztőknek is elküldheted, hogy javíthassuk a felismerést."))
+                            .font(.caption).foregroundStyle(.secondary)
+                        ShareLink(item: report(s), subject: Text("DentHub-Brush feedback")) { Label(tr("Küldés a fejlesztőknek"), systemImage: "paperplane") }
+                    }
+                } else {
+                    Text(tr("Pontos volt a mérés?")).font(.headline)
+                    HStack {
+                        ChoiceChip(title: tr("👍 Igen"), selected: answer == true) { answer = true }
+                        ChoiceChip(title: tr("👎 Nem"), selected: answer == false) { answer = false }
+                    }
+                    if answer == false {
+                        ForEach(FeedbackReasons.all) { r in
+                            ChoiceChip(title: r.title, selected: reason == r.id) { reason = r.id }
+                        }
+                        TextField(tr("Mi történt? (nem kötelező)"), text: $note, axis: .vertical).textFieldStyle(.roundedBorder)
+                    }
+                    if answer != nil {
+                        Button(tr("Mentés"), action: save).buttonStyle(.borderedProminent)
+                            .disabled(answer == false && reason == nil)
+                    }
+                }
+            }
+        }
+    }
+
+    private func save() {
+        let e = FeedbackEntry(date: Date(), profileId: profile.id, ok: answer == true, reason: answer == true ? nil : reason,
+                              note: note.trimmingCharacters(in: .whitespacesAndNewlines), durationS: record.durationS,
+                              endReason: endReason, cue: manual ? "manual" : "auto", waterRunningS: record.waterRunningS,
+                              brushType: profile.brushType.rawValue, targetS: profile.goals.targetS)
+        model.data.feedback = Array((model.data.feedback + [e]).suffix(200))
+        if var p = model.profile(profile.id) {
+            p.quietExtraS = adjustedQuietExtra(p.quietExtraS, reason: e.reason)
+            model.updateProfile(p)
+        }
+        saved = e
+    }
+
+    private func report(_ e: FeedbackEntry) -> String {
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        return feedbackReport(e, platform: "ios", appVersion: v, quietExtraS: model.profile(e.profileId)?.quietExtraS ?? 0)
+    }
+}
