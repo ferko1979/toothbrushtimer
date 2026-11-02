@@ -4,20 +4,23 @@ import android.Manifest
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.mutableStateOf
+import androidx.fragment.app.FragmentActivity
 import hu.fogmosas.core.BrushRecord
 import hu.fogmosas.shared.AppStore
 import hu.fogmosas.shared.BrushingEngine
 import hu.fogmosas.shared.WearSync
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     companion object { const val EXTRA_ARM = "arm" }
 
     /** Set when opened from a reminder: start listening right away, brushing is expected. */
     val armRequest = mutableStateOf(false)
     val newAchievements = mutableStateOf<List<String>>(emptyList())
+    /** App lock / parent lock state; locks again when the app goes to the background (not while brushing). */
+    val unlocked = mutableStateOf(false)
+    val parentUnlocked = mutableStateOf(false)
     lateinit var speaker: Speaker
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +57,10 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        if (!BrushingEngine.state.value.active && !isChangingConfigurations) {
+            unlocked.value = false
+            parentUnlocked.value = false
+        }
         BrushingEngine.appBackground()
         super.onStop()
     }

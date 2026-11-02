@@ -3,6 +3,8 @@ package hu.fogmosas.shared
 import android.content.Context
 import hu.fogmosas.core.AppSettings
 import hu.fogmosas.core.BrushRecord
+import hu.fogmosas.core.CareEntry
+import hu.fogmosas.core.toCare
 import hu.fogmosas.core.Coach
 import hu.fogmosas.core.ExtraRecord
 import hu.fogmosas.core.Profile
@@ -22,11 +24,14 @@ data class AppData(
     val activeProfileId: String = "me",
     val records: List<BrushRecord> = emptyList(),
     val extras: List<ExtraRecord> = emptyList(),
+    val care: List<CareEntry> = emptyList(),
 ) {
     val activeProfile get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.first()
     fun profile(id: String) = profiles.firstOrNull { it.id == id }
     fun records(profileId: String) = records.filter { it.profileId == profileId }
     fun extras(profileId: String) = extras.filter { it.profileId == profileId }
+    /** Journal entries of a profile, including old floss / mouthwash ticks. */
+    fun care(profileId: String) = care.filter { it.profileId == profileId } + extras(profileId).map { it.toCare() }
 }
 
 class AppStore private constructor(context: Context) {
@@ -79,6 +84,9 @@ class AppStore private constructor(context: Context) {
     }
 
     fun addExtra(kind: String) = update { d ->
-        d.copy(extras = d.extras + ExtraRecord(profileId = d.activeProfileId, dateMs = System.currentTimeMillis(), kind = kind))
+        d.copy(care = d.care + CareEntry(profileId = d.activeProfileId, dateMs = System.currentTimeMillis(),
+            floss = kind == "floss", mouthwash = kind == "mouthwash", interdental = kind == "interdental", tongue = kind == "tongue"))
     }
+
+    fun addCare(e: CareEntry) = update { d -> d.copy(care = d.care + e) }
 }

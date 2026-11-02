@@ -66,6 +66,13 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
         ReminderScheduler.reschedule(activity)
     }
 
+    if (data.settings.isOn("parent_lock", "android") && !activity.parentUnlocked.value) {
+        LockScreen("A beállítások szülői zárral védettek") {
+            DeviceAuth.authenticate(activity, "Szülői zár") { ok -> if (ok) activity.parentUnlocked.value = true }
+        }
+        return
+    }
+
     val p = data.activeProfile
     Column(Modifier.fillMaxSize().background(C.bg).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Beállítások", fontSize = 28.sp, fontWeight = FontWeight.Bold)
@@ -96,6 +103,10 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
             }
             if (p.electric && data.settings.isOn("calibration")) Text(p.calibration.statusText, fontSize = 12.sp, color = C.muted)
             if (p.child) SwitchRow("Tud olvasni", "", p.canRead) { on -> store.updateProfile(p.copy(canRead = on)) }
+            ProfileCareSettings(store, p) {
+                store.data.value.profile(p.id)?.let { if (it.id == "me") WearSync.pushGoals(activity, it.goals) }
+                ReminderScheduler.reschedule(activity)
+            }
         }
 
         Section("Emlékeztetők")
@@ -115,9 +126,15 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
             InfoCard {
                 features.forEach { f ->
                     if (f.available) {
-                        SwitchRow(f.title, f.description, data.settings.isOn(f.id)) { on ->
-                            store.update { it.copy(settings = it.settings.with(f.id, on)) }
-                            if (f.id == "notifications") ReminderScheduler.reschedule(activity)
+                        val lock = f.id == "app_lock" || f.id == "parent_lock"
+                        val sub = if (lock && !DeviceAuth.available(activity)) "Ehhez képernyőzárat (ujjlenyomat, arc vagy PIN) kell beállítani a telefonon." else f.description
+                        SwitchRow(f.title, sub, data.settings.isOn(f.id)) { on ->
+                            fun apply() {
+                                store.update { it.copy(settings = it.settings.with(f.id, on)) }
+                                if (f.id == "notifications" || f.id == "dentist_reminders") ReminderScheduler.reschedule(activity)
+                                if (lock) { activity.unlocked.value = true; activity.parentUnlocked.value = true }
+                            }
+                            if (lock) DeviceAuth.authenticate(activity, f.title) { ok -> if (ok) apply() } else apply()
                         }
                     } else {
                         SwitchRow(f.title, "hamarosan", false, enabled = false) {}
@@ -149,7 +166,7 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
 
         Section("Adatvédelem")
         InfoCard {
-            Text("A hang csak ezen a készüléken, a memóriában dolgozódik fel. Hangfelvétel nem készül, és semmi nem kerül szerverre.", fontSize = 13.sp, color = C.muted)
+            Text("A hang csak ezen a készüléken, a memóriában dolgozódik fel. Hangfelvétel nem készül, és semmi nem kerül szerverre. A webes megtekintés csak akkor küld adatot, ha te olvasod be a QR-kódot, és akkor is titkosítva.", fontSize = 13.sp, color = C.muted)
             TextButton(onClick = { confirmDelete = true }) { Text("Összes adat törlése", color = C.danger) }
         }
     }

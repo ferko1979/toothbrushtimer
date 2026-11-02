@@ -61,6 +61,10 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
         }
 
         when {
+            data.onboarded && data.settings.isOn("app_lock", "android") && !activity.unlocked.value && !engine.active ->
+                LockScreen("Fogmosás – zárolva") {
+                    DeviceAuth.authenticate(activity, "Fogmosás feloldása") { ok -> if (ok) activity.unlocked.value = true }
+                }
             !data.onboarded -> OnboardingScreen(activity, store)
             showBrushing || engine.active || engine.result != null -> BrushingScreen(activity, store) {
                 BrushingEngine.reset()

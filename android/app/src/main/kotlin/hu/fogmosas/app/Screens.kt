@@ -55,7 +55,8 @@ import hu.fogmosas.core.achievementTitle
 import hu.fogmosas.core.brushHeadStatus
 import hu.fogmosas.core.brushProgress
 import hu.fogmosas.core.detectHabits
-import hu.fogmosas.core.extrasDoneToday
+import hu.fogmosas.core.CareKind
+import hu.fogmosas.core.careDoneToday
 import hu.fogmosas.core.feedbackFor
 import hu.fogmosas.core.monthlyReportText
 import hu.fogmosas.core.recordsCsv
@@ -242,8 +243,10 @@ fun HomeScreen(store: AppStore, onStart: () -> Unit) {
                 if (st.due || st.soon) Text(st.message, fontSize = 12.sp, color = C.muted)
             }
         }
+        if (p.child) RewardCard(store, p)
+        DentistHomeCard(store)
         if (data.settings.isOn("floss_tracking")) {
-            val done = extrasDoneToday(data.extras(p.id), "floss", today, zone)
+            val done = careDoneToday(data.care(p.id), CareKind.FLOSS, today, zone)
             InfoCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(if (done) "🧵 Fogselyem: ma kipipálva ✔︎" else "🧵 Fogselyem: ma még nem volt", Modifier.weight(1f))
@@ -356,17 +359,7 @@ fun ResultScreen(activity: MainActivity, store: AppStore, durationS: Double, wat
                 if (p.canRead) Text(Achievements.byId(id)?.description ?: "", fontSize = 14.sp, color = C.muted)
             }
         }
-        val today = LocalDate.now()
-        if (data.settings.isOn("floss_tracking") || data.settings.isOn("mouthwash_tracking")) InfoCard {
-            Text("Kiegészítők ma", fontWeight = FontWeight.Bold)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for ((kind, label) in listOf("floss" to "🧵 Fogselyem", "mouthwash" to "🫧 Szájvíz")) {
-                    if (!data.settings.isOn(if (kind == "floss") "floss_tracking" else "mouthwash_tracking")) continue
-                    val done = extrasDoneToday(data.extras(p.id), kind, today, zone)
-                    OutlinedButton(onClick = { store.addExtra(kind) }, enabled = !done) { Text(if (done) "$label ✔︎" else label) }
-                }
-            }
-        }
+        CareCheckIn(store)
         Button(onClick = onClose, Modifier.fillMaxWidth().height(52.dp)) { Text("Kész") }
     }
 }
@@ -411,6 +404,7 @@ fun StatsScreen(activity: MainActivity, store: AppStore) {
                 }
             }
         }
+        item { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { CareStatsCards(activity, store) } }
         item { Text("Legutóbbiak", fontWeight = FontWeight.Bold) }
         if (rs.isEmpty()) item { Text("Még nincs mért fogmosás.", color = C.muted) }
         items(rs.sortedByDescending { it.startMs }.take(30)) { r ->
@@ -441,6 +435,7 @@ fun AchievementsScreen(store: AppStore) {
             val (st, figs) = stickers(rs, p.goals, zone)
             InfoCard { Text("🟡 $st matrica · 🦖 $figs figura", fontWeight = FontWeight.Bold); Text("Minden tökéletes nap egy matrica, 7 matrica egy figura.", fontSize = 12.sp, color = C.muted) }
         }
+        if (p.child) item { RewardCard(store, p) }
         items(Achievements.all) { a ->
             val on = a.id in earned
             Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
