@@ -1,0 +1,68 @@
+name: Deploy web (metalquo)
+
+# Copies web/ to the server over SSH and (re)starts it. Runs on pushes to main that touch web/,
+# or by hand (Actions → Deploy web → Run workflow, from any branch).
+# Repository secrets:
+#   DEPLOY_HOST      server address (e.g. metalquo.hu or its IP)
+#   DEPLOY_USER      SSH user (in the docker group, or with sudo for systemctl)
+#   DEPLOY_SSH_KEY   private key (the public key goes into ~/.ssh/authorized_keys on the server)
+#   DEPLOY_DOMAIN    the subdomain, e.g. brush.example.hu (for the health check)
+# Optional: DEPLOY_PORT (SSH port, default 22), DEPLOY_PATH (default /opt/denthub-brush),
+#           DEPLOY_MODE (docker | systemd, default docker)
+
+on:
+  push:
+    branches: [main, master]
+    paths: ["web/**", "deploy/**"]
+  workflow_dispatch:
+
+concurrency: deploy-web
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check secrets
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          if [ -z "$HOST" ]; then
+            echo "::error::DEPLOY_HOST secret is not set. See deploy/README.md."; exit 1
+          fi
+      - name: Test web before deploying
+        working-directory: web
+        run: npm test
+      - name: SSH key
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -p "$PORT" "$HOST" >> ~/.ssh/known_hosts
+      - name: Copy files
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEST: ${{ secrets.DEPLOY_PATH || '/opt/denthub-brush' }}
+        run: |
+          SSH="ssh -i ~/.ssh/id_deploy -p $PORT"
+          $SSH "$USER@$HOST" "mkdir -p '$DEST'"
+          rsync -az --delete -e "$SSH" --exclude test --exclude tools --exclude node_modules web/ "$USER@$HOST:$DEST/web/"
+          rsync -az -e "$SSH" deploy/docker-compose.yml deploy/remote-deploy.sh "$USER@$HOST:$DEST/"
+      - name: Start
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEST: ${{ secrets.DEPLOY_PATH || '/opt/denthub-brush' }}
+          MODE: ${{ secrets.DEPLOY_MODE || 'docker' }}
+        run: ssh -i ~/.ssh/id_deploy -p "$PORT" "$USER@$HOST" "sh '$DEST/remote-deploy.sh' '$MODE'"
+      - name: Check https
+        env:
+          DOMAIN: ${{ secrets.DEPLOY_DOMAIN }}
+        run: |
+          if [ -n "$DOMAIN" ]; then curl -fsS "https://$DOMAIN/healthz" && echo " https://$DOMAIN is live"; fi

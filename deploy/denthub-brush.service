@@ -1,0 +1,19 @@
+# Without Docker: Node.js 18+ on the server, code in /opt/denthub-brush/web
+# cp denthub-brush.service /etc/systemd/system/ && systemctl enable --now denthub-brush
+[Unit]
+Description=DentHub-Brush web (dashboard + relay)
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/denthub-brush/web
+Environment=PORT=8090
+ExecStart=/usr/bin/node server.mjs
+Restart=always
+User=www-data
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

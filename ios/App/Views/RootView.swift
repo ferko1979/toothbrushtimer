@@ -16,7 +16,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if model.data.onboarded && model.settings.isOn("app_lock", platform: .ios) && !lock.unlocked && brushing == nil {
-                LockView(title: tr("Fogmosás – zárolva"), reason: tr("Fogmosás feloldása")) { lock.unlocked = true }
+                LockView(title: tr("DentHub-Brush – zárolva"), reason: tr("DentHub-Brush feloldása")) { lock.unlocked = true }
             } else if model.data.onboarded && !model.data.tourSeen && brushing == nil {
                 TourView { model.data.tourSeen = true }
             } else if model.data.onboarded {

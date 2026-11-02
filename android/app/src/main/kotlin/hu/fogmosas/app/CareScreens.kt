@@ -245,13 +245,13 @@ private fun WebLinkCard(activity: MainActivity, store: AppStore) {
     var status by remember { mutableStateOf<String?>(null) }
     InfoCard {
         Text(tr("Megnézem a weben"), fontWeight = FontWeight.Bold)
-        Text(tr("Nyisd meg a Fogmosás weboldalát a számítógépen, és olvasd be az ott látható QR-kódot. Az adatok titkosítva mennek át, a szerver nem tárolja őket."), fontSize = 13.sp, color = C.muted)
+        Text(tr("Nyisd meg a DentHub-Brush weboldalát a számítógépen, és olvasd be az ott látható QR-kódot. Az adatok titkosítva mennek át, a szerver nem tárolja őket."), fontSize = 13.sp, color = C.muted)
         Button(onClick = {
             status = null
             WebShare.scan(activity) { text ->
                 if (text == null) return@scan
                 val pr = WebLink.parse(text)
-                if (pr == null) status = tr("Ez nem a Fogmosás weboldal QR-kódja.") else pairing = pr
+                if (pr == null) status = tr("Ez nem a DentHub-Brush weboldal QR-kódja.") else pairing = pr
             }
         }) { Text(tr("📷 QR-kód beolvasása")) }
         status?.let { Text(it, fontSize = 13.sp, color = if (it.startsWith("✔")) C.ok else C.danger) }

@@ -18,7 +18,7 @@ struct WatchHomeView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(Color(red: 0.118, green: 0.608, blue: 0.722))
             }
-            .navigationTitle(tr("Fogmosás"))
+            .navigationTitle("DentHub-Brush")
             .fullScreenCover(isPresented: $brushing) {
                 WatchBrushingView().environmentObject(model)
             }

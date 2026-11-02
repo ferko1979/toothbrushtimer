@@ -1,4 +1,4 @@
-# Fogmosás-időzítő – Android telefon és Wear OS óra
+# DentHub-Brush – fogmosás-időzítő – Android telefon és Wear OS óra
 
 ## Letöltés
 
@@ -58,7 +58,7 @@ Helyi build: `cd android && ./gradlew :brushcore:test :app:assembleDebug :wear:a
 - **Zárolás ujjlenyomattal / arcfelismeréssel**, külön **szülői zár** a beállításokra.
 - **Az órán is:** fogmosás után gyors jelölés (🧵 fogselyem, 🩸 ínyvérzés, ⚡ érzékenység), a telefonra kerül; **csempe** a mai haladással.
 - **Élő kijelzés:** fogmosás közben futó idő és haladássáv az értesítésben, a lezárt képernyőn is.
-- **Gyorsindítás:** hosszan nyomd meg az app ikonját → „Fogmosás indítása”. Hanggal: „Hé Google, nyisd meg a Fogmosást”.
+- **Gyorsindítás:** hosszan nyomd meg az app ikonját → „Fogmosás indítása”. Hanggal: „Hé Google, nyisd meg a DentHub-Brush appot”.
 - **Bemutató:** „Mit tud az app?” első indításkor és a Beállításokban.
 - **Megnézem a weben:** Statisztika → QR-kód beolvasása (a Google kódolvasóját használja, kameraengedély nem kell). Lásd [web/README.md](../web/README.md).
 

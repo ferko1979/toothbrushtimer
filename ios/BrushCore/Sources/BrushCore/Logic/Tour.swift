@@ -25,7 +25,7 @@ public enum Tour {
             TourPage(icon: "👨‍👩‍👧", title: tr("Az egész családnak"), text: tr("Gyerekprofilok saját avatarral; a még nem olvasó gyerekek képes felületet kapnak felolvasással. Matricát gyűjthetnek, a szülő jutalmat tűzhet ki.")),
             TourPage(icon: "🏅", title: tr("Célok és kitüntetések"), text: tr("Állítsd be, naponta hányszor és meddig mosol fogat. Sorozatokat és kitüntetéseket gyűjthetsz, és tippeket kapsz a fejlődéshez.")),
             TourPage(icon: "⌚", title: "\(watch)", text: tr("Az órán is elindíthatod a mérést; az eredmény átkerül a telefonra. A {0} egy pillantással mutatja a mai haladást.", complication)),
-            TourPage(icon: "🌐", title: tr("Weben is"), text: tr("A Statisztikában beolvashatod a Fogmosás weboldal QR-kódját, és a számítógépen nagyobb képernyőn is látod az eredményeidet. Titkosítva, jelszó nélkül.")),
+            TourPage(icon: "🌐", title: tr("Weben is"), text: tr("A Statisztikában beolvashatod a DentHub-Brush weboldal QR-kódját, és a számítógépen nagyobb képernyőn is látod az eredményeidet. Titkosítva, jelszó nélkül.")),
             TourPage(icon: "🔒", title: tr("Adatvédelem"), text: tr("Hangfelvétel nem készül: a hangot csak a telefon dolgozza fel, a memóriában. Az appot {0} zárolhatod, a beállításokat szülői zárral védheted.", auth)),
         ]
     }

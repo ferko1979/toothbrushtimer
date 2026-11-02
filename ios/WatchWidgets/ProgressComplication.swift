@@ -70,7 +70,7 @@ struct ProgressComplication: Widget {
         StaticConfiguration(kind: "FogmosasProgress", provider: SummaryProvider()) { entry in
             ComplicationView(entry: entry).containerBackground(.clear, for: .widget)
         }
-        .configurationDisplayName(tr("Fogmosás"))
+        .configurationDisplayName("DentHub-Brush")
         .description(tr("A mai fogmosások és a sorozat."))
         .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline, .accessoryCorner])
     }

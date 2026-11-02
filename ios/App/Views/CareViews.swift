@@ -232,7 +232,7 @@ struct CareStatsSections: View {
         }
         if model.settings.isOn("web_link", platform: .ios) {
             Section(tr("Megnézem a weben")) {
-                Text(tr("Nyisd meg a Fogmosás weboldalát a számítógépen, és olvasd be az ott látható QR-kódot. Az adatok titkosítva mennek át, a szerver nem tárolja őket."))
+                Text(tr("Nyisd meg a DentHub-Brush weboldalát a számítógépen, és olvasd be az ott látható QR-kódot. Az adatok titkosítva mennek át, a szerver nem tárolja őket."))
                     .font(.caption).foregroundStyle(.secondary)
                 Button { webStatus = nil; scanning = true } label: { Label(tr("QR-kód beolvasása"), systemImage: "qrcode.viewfinder") }
                 if let s = webStatus { Text(s).font(.footnote).foregroundStyle(s.hasPrefix("✔") ? Theme.ok : Theme.danger) }
@@ -241,7 +241,7 @@ struct CareStatsSections: View {
                 NavigationStack {
                     QRScannerView { code in
                         scanning = false
-                        if let pr = WebLink.parse(code) { pairing = pr } else { webStatus = tr("Ez nem a Fogmosás weboldal QR-kódja.") }
+                        if let pr = WebLink.parse(code) { pairing = pr } else { webStatus = tr("Ez nem a DentHub-Brush weboldal QR-kódja.") }
                     }
                     .ignoresSafeArea()
                     .navigationTitle(tr("QR-kód")).navigationBarTitleDisplayMode(.inline)

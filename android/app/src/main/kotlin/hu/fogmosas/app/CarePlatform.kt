@@ -84,7 +84,7 @@ object ReportPdf {
             for (l in s.lines) draw("•  $l", body, indent = 8)
             y += 10f
         }
-        draw(tr("Készült a Fogmosás appal. A tünetek a felhasználó saját jelölései, nem orvosi diagnózis."), muted)
+        draw(tr("Készült a DentHub-Brush appal. A tünetek a felhasználó saját jelölései, nem orvosi diagnózis."), muted)
         page?.let { doc.finishPage(it) }
         val dir = File(ctx.cacheDir, "reports").apply { mkdirs() }
         val f = File(dir, "fogapolasi-jelentes.pdf")

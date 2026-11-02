@@ -1,0 +1,4 @@
+# Alternative to nginx: Caddy gets the https certificate by itself.
+brush.example.hu {
+    reverse_proxy 127.0.0.1:8090
+}

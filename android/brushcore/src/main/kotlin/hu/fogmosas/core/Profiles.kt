@@ -163,7 +163,7 @@ data class Feature(
             Feature("mouthwash_tracking", tr("Szájvíz követése"), "", false, tr("Kiegészítők")),
             Feature("interdental_tracking", tr("Fogköztisztító kefe / szájzuhany"), tr("Fogszabályzóval különösen fontos."), false, tr("Kiegészítők")),
             Feature("tongue_tracking", tr("Nyelvtisztítás"), "", false, tr("Kiegészítők")),
-            Feature("voice_shortcuts", tr("Gyorsindítás és hangvezérlés"), tr("Hosszan nyomd meg az app ikonját: „Fogmosás indítása”. Vagy: „Hé Google, nyisd meg a Fogmosást”."), true, tr("Kiegészítők")),
+            Feature("voice_shortcuts", tr("Gyorsindítás és hangvezérlés"), tr("Hosszan nyomd meg az app ikonját: „Fogmosás indítása”. Vagy: „Hé Google, nyisd meg a DentHub-Brush appot”."), true, tr("Kiegészítők")),
             Feature("health_sync", tr("Mentés az Egészség appba"), tr("Apple Health: Fogmosás."), false, tr("Adatok"), setOf("ios", "watchos")),
             Feature("care_checkin", tr("Tünetnapló"), tr("Fogmosás után: érzékeny volt-e a fog, vérzett-e az íny. Statisztika és figyelmeztetés, ha tartós."), true, tr("Egészség")),
             Feature("toothpaste_tracking", tr("Fogkrém nyilvántartása"), tr("Látszik, segít-e az érzékeny fogra való fogkrém."), false, tr("Egészség")),

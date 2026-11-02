@@ -63,8 +63,8 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
 
         when {
             data.onboarded && data.settings.isOn("app_lock", "android") && !activity.unlocked.value && !engine.active ->
-                LockScreen(tr("Fogmosás – zárolva")) {
-                    DeviceAuth.authenticate(activity, tr("Fogmosás feloldása")) { ok -> if (ok) activity.unlocked.value = true }
+                LockScreen(tr("DentHub-Brush – zárolva")) {
+                    DeviceAuth.authenticate(activity, tr("DentHub-Brush feloldása")) { ok -> if (ok) activity.unlocked.value = true }
                 }
             !data.onboarded -> OnboardingScreen(activity, store)
             !data.tourSeen && !engine.active -> TourScreen { store.update { it.copy(tourSeen = true) } }

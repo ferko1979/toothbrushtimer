@@ -6,7 +6,7 @@
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
-        android:label="Fogmosás"
+        android:label="DentHub-Brush"
         android:theme="@android:style/Theme.DeviceDefault">
 
         <meta-data android:name="com.google.android.wearable.standalone" android:value="true" />
@@ -24,7 +24,7 @@
         <service
             android:name=".ProgressTileService"
             android:exported="true"
-            android:label="Fogmosás"
+            android:label="DentHub-Brush"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>
                 <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />

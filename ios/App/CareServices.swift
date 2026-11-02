@@ -67,7 +67,7 @@ enum ReportPDF {
                     for l in sec.lines { draw("•  " + l, body, indent: 8) }
                     y += 10
                 }
-                draw(tr("Készült a Fogmosás appal. A tünetek a felhasználó saját jelölései, nem orvosi diagnózis."), muted)
+                draw(tr("Készült a DentHub-Brush appal. A tünetek a felhasználó saját jelölései, nem orvosi diagnózis."), muted)
             }
             return url
         } catch {

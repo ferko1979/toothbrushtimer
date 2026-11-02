@@ -76,7 +76,7 @@ struct LockScreenView: View {
         HStack(spacing: 14) {
             Text(state.phase == "done" ? "🎉" : "🪥").font(.system(size: 40))
             VStack(alignment: .leading, spacing: 6) {
-                Text(attrs.child ? attrs.name : tr("Fogmosás")).font(.headline).foregroundStyle(.white)
+                Text(attrs.child ? attrs.name : "DentHub-Brush").font(.headline).foregroundStyle(.white)
                 if let st = state.startedAt {
                     HStack {
                         Text(st, style: .timer).font(.title.monospacedDigit().bold()).foregroundStyle(.white)

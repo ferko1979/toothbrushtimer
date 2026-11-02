@@ -1,4 +1,4 @@
-# Fogmosás-időzítő – iPhone és Apple Watch
+# DentHub-Brush – fogmosás-időzítő – iPhone és Apple Watch
 
 ## Letölthető teszt-verzió fizetős fiók nélkül (Sideloadly / AltStore)
 

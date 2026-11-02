@@ -21,7 +21,7 @@ object Tour {
             TourPage("👨‍👩‍👧", tr("Az egész családnak"), tr("Gyerekprofilok saját avatarral; a még nem olvasó gyerekek képes felületet kapnak felolvasással. Matricát gyűjthetnek, a szülő jutalmat tűzhet ki.")),
             TourPage("🏅", tr("Célok és kitüntetések"), tr("Állítsd be, naponta hányszor és meddig mosol fogat. Sorozatokat és kitüntetéseket gyűjthetsz, és tippeket kapsz a fejlődéshez.")),
             TourPage("⌚", "$watch", tr("Az órán is elindíthatod a mérést; az eredmény átkerül a telefonra. A {0} egy pillantással mutatja a mai haladást.", complication)),
-            TourPage("🌐", tr("Weben is"), tr("A Statisztikában beolvashatod a Fogmosás weboldal QR-kódját, és a számítógépen nagyobb képernyőn is látod az eredményeidet. Titkosítva, jelszó nélkül.")),
+            TourPage("🌐", tr("Weben is"), tr("A Statisztikában beolvashatod a DentHub-Brush weboldal QR-kódját, és a számítógépen nagyobb képernyőn is látod az eredményeidet. Titkosítva, jelszó nélkül.")),
             TourPage("🔒", tr("Adatvédelem"), tr("Hangfelvétel nem készül: a hangot csak a telefon dolgozza fel, a memóriában. Az appot {0} zárolhatod, a beállításokat szülői zárral védheted.", auth)),
         )
     }

@@ -1,4 +1,4 @@
-# Fogmosás-időzítő
+# DentHub-Brush – fogmosás-időzítő
 
 Hang alapján méri a fogmosás idejét: a víz elzárásától az öblítésig. Felismeri
 a kézi súrolást és az elektromos (szónikus) fogkefe zúgását, figyelmeztet a

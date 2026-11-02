@@ -8,7 +8,7 @@ The browser and the phone share one encrypted message through a relay that canno
        https://<host>[/<prefix>]/l#<sid>.<base64url(raw public key, 65 bytes, 0x04||X||Y)>
 
    and long-polls `GET /api/relay/<sid>`.
-2. **Phone** (the Fogmosás app) scans the QR code, shows the host name, asks for Face ID /
+2. **Phone** (the DentHub-Brush app) scans the QR code, shows the host name, asks for Face ID /
    fingerprint, builds the statistics snapshot (JSON, `WebSnapshot`), and seals it:
    - ephemeral ECDH P-256 key pair; `shared = ECDH(phone_priv, web_pub)` (32-byte X coordinate)
    - `key = HKDF-SHA256(ikm = shared, salt = utf8(sid), info = "fogmosas-web-v1", L = 32)`

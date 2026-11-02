@@ -1,4 +1,4 @@
-# Fogmosás – webes megtekintés
+# DentHub-Brush – webes megtekintés
 
 A telefonos appban mért statisztika a böngészőben is megnézhető, **fiók és jelszó nélkül**:
 

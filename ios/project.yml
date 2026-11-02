@@ -37,7 +37,7 @@ targets:
     info:
       path: App/Info.plist
       properties:
-        CFBundleDisplayName: Fogmosás
+        CFBundleDisplayName: DentHub-Brush
         CFBundleDevelopmentRegion: hu
         CFBundleLocalizations: [hu, en]
         UILaunchScreen: {}
@@ -74,7 +74,7 @@ targets:
     info:
       path: Watch/Info.plist
       properties:
-        CFBundleDisplayName: Fogmosás
+        CFBundleDisplayName: DentHub-Brush
         CFBundleDevelopmentRegion: hu
         CFBundleLocalizations: [hu, en]
         WKApplication: true
@@ -102,7 +102,7 @@ targets:
     info:
       path: Widgets/Info.plist
       properties:
-        CFBundleDisplayName: Fogmosás
+        CFBundleDisplayName: DentHub-Brush
         CFBundleDevelopmentRegion: hu
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
@@ -128,7 +128,7 @@ targets:
     info:
       path: WatchWidgets/Info.plist
       properties:
-        CFBundleDisplayName: Fogmosás
+        CFBundleDisplayName: DentHub-Brush
         CFBundleDevelopmentRegion: hu
         FogmosasAppGroup: "group.${BUNDLE_PREFIX}.toothbrushtimer"
         NSExtension:
