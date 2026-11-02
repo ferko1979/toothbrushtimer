@@ -18,16 +18,27 @@ the tap was running.
    él a memóriában. Ebből számoljuk a jellemzőket (hangszín, ritmus, zúgás), utána
    a puffer felülíródik. Hangot fájlba, adatbázisba vagy naplóba írni tilos.
 2. **Nincs hálózat a felismeréshez.** A modell a készüléken fut; az app a mérés
-   működéséhez nem kér internetet.
+   működéséhez nem használ internetet (csak a kérésre indított webes megtekintéshez).
 3. **Csak minimális adat** kerül mentésre: kezdő időpont, időtartam, csap-idő,
    fogkefe típusa, profil. Ezek a készüléken maradnak.
 4. **Megosztás csak kifejezett kérésre:** Apple Health (iOS), CSV/JSON export,
-   havi összefoglaló a fogorvosnak. Felhőmentés csak a platform titkosított
-   mentésén keresztül (iCloud / Google mentés), külön szerver nincs.
-5. **Mikor figyel a mikrofon?** Csak amikor a felhasználó engedélyezte, és
+   havi összefoglaló és PDF-jelentés a fogorvosnak. Felhőmentés csak a platform
+   titkosított mentésén keresztül (iCloud / Google mentés), fiók és saját adatbázis nincs.
+5. **Tünetnapló = egészségügyi adat.** Az érzékenység és az ínyvérzés a GDPR szerint
+   különleges kategóriás adat. Ezért csak a készüléken tároljuk, a felhasználó maga
+   jelöli, és csak az ő kifejezett kérésére hagyja el a telefont (PDF, webes megtekintés).
+   Az app tanácsai nem orvosi diagnózisok.
+6. **Webes megtekintés:** csak akkor küld adatot, ha a felhasználó beolvassa a weboldal
+   QR-kódját, megerősíti a webcímet, és Face ID-val / ujjlenyomattal jóváhagyja. Az adat
+   végponttól végpontig titkosított (ECDH P-256 + AES-256-GCM, egyszeri kulcs); a
+   továbbító szerver nem tudja elolvasni, legfeljebb 2 percig tartja a memóriában,
+   lemezre nem ír, és a böngészőlap bezárásakor az adat eltűnik ([web/PROTOCOL.md](web/PROTOCOL.md)).
+7. **Zárolás:** az app és a beállítások (szülői zár) a készülék saját azonosításával
+   (Face ID, Touch ID, ujjlenyomat, PIN) zárolhatók; biometrikus adat nem jut az apphoz.
+8. **Mikor figyel a mikrofon?** Csak amikor a felhasználó engedélyezte, és
    (a) épp fut egy mérés, vagy (b) a „mosdó mód” be van kapcsolva, amikor a
    telefon le van téve a fürdőben. A rendszer mikrofonjelzője (narancs/zöld pötty)
    ilyenkor látszik, és az app is mutatja.
-6. **Gyerekprofilok:** szülői fiókhoz kötve, reklám és harmadik féltől származó
+9. **Gyerekprofilok:** szülői fiókhoz kötve, reklám és harmadik féltől származó
    analitika nélkül.
-7. **Törlés:** az összes adat egy gombbal törölhető az appból.
+10. **Törlés:** az összes adat egy gombbal törölhető az appból.

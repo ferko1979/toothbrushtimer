@@ -106,7 +106,15 @@ ios/
 | Havi összefoglaló, CSV-export | ✅ | – |
 | Apple Health (Fogmosás) | ✅ (bekapcsolható) | a telefon menti |
 | Siri / Parancsok: „Start brushing with Fogmosás” | ✅ | – |
-| Fogselyem, szájvíz | ✅ (bekapcsolható) | – |
+| Fogselyem, szájvíz, fogköztisztító, nyelvtisztítás (napló, sorozat, statisztika) | ✅ (bekapcsolható) | – |
+| Tünetnapló fogmosás után: érzékenység, ínyvérzés; figyelmeztetés, ha tartós | ✅ (gyerekeknek képekkel) | – |
+| Fogkrém nyilvántartása, „segít-e az érzékeny fogra való fogkrém” | ✅ (bekapcsolható) | – |
+| Fogorvosi kontroll (félévente) és fogkőeltávolítás (évente) emlékeztető | ✅ | – |
+| Jelentés a fogorvosnak PDF-ben (30/90 nap) | ✅ | – |
+| Fogszabályzós mód (3 perc célidő, fogköztisztítás) | ✅ | – |
+| Gyerekeknek jutalom matricákért, szülőnek családi áttekintés | ✅ | – |
+| Zárolás Face ID-val / Touch ID-val, szülői zár | ✅ (bekapcsolható) | – |
+| Megnézem a weben: QR-kód beolvasása, titkosított átküldés | ✅ | – |
 
 **Még nincs kész** (a beállításokban „hamarosan” felirattal szerepel):
 - élő kijelzés a lezárt képernyőn és a Dynamic Islanden (külön widget-bővítmény kell hozzá),

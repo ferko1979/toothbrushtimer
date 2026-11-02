@@ -50,6 +50,14 @@ android/
 
 Helyi build: `cd android && ./gradlew :brushcore:test :app:assembleDebug :wear:assembleDebug` (Android SDK és JDK 17 kell).
 
+## Fogápolás, fogorvos, web
+
+- **Tünetnapló** fogmosás után (érzékenység, ínyvérzés; gyerekeknek képekkel), fogselyem, szájvíz, fogköztisztító, nyelvtisztítás, fogkrém. Statisztika és figyelmeztetés, ha egy tünet tartós (ez nem orvosi diagnózis).
+- **Fogorvosi kontroll** (félévente) és fogkőeltávolítás (évente) emlékeztető, **PDF-jelentés** a fogorvosnak (Statisztika → PDF).
+- **Fogszabályzós mód**, **jutalom matricákért** a gyerekeknek, **családi áttekintés** a szülőnek.
+- **Zárolás ujjlenyomattal / arcfelismeréssel**, külön **szülői zár** a beállításokra.
+- **Megnézem a weben:** Statisztika → QR-kód beolvasása (a Google kódolvasóját használja, kameraengedély nem kell). Lásd [web/README.md](../web/README.md).
+
 ## Ismert korlátok (teszt-verzió)
 
 - Az Android nem jelzi az appnak az első feloldást, ha az app nem fut. Ezért a reggeli emlékeztető az ébredés idejére van időzítve, ugyanúgy, mint iPhone-on.

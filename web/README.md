@@ -1,0 +1,37 @@
+# Fogmosás – webes megtekintés
+
+A telefonos appban mért statisztika a böngészőben is megnézhető, **fiók és jelszó nélkül**:
+
+1. Nyisd meg a weboldalt a számítógépen: megjelenik egy QR-kód.
+2. A telefonon: **Statisztika → Megnézem a weben → QR-kód beolvasása**, majd hagyd jóvá Face ID-val vagy ujjlenyomattal.
+3. A böngészőben megjelenik az irányítópult: fogmosási idők, fogápolási napló (fogselyem, ínyvérzés, érzékenység), megfigyelések és a fogorvosi jelentés (nyomtatható).
+
+Az adatokat a telefon titkosítja, és csak az a böngészőlap tudja kinyitni, amelyik a QR-kódot mutatta.
+A szerver csak továbbítja a titkosított csomagot (legfeljebb 2 percig tartja a memóriában), nem
+tárol semmit, és nem látja a tartalmat. A lap bezárásakor az adatok eltűnnek. Részletek: [PROTOCOL.md](PROTOCOL.md).
+
+## Futtatás
+
+Node.js 18 vagy újabb kell, más függőség nincs.
+
+```bash
+cd web
+npm start                 # http://localhost:8080
+npm test                  # továbbító és titkosítás tesztjei
+node test/e2e.mjs shots   # teljes párosítás valódi böngészőben (Playwright kell)
+```
+
+A telefonos appok csak **https** címet fogadnak el (helyi fejlesztéskor `http://localhost` is jó).
+
+## Közzététel
+
+Bármilyen Node- vagy Docker-tárhelyen fut (pl. Render, Fly.io, Railway, saját szerver), egyetlen
+folyamatként; adatbázis és tárhely nem kell.
+
+```bash
+docker build -t fogmosas-web web
+docker run -p 8080:8080 fogmosas-web
+```
+
+Https-t a tárhely vagy egy elé tett proxy (pl. Caddy, nginx) adja. Több példány esetén mindegyik
+kérésnek ugyanarra a példányra kell érkeznie (egy példány bőven elég).
