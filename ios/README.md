@@ -1,5 +1,28 @@
 # Fogmosás-időzítő – iPhone és Apple Watch
 
+## Letölthető teszt-verzió: TestFlight
+
+Az iPhone-os és az órás app letölthető teszt-verzióját az Apple csak
+**TestFlighton** keresztül engedi terjeszteni. Ehhez **Apple Developer Program-tagság**
+kell (99 USD/év, https://developer.apple.com/programs/). Ha ez megvan, a
+GitHub-munkafolyamat (`.github/workflows/ios-testflight.yml`) Mac nélkül is
+megépíti, aláírja és feltölti az appot. Lépések:
+
+1. **App Store Connect → Saját appok → + → Új app**: platform iOS, név „Fogmosás”,
+   bundle ID: `<előtag>.toothbrushtimer` (például `hu.sajatnev.toothbrushtimer`; ha még nincs a listában,
+   előbb a developer.apple.com → Identifiers oldalon kell felvenni).
+2. **App Store Connect → Felhasználók és hozzáférés → Integrációk → App Store Connect API**:
+   hozz létre egy kulcsot *App Manager* szerepkörrel, és töltsd le az `AuthKey_XXXX.p8` fájlt.
+3. **GitHub → a repó → Settings → Secrets and variables → Actions**, add hozzá:
+   `APPLE_TEAM_ID`, `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` (a .p8 fájl tartalma), `BUNDLE_PREFIX`.
+4. **GitHub → Actions → „iOS + watchOS → TestFlight” → Run workflow** (vagy szólj, és én indítom).
+5. 10–30 perc múlva megjelenik az App Store Connect **TestFlight** fülén. Ott add hozzá magad
+   (és a tesztelőket) belső tesztelőként, majd telepítsd az iPhone-on a **TestFlight** appból.
+   Az órás app a telefonos appal együtt érkezik, és a Watch appban telepíthető.
+
+Ingyenes Apple ID-val TestFlight nincs; akkor csak Macről, Xcode-dal lehet a saját
+iPhone-ra telepíteni (lásd lent), és a telepítés 7 napig érvényes.
+
 ## Futtatás (Macen)
 
 Kell hozzá:
