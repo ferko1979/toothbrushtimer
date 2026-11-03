@@ -74,7 +74,7 @@ fun ToothMapPicker(selected: Set<String>, onChange: (Set<String>) -> Unit) {
                 teeth.forEach { t ->
                     val on = t in selected
                     OutlinedButton(onClick = { onChange(if (on) selected - t else selected + t) },
-                        Modifier.weight(1f).height(44.dp).semantics { contentDescription = ToothMap.name(t); selected = on }, shape = RoundedCornerShape(10.dp),
+                        Modifier.weight(1f).height(44.dp).semantics { contentDescription = ToothMap.name(t); this.selected = on }, shape = RoundedCornerShape(10.dp),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                         border = BorderStroke(if (on) 2.dp else 1.dp, if (on) C.brand else Color(0xFFC9D6DD)),
                         colors = ButtonDefaults.outlinedButtonColors(containerColor = if (on) C.brand else Color(0xFFF2F6F8))) {
