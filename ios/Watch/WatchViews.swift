@@ -144,8 +144,8 @@ struct WatchBrushingView: View {
                     if n % 25 == 0 { controller.setMotionBrush(rhythm.score()) }
                 }
             }
-            controller.start(heads: heads, sessionConfig: sc, sonicConfig: son, nearGateDb: place.nearGateDb,
-                             useSonic: true, batterySaver: true)
+            controller.start(heads: heads, sessionConfig: sc, sonicConfig: son,
+                             useSonic: true, batterySaver: true, nearGateDb: place.nearGateDb)
         } else {
             controller.startManual()
         }
