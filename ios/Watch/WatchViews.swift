@@ -120,6 +120,7 @@ struct WatchBrushingView: View {
             var sc = SessionConfig()
             sc.holdUntilS = model.goals.targetS
             sc.sonicSuppressesWater = true
+            sc.runHysteresis = true
             // The watch does not know the brush type: listen from Oral-B's low hum up to sonic brushes.
             var son = SonicConfig()
             son.bandLowHz = 60

@@ -142,7 +142,7 @@ object BrushingEngine {
         // Until the goal is reached, stop only after a long silence or a clear rinse.
         val sc = policy.sessionConfig.let {
             it.copy(holdUntilS = cfg.targetS, endQuietS = it.endQuietS + cfg.quietExtraS, holdQuietS = it.holdQuietS + cfg.quietExtraS,
-                sonicSuppressesWater = cfg.useSonic)
+                sonicSuppressesWater = cfg.useSonic, runHysteresis = true)
         }
         userStop = false
         val det = StreamingDetector(heads, sc, cfg.sonicConfig, cfg.useSonic, cfg.batterySaver,

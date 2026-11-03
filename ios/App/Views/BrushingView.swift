@@ -186,6 +186,7 @@ struct BrushingView: View {
         sc.endQuietS += profile.quietExtraS
         sc.holdQuietS += profile.quietExtraS
         sc.sonicSuppressesWater = profile.brushType.powered
+        sc.runHysteresis = true
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         let faceDown = UIDevice.current.orientation == .faceDown
         let testing = settings.isOn("test_recording", platform: .ios)
