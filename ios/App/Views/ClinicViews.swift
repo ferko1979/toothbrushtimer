@@ -150,7 +150,16 @@ struct SymptomFlowView: View {
                                 Text(tr("Válaszd ki, mi történt. Utána pár rövid kérdés jön, hogy pontosan leírhasd."))
                                     .font(.subheadline).foregroundStyle(.secondary)
                             }
-                            ForEach(q.options, id: \.id) { o in
+                            if q.id == "teeth" {
+                                ToothMapPicker(selected: $multi)
+                                Button(tr("Nem tudom / kihagyom")) {
+                                    try? flow.answer(["unsure"])
+                                    multi = []
+                                    tick += 1
+                                }
+                                .buttonStyle(.bordered).frame(maxWidth: .infinity)
+                            }
+                            ForEach(q.id == "teeth" ? [] : q.options, id: \.id) { o in
                                 ChoiceButton(label: o.label, selected: multi.contains(o.id)) {
                                     if q.multi {
                                         if multi.contains(o.id) { multi.remove(o.id) } else { multi.insert(o.id) }
@@ -202,6 +211,7 @@ struct SymptomResultView: View {
     @State private var picked: PhotosPickerItem?
     @State private var mail: OutgoingMail?
     @State private var visit = false
+    @State private var addTask = false
 
     var body: some View {
         let res = flow.result()
@@ -286,12 +296,15 @@ struct SymptomResultView: View {
                     Button(tr("📅 Időpontot kérek")) { _ = save(via: nil); visit = true }
                         .buttonStyle(.bordered).frame(maxWidth: .infinity)
                 }
+                Button(tr("💊 Gyógyszer / teendő emlékeztető")) { addTask = true }
+                    .buttonStyle(.bordered).frame(maxWidth: .infinity)
                 Button(tr("Mentés a naplóba és bezárás")) { _ = save(via: nil); onClose() }
                     .buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
             }
             .padding()
         }
         .sheet(isPresented: $camera) { CameraPicker { img in if let n = ClinicFiles.save(img) { photos.append(n) } } }
+        .sheet(isPresented: $addTask) { CareTaskSheet(profileId: model.activeProfile.id).environmentObject(model) }
         .sheet(item: $mail) { MailSheet(mail: $0) }
         .navigationDestination(isPresented: $visit) { VisitRequestView(symptomId: saved?.id, onClose: onClose) }
         .onChange(of: picked) { _, item in
@@ -507,20 +520,33 @@ struct SymptomHistoryCard: View {
         }
         .sheet(isPresented: $symptom) { SymptomFlowView(profile: p, reports: model.data.symptoms).environmentObject(model) }
         .sheet(item: $mail) { MailSheet(mail: $0) }
-        .alert(open.map { Symptoms.kind($0.kind).title } ?? "", isPresented: Binding(get: { open != nil }, set: { if !$0 { open = nil } })) {
-            Button(tr("✉️ Küldés")) {
-                if var r = open {
-                    let m = clinicEmail(patientName: p.name, symptom: r, visit: nil)
-                    r.sentVia = "email"
-                    r.sentAt = Date()
-                    model.addSymptom(r)
-                    mail = OutgoingMail(to: model.data.clinic?.email, subject: m.subject, body: m.body, photos: r.photos)
+        .sheet(item: $open) { r in
+            NavigationStack {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(symptomSummary(r).dropFirst(), id: \.self) { Text($0).font(.subheadline) }
+                        ForEach(Array(model.data.followUps.filter { $0.reportId == r.id }.enumerated()), id: \.offset) { _, f in
+                            Text(tr("{0}. nap: {1}", f.day, FollowUps.title(f.answer))).font(.caption).foregroundStyle(.secondary)
+                        }
+                        PhotoTimelineView(reports: photoTimeline(model.data.symptoms, profileId: p.id, kind: r.kind))
+                        Button(tr("✉️ Küldés")) {
+                            var s = r
+                            let m = clinicEmail(patientName: p.name, symptom: s, visit: nil)
+                            s.sentVia = "email"
+                            s.sentAt = Date()
+                            model.addSymptom(s)
+                            open = nil
+                            let out = OutgoingMail(to: model.data.clinic?.email, subject: m.subject, body: m.body, photos: s.photos)
+                            // Present the mail once this sheet is gone.
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { mail = out }
+                        }
+                        .buttonStyle(.borderedProminent).padding(.top)
+                    }
+                    .padding()
                 }
-                open = nil
+                .navigationTitle(Symptoms.kind(r.kind).title).navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button(tr("Bezárás")) { open = nil } } }
             }
-            Button(tr("Bezárás"), role: .cancel) { open = nil }
-        } message: {
-            Text(open.map { symptomSummary($0).dropFirst().joined(separator: "\n") } ?? "")
         }
     }
 }

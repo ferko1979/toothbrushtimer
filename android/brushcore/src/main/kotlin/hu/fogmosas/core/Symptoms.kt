@@ -110,14 +110,16 @@ object Symptoms {
         "loose_cause" -> SymptomQuestion(id, tr("Mi okozhatta?"), listOf(o("injury", tr("Ütés, baleset")), o("slowly", tr("Lassan kezdett mozogni")), o("changing", tr("Gyerek, fogváltás"))))
         "jaw_sym" -> SymptomQuestion(id, tr("Mit érzel? (több is lehet)"), listOf(o("click", tr("Kattog, ropog")), o("chew_pain", tr("Rágáskor fáj")), o("open", tr("Nem tudom nagyra nyitni")), o("morning", tr("Reggel fáj, fogcsikorgatás"))), multi = true)
         "taste" -> SymptomQuestion(id, tr("Rossz ízt vagy gennyet érzel a szádban?"), yesNo)
+        "teeth" -> SymptomQuestion(id, tr("Melyik fog? Koppints rá (több is lehet)"),
+            ToothMap.all.map { o(it, it) } + o("unsure", tr("Nem tudom / kihagyom")), multi = true)
         "braces_issue" -> SymptomQuestion(id, tr("Mi a gond?"), listOf(o("wire", tr("Szúr a drót")), o("bracket", tr("Levált egy bracket")), o("adjust", tr("Fáj az utánállítás után")), o("aligner", tr("Eltört a sín, aligner"))))
         else -> throw IllegalArgumentException(id)
     }
 
     /** The questions of a complaint, in order; later ones may depend on earlier answers. */
-    fun questionsFor(kind: String, a: Map<String, List<String>>): List<String> {
+    fun questionsFor(kind: String, a: Map<String, List<String>>, child: Boolean = false): List<String> {
         fun yes(q: String) = a[q]?.contains("yes") == true
-        return when (kind) {
+        val qs = when (kind) {
             "bleeding" -> listOf("jaw", "side", "bleed_when", "bleed_amount", "since")
             "pain" -> listOf("jaw", "side", "zone", "pain", "trigger", "since", "swelling_also") +
                 (if (yes("swelling_also")) listOf("fever", "breathing") else emptyList())
@@ -134,6 +136,10 @@ object Symptoms {
             "braces" -> listOf("braces_issue", "pain")
             else -> listOf("since", "pain")
         }
+        // Tooth map after the "where" questions (adult teeth only).
+        if (child || kind !in ToothMap.kinds) return qs
+        val after = qs.indexOf(if ("zone" in qs) "zone" else "side")
+        return qs.take(after + 1) + "teeth" + qs.drop(after + 1)
     }
 
     /** A short label of a question for the summary ("Fogsor: Felső"). */
@@ -146,7 +152,7 @@ object Symptoms {
         "tooth_type" -> tr("Fog"); "minutes" -> tr("Ideje"); "wound_bleed" -> tr("Vérzés")
         "wound_deep" -> tr("Mély seb"); "injury_cause" -> tr("Ok"); "sore_where" -> tr("Hely")
         "sore_weeks" -> tr("Mióta"); "loose_cause" -> tr("Ok"); "jaw_sym" -> tr("Tünetek")
-        "taste" -> tr("Rossz íz, genny"); "braces_issue" -> tr("Gond")
+        "taste" -> tr("Rossz íz, genny"); "braces_issue" -> tr("Gond"); "teeth" -> tr("Fog (FDI)")
         else -> q
     }
 }
@@ -162,7 +168,7 @@ class SymptomFlow(
 
     fun next(): SymptomQuestion? {
         val k = kind ?: return SymptomQuestion("kind", tr("Mi a gond?"), Symptoms.kinds.map { SymptomOption(it.id, "${it.emoji} ${it.title}") })
-        val id = Symptoms.questionsFor(k, answers).firstOrNull { it !in answers } ?: return null
+        val id = Symptoms.questionsFor(k, answers, child).firstOrNull { it !in answers } ?: return null
         return Symptoms.question(id)
     }
 
@@ -182,7 +188,7 @@ class SymptomFlow(
     /** 0…1 for a progress bar. */
     val progress: Double get() {
         val k = kind ?: return 0.0
-        val total = Symptoms.questionsFor(k, answers).size + 1
+        val total = Symptoms.questionsFor(k, answers, child).size + 1
         return (answers.size + 1).toDouble() / total
     }
 
@@ -346,7 +352,8 @@ fun symptomSummary(r: SymptomReport, zone: ZoneId = ZoneId.systemDefault()): Lis
     val out = arrayListOf("${I18n.date(date.toLocalDate())} ${"%02d:%02d".format(date.hour, date.minute)} – ${k.emoji} ${k.title}")
     for ((q, ids) in r.answers) {
         val question = runCatching { Symptoms.question(q) }.getOrNull() ?: continue
-        val labels = ids.mapNotNull { id -> question.options.firstOrNull { it.id == id }?.label }
+        val labels = if (q == "teeth") ids.map { if (it == "unsure") tr("Nem tudom / kihagyom") else ToothMap.name(it) }
+            else ids.mapNotNull { id -> question.options.firstOrNull { it.id == id }?.label }
         out += "${Symptoms.shortLabel(q)}: ${labels.joinToString(", ")}"
     }
     out += tr("Besorolás: {0}", TriageLevel.byId(r.level).title)

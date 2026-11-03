@@ -37,6 +37,8 @@ data class AppData(
     val messages: List<hu.fogmosas.core.ClinicMessage> = emptyList(),
     /** The clinic linked through DentHub (logo at start, messages, booking). */
     val clinic: hu.fogmosas.core.ClinicInfo? = null,
+    val followUps: List<hu.fogmosas.core.SymptomFollowUp> = emptyList(),
+    val careTasks: List<hu.fogmosas.core.CareTask> = emptyList(),
 ) {
     val activeProfile get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.first()
     fun profile(id: String) = profiles.firstOrNull { it.id == id }
@@ -117,6 +119,9 @@ class AppStore private constructor(context: Context) {
     fun addSymptom(r: hu.fogmosas.core.SymptomReport) = update { d -> d.copy(symptoms = d.symptoms.filter { it.id != r.id } + r) }
     fun addVisit(v: hu.fogmosas.core.VisitRequest) = update { d -> d.copy(visits = d.visits.filter { it.id != v.id } + v) }
     fun addMessage(m: hu.fogmosas.core.ClinicMessage) = update { d -> d.copy(messages = d.messages + m) }
+    fun addFollowUp(f: hu.fogmosas.core.SymptomFollowUp) = update { d -> d.copy(followUps = d.followUps + f) }
+    fun putCareTask(t: hu.fogmosas.core.CareTask) = update { d -> d.copy(careTasks = d.careTasks.filter { it.id != t.id } + t) }
+    fun removeCareTask(id: String) = update { d -> d.copy(careTasks = d.careTasks.filter { it.id != id }) }
     fun setClinic(c: hu.fogmosas.core.ClinicInfo?) = update { d -> d.copy(clinic = c) }
     fun removeRecord(id: String) = update { d -> d.copy(records = d.records.filter { it.id != id }) }
 }

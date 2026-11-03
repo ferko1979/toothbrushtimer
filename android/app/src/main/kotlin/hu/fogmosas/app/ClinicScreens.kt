@@ -192,7 +192,12 @@ fun SymptomWizard(activity: MainActivity, store: AppStore, onClose: () -> Unit) 
         OverlayPage(tr("Panasz"), flow.progress.toFloat(), if (flow.kind != null) ({ flow.back(); multi = emptySet(); tick += 1 }) else null, onClose) {
             Text(q.title, fontSize = 24.sp, fontWeight = FontWeight.Bold)
             if (q.id == "kind") Text(tr("Válaszd ki, mi történt. Utána pár rövid kérdés jön, hogy pontosan leírhasd."), color = C.muted)
-            q.options.forEach { o ->
+            if (q.id == "teeth") {
+                ToothMapPicker(multi) { multi = it }
+                OutlinedButton(onClick = { flow.answer(listOf("unsure")); multi = emptySet(); tick += 1 }, Modifier.fillMaxWidth()) {
+                    Text(tr("Nem tudom / kihagyom"))
+                }
+            } else q.options.forEach { o ->
                 ChoiceButton(o.label, o.id in multi) {
                     if (q.multi) {
                         multi = if (o.id in multi) multi - o.id else multi + o.id
@@ -309,7 +314,10 @@ private fun SymptomResult(activity: MainActivity, store: AppStore, flow: Symptom
             val r = save()
             activity.overlay.value = "visit:${r.id}"
         }, Modifier.fillMaxWidth()) { Text(tr("📅 Időpontot kérek")) }
-        Button(onClick = { save(); onClose() }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Mentés a naplóba és bezárás")) }
+        var addTask by remember { mutableStateOf(false) }
+        OutlinedButton(onClick = { addTask = true }, Modifier.fillMaxWidth()) { Text(tr("💊 Gyógyszer / teendő emlékeztető")) }
+        if (addTask) CareTaskDialog(store, p.id) { addTask = false }
+        Button(onClick = { save(); ReminderScheduler.reschedule(ctx); onClose() }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Mentés a naplóba és bezárás")) }
     }
 }
 
@@ -437,7 +445,15 @@ fun SymptomHistoryCard(activity: MainActivity, store: AppStore) {
     open?.let { r ->
         val ctx = LocalContext.current
         AlertDialog(onDismissRequest = { open = null }, title = { Text(Symptoms.kind(r.kind).title) },
-            text = { Column(Modifier.verticalScroll(rememberScrollState())) { symptomSummary(r).drop(1).forEach { Text(it, fontSize = 14.sp) } } },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    symptomSummary(r).drop(1).forEach { Text(it, fontSize = 14.sp) }
+                    data.followUps.filter { it.reportId == r.id }.forEach { f ->
+                        Text(tr("{0}. nap: {1}", f.day, hu.fogmosas.core.FollowUps.title(f.answer)), fontSize = 13.sp, color = C.muted)
+                    }
+                    PhotoTimeline(hu.fogmosas.core.photoTimeline(data.symptoms, p.id, r.kind))
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     val (subject, body) = clinicEmail(p.name, r, null)

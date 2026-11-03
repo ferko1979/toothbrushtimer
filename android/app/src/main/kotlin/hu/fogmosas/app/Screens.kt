@@ -309,7 +309,10 @@ fun HomeScreen(activity: MainActivity, store: AppStore, onStart: () -> Unit) {
         }
         if (p.child) RewardCard(store, p)
         ChargeReminderCard(store)
+        FollowUpCard(activity, store)
+        CareTasksCard(store)
         DentistCard(activity, store)
+        AddCareTaskButton(store)
         if (data.settings.isOn("floss_tracking")) {
             val done = careDoneToday(data.care(p.id), CareKind.FLOSS, today, zone)
             InfoCard {
@@ -488,7 +491,7 @@ fun StatsScreen(activity: MainActivity, store: AppStore) {
                 }
             }
         }
-        item { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { CareStatsCards(activity, store); if (data.activeProfile.canRead) SymptomHistoryCard(activity, store) } }
+        item { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { CareStatsCards(activity, store); MotorTrendCard(store); if (data.activeProfile.canRead) SymptomHistoryCard(activity, store) } }
         item { Text(tr("Legutóbbiak"), fontWeight = FontWeight.Bold) }
         if (rs.isEmpty()) item { Text(tr("Még nincs mért fogmosás."), color = C.muted) }
         items(rs.sortedByDescending { it.startMs }.take(30)) { r ->

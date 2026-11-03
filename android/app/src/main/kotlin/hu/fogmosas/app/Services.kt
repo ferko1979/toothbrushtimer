@@ -36,8 +36,13 @@ object ReminderScheduler {
         }
         PendingIntent.getBroadcast(ctx, DENTIST_CODE, Intent(ctx, ReminderReceiver::class.java),
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)?.let { am.cancel(it) }
+        for (i in 0 until EXTRA_MAX) {
+            PendingIntent.getBroadcast(ctx, EXTRA_CODE + i, Intent(ctx, ReminderReceiver::class.java),
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)?.let { am.cancel(it) }
+        }
         val d = AppStore.get(ctx).data.value
         if (d.onboarded) scheduleDentist(ctx, am, d)
+        if (d.onboarded) scheduleCare(ctx, am, d)
         if (!d.onboarded || !d.settings.isOn("notifications")) return
         val me = d.profile("me") ?: d.activeProfile
         val zone = ZoneId.systemDefault()
@@ -51,6 +56,21 @@ object ReminderScheduler {
     }
 
     private const val DENTIST_CODE = 1100
+    private const val EXTRA_CODE = 1200
+    private const val EXTRA_MAX = 60
+
+    /** Medicine / care task reminders and complaint follow-ups ("Hogy van most?"). */
+    private fun scheduleCare(ctx: Context, am: AlarmManager, d: hu.fogmosas.shared.AppData) {
+        val zone = ZoneId.systemDefault()
+        val now = LocalDateTime.now()
+        val plan = (hu.fogmosas.core.plannedCareTasks(d.careTasks, now) +
+            hu.fogmosas.core.plannedFollowUps(d.symptoms, d.followUps, now, zone)).sortedBy { it.first }
+        plan.take(EXTRA_MAX).forEachIndexed { i, (at, text) ->
+            val intent = Intent(ctx, ReminderReceiver::class.java).putExtra("text", text).putExtra("arm", false)
+            val pi = PendingIntent.getBroadcast(ctx, EXTRA_CODE + i, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            am.setWindow(AlarmManager.RTC_WAKEUP, at.atZone(zone).toInstant().toEpochMilli(), 5 * 60_000L, pi)
+        }
+    }
 
     /** One alarm at 10:00 on the day the next checkup / cleaning of the main profile is due. */
     private fun scheduleDentist(ctx: Context, am: AlarmManager, d: hu.fogmosas.shared.AppData) {

@@ -34,7 +34,7 @@ class SymptomsTest {
 
     @Test
     fun swellingWithBreathingTroubleIsAnEmergency() {
-        val f = flow(listOf("pain"), listOf("lower"), listOf("right"), listOf("back"), listOf("moderate"), listOf("chewing"), listOf("days"), listOf("yes"))
+        val f = flow(listOf("pain"), listOf("lower"), listOf("right"), listOf("back"), listOf("46", "47"), listOf("moderate"), listOf("chewing"), listOf("days"), listOf("yes"))
         assertEquals("fever", f.next()!!.id)
         f.answer(listOf("no")); f.answer(listOf("yes"))
         assertNull(f.next())
@@ -46,7 +46,7 @@ class SymptomsTest {
 
     @Test
     fun nightPainIsUrgentAndMultiChoiceKept() {
-        val f = flow(listOf("pain"), listOf("upper"), listOf("left"), listOf("back"), listOf("mild"), listOf("hot", "night"), listOf("today"), listOf("no"))
+        val f = flow(listOf("pain"), listOf("upper"), listOf("left"), listOf("back"), listOf("unsure"), listOf("mild"), listOf("hot", "night"), listOf("today"), listOf("no"))
         assertEquals(listOf("hot", "night"), f.answers["trigger"])
         assertEquals(TriageLevel.URGENT, f.result().level)
     }
@@ -84,12 +84,13 @@ class SymptomsTest {
 
     @Test
     fun summaryEmailAndVisit() {
-        val f = flow(listOf("chipped"), listOf("tooth"), listOf("upper"), listOf("front"), listOf("front"), listOf("none"), listOf("yes"), listOf("yes"))
+        val f = flow(listOf("chipped"), listOf("tooth"), listOf("upper"), listOf("front"), listOf("front"), listOf("11"), listOf("none"), listOf("yes"), listOf("yes"))
         val r = f.report("me", 1_700_000_000_000, photos = listOf("a.jpg"), note = "Diótörés")
         val lines = symptomSummary(r, ZoneOffset.UTC)
         assertTrue(lines.first().contains("🦷"))
         assertTrue(lines.any { it.startsWith("Fogsor: Felső") })
         assertTrue(lines.any { it.contains("Diótörés") })
+        assertTrue(lines.any { it.startsWith("Fog (FDI): 11 (jobb felső középső metszőfog)") })
         assertEquals(TriageLevel.SOON.id, r.level)
         val v = VisitRequest(profileId = "me", createdMs = 0, reason = "broken", timing = "week", dayParts = listOf("morning"), symptomId = r.id)
         val (subject, body) = clinicEmail("Kiss Anna", r, v)

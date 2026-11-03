@@ -29,6 +29,7 @@ struct StatsView: View {
                 }
                 CareStatsSections()
                 if profile.canRead {
+                    Section { MotorTrendCard() }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
                     Section { SymptomHistoryCard() }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
                 }
                 Section(tr("Legutóbbiak")) {

@@ -32,9 +32,12 @@ enum NotificationScheduler {
     static func reschedule(model: AppModel) {
         let center = UNUserNotificationCenter.current()
         center.getPendingNotificationRequests { pending in
-            center.removePendingNotificationRequests(withIdentifiers: pending.map(\.identifier).filter { $0.hasPrefix("rem.") || $0 == "dentist" })
+            center.removePendingNotificationRequests(withIdentifiers: pending.map(\.identifier).filter {
+                $0.hasPrefix("rem.") || $0 == "dentist" || $0.hasPrefix("care.")
+            })
             DispatchQueue.main.async {
                 scheduleDentist(model: model, center: center)
+                scheduleCare(model: model, center: center)
                 guard model.settings.isOn("notifications") else { return }
                 let me = model.profile("me") ?? model.activeProfile
                 let plan = ReminderPlanner().plan(now: Date(), records: model.records(for: me.id), goals: me.goals,
@@ -55,6 +58,23 @@ enum NotificationScheduler {
 }
 
 extension NotificationScheduler {
+    /// Medicine / care task reminders and complaint follow-ups ("Hogy van most?").
+    static func scheduleCare(model: AppModel, center: UNUserNotificationCenter) {
+        let now = Date()
+        let plan = (plannedCareTasks(model.data.careTasks, now: now) + plannedFollowUps(model.data.symptoms, model.data.followUps, now: now))
+            .sorted { $0.0 < $1.0 }.prefix(30)
+        for (i, item) in plan.enumerated() {
+            let content = UNMutableNotificationContent()
+            content.title = tr("🦷 DentHub-Brush")
+            content.body = item.1
+            content.sound = .default
+            content.userInfo = ["arm": false]
+            let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: item.0)
+            center.add(UNNotificationRequest(identifier: "care.\(i)", content: content,
+                                             trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))
+        }
+    }
+
     /// One notification at 10:00 on the day the main profile's checkup / cleaning is due.
     static func scheduleDentist(model: AppModel, center: UNUserNotificationCenter) {
         guard model.settings.isOn("dentist_reminders"), let me = model.profile("me"),

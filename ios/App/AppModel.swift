@@ -20,6 +20,8 @@ struct AppData: Codable {
     var messages: [ClinicMessage] = []
     /// The clinic linked through DentHub (logo at start, messages, booking).
     var clinic: ClinicInfo?
+    var followUps: [SymptomFollowUp] = []
+    var careTasks: [CareTask] = []
 
     init() {}
 
@@ -41,6 +43,8 @@ struct AppData: Codable {
         visits = try c.decodeIfPresent([VisitRequest].self, forKey: .visits) ?? []
         messages = try c.decodeIfPresent([ClinicMessage].self, forKey: .messages) ?? []
         clinic = try c.decodeIfPresent(ClinicInfo.self, forKey: .clinic)
+        followUps = try c.decodeIfPresent([SymptomFollowUp].self, forKey: .followUps) ?? []
+        careTasks = try c.decodeIfPresent([CareTask].self, forKey: .careTasks) ?? []
     }
 }
 
@@ -154,6 +158,23 @@ final class AppModel: ObservableObject {
     func addSymptom(_ r: SymptomReport) {
         data.symptoms.removeAll { $0.id == r.id }
         data.symptoms.append(r)
+        NotificationScheduler.reschedule(model: self)
+    }
+
+    func putCareTask(_ t: CareTask) {
+        data.careTasks.removeAll { $0.id == t.id }
+        data.careTasks.append(t)
+        NotificationScheduler.reschedule(model: self)
+    }
+
+    func removeCareTask(_ id: UUID) {
+        data.careTasks.removeAll { $0.id == id }
+        NotificationScheduler.reschedule(model: self)
+    }
+
+    func addFollowUp(_ f: SymptomFollowUp) {
+        data.followUps.append(f)
+        NotificationScheduler.reschedule(model: self)
     }
 
     func addVisit(_ v: VisitRequest) {

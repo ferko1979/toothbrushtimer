@@ -26,7 +26,7 @@ final class SymptomsTests: XCTestCase {
     }
 
     func testSwellingWithBreathingTroubleIsAnEmergency() throws {
-        let f = try flow([["pain"], ["lower"], ["right"], ["back"], ["moderate"], ["chewing"], ["days"], ["yes"]])
+        let f = try flow([["pain"], ["lower"], ["right"], ["back"], ["46", "47"], ["moderate"], ["chewing"], ["days"], ["yes"]])
         XCTAssertEqual(f.next()?.id, "fever")
         try f.answer(["no"]); try f.answer(["yes"])
         XCTAssertNil(f.next())
@@ -37,7 +37,7 @@ final class SymptomsTests: XCTestCase {
     }
 
     func testNightPainIsUrgentAndMultiChoiceKept() throws {
-        let f = try flow([["pain"], ["upper"], ["left"], ["back"], ["mild"], ["hot", "night"], ["today"], ["no"]])
+        let f = try flow([["pain"], ["upper"], ["left"], ["back"], ["unsure"], ["mild"], ["hot", "night"], ["today"], ["no"]])
         XCTAssertEqual(f.answers.first { $0.question == "trigger" }?.options, ["hot", "night"])
         XCTAssertEqual(f.result().level, .urgent)
     }
@@ -70,7 +70,7 @@ final class SymptomsTests: XCTestCase {
     }
 
     func testSummaryEmailAndVisit() throws {
-        let f = try flow([["chipped"], ["tooth"], ["upper"], ["front"], ["front"], ["none"], ["yes"], ["yes"]])
+        let f = try flow([["chipped"], ["tooth"], ["upper"], ["front"], ["front"], ["11"], ["none"], ["yes"], ["yes"]])
         let r = f.report(profileId: "me", now: Date(timeIntervalSince1970: 1_700_000_000), photos: ["a.jpg"], note: "Diótörés")
         var utc = Calendar(identifier: .gregorian)
         utc.timeZone = TimeZone(identifier: "UTC")!
@@ -78,6 +78,7 @@ final class SymptomsTests: XCTestCase {
         XCTAssertTrue(lines[0].contains("🦷"))
         XCTAssertTrue(lines.contains { $0.hasPrefix("Fogsor: Felső") })
         XCTAssertTrue(lines.contains { $0.contains("Diótörés") })
+        XCTAssertTrue(lines.contains { $0.hasPrefix("Fog (FDI): 11 (jobb felső középső metszőfog)") })
         XCTAssertEqual(r.level, TriageLevel.soon.rawValue)
         let v = VisitRequest(profileId: "me", created: Date(), reason: "broken", timing: "week", dayParts: ["morning"], symptomId: r.id)
         let mail = clinicEmail(patientName: "Kiss Anna", symptom: r, visit: v)

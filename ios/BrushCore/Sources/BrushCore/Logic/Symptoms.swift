@@ -147,13 +147,21 @@ public enum Symptoms {
         case "loose_cause": return q(tr("Mi okozhatta?"), [o("injury", tr("Ütés, baleset")), o("slowly", tr("Lassan kezdett mozogni")), o("changing", tr("Gyerek, fogváltás"))])
         case "jaw_sym": return q(tr("Mit érzel? (több is lehet)"), [o("click", tr("Kattog, ropog")), o("chew_pain", tr("Rágáskor fáj")), o("open", tr("Nem tudom nagyra nyitni")), o("morning", tr("Reggel fáj, fogcsikorgatás"))], multi: true)
         case "taste": return q(tr("Rossz ízt vagy gennyet érzel a szádban?"), yesNo)
+        case "teeth": return q(tr("Melyik fog? Koppints rá (több is lehet)"), ToothMap.all.map { o($0, $0) } + [o("unsure", tr("Nem tudom / kihagyom"))], multi: true)
         case "braces_issue": return q(tr("Mi a gond?"), [o("wire", tr("Szúr a drót")), o("bracket", tr("Levált egy bracket")), o("adjust", tr("Fáj az utánállítás után")), o("aligner", tr("Eltört a sín, aligner"))])
         default: return nil
         }
     }
 
     /// The questions of a complaint, in order; later ones may depend on earlier answers.
-    public static func questionsFor(_ kind: String, _ a: [SymptomAnswer]) -> [String] {
+    public static func questionsFor(_ kind: String, _ a: [SymptomAnswer], child: Bool = false) -> [String] {
+        let qs = baseQuestions(kind, a)
+        // Tooth map after the "where" questions (adult teeth only).
+        guard !child, ToothMap.kinds.contains(kind), let after = qs.firstIndex(of: qs.contains("zone") ? "zone" : "side") else { return qs }
+        return Array(qs[...after]) + ["teeth"] + Array(qs[(after + 1)...])
+    }
+
+    private static func baseQuestions(_ kind: String, _ a: [SymptomAnswer]) -> [String] {
         let yes = { (q: String) in a.first { $0.question == q }?.options.contains("yes") == true }
         switch kind {
         case "bleeding": return ["jaw", "side", "bleed_when", "bleed_amount", "since"]
@@ -202,6 +210,7 @@ public enum Symptoms {
         case "jaw_sym": return tr("Tünetek")
         case "taste": return tr("Rossz íz, genny")
         case "braces_issue": return tr("Gond")
+        case "teeth": return tr("Fog (FDI)")
         default: return q
         }
     }
@@ -226,7 +235,7 @@ public final class SymptomFlow {
                                    options: Symptoms.kinds.map { SymptomOption(id: $0.id, label: "\($0.emoji) \($0.title)") })
         }
         let done = Set(answers.map(\.question))
-        guard let id = Symptoms.questionsFor(k, answers).first(where: { !done.contains($0) }) else { return nil }
+        guard let id = Symptoms.questionsFor(k, answers, child: child).first(where: { !done.contains($0) }) else { return nil }
         return Symptoms.question(id)
     }
 
@@ -254,7 +263,7 @@ public final class SymptomFlow {
     /// 0…1 for a progress bar.
     public var progress: Double {
         guard let k = kind else { return 0 }
-        let total = Symptoms.questionsFor(k, answers).count + 1
+        let total = Symptoms.questionsFor(k, answers, child: child).count + 1
         return Double(answers.count + 1) / Double(total)
     }
 
@@ -438,7 +447,9 @@ public func symptomSummary(_ r: SymptomReport, calendar: Calendar = .current) ->
     var out = ["\(I18n.date(r.date, calendar: calendar)) \(String(format: "%02d:%02d", c.hour ?? 0, c.minute ?? 0)) – \(k.emoji) \(k.title)"]
     for ans in r.answers {
         guard let q = Symptoms.question(ans.question) else { continue }
-        let labels = ans.options.compactMap { id in q.options.first { $0.id == id }?.label }
+        let labels = ans.question == "teeth"
+            ? ans.options.map { $0 == "unsure" ? tr("Nem tudom / kihagyom") : ToothMap.name($0) }
+            : ans.options.compactMap { id in q.options.first { $0.id == id }?.label }
         out.append("\(Symptoms.shortLabel(ans.question)): \(labels.joined(separator: ", "))")
     }
     out.append(tr("Besorolás: {0}", TriageLevel.byId(r.level).title))
