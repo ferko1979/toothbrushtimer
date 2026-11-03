@@ -11,4 +11,15 @@
             android:targetPackage="hu.fogmosas.toothbrushtimer"
             android:targetClass="hu.fogmosas.app.MainActivity" />
     </shortcut>
+    <shortcut
+        android:shortcutId="complaint"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_complaint_short"
+        android:shortcutLongLabel="@string/shortcut_complaint_long">
+        <intent
+            android:action="hu.fogmosas.action.COMPLAINT"
+            android:targetPackage="hu.fogmosas.toothbrushtimer"
+            android:targetClass="hu.fogmosas.app.MainActivity" />
+    </shortcut>
 </shortcuts>

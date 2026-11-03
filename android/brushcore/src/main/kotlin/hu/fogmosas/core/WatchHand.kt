@@ -58,3 +58,42 @@ class MotionRhythm(private val rateHz: Double = 50.0, windowS: Double = 3.0) {
         return Stats.ramp(band / total, 0.35, 0.6) * Stats.ramp(sqrt(variance), 0.03, 0.08)
     }
 }
+
+/**
+ * Experimental: left/right balance from the wrist roll (gravity along the watch's x axis) while
+ * brushing. The first quarter is the upper right (the cue order), so the roll seen in the first
+ * [calibrationS] seconds of brushing is taken as "right".
+ */
+class SideBalance(private val calibrationS: Double = 15.0, private val threshold: Double = 0.25) {
+    private var calib = 0.0
+    private var pos = 0.0
+    private var neg = 0.0
+
+    fun reset() { calib = 0.0; pos = 0.0; neg = 0.0 }
+
+    /** [gx] gravity along x in g, [dt] seconds since the last sample, [elapsedS] brushing time so far. */
+    fun add(gx: Double, dt: Double, brushing: Boolean, elapsedS: Double) {
+        if (!brushing) return
+        val s = if (gx > threshold) 1 else if (gx < -threshold) -1 else 0
+        if (s == 0) return
+        if (elapsedS < calibrationS) calib += s * dt
+        if (s > 0) pos += dt else neg += dt
+    }
+
+    /** (right %, left %), or null when the start was unclear or too little was measured. */
+    fun result(): Pair<Int, Int>? {
+        if (kotlin.math.abs(calib) < 4.0 || pos + neg < 30.0) return null
+        val right = if (calib > 0) pos else neg
+        val r = Math.round(100 * right / (pos + neg)).toInt()
+        return r to 100 - r
+    }
+
+    fun note(): String? {
+        val (r, l) = result() ?: return null
+        return when {
+            l < 30 -> tr("A bal oldalra kevesebb idő jutott (kb. {0}%). (kísérleti)", l)
+            r < 30 -> tr("A jobb oldalra kevesebb idő jutott (kb. {0}%). (kísérleti)", r)
+            else -> tr("Jobb {0}% · bal {1}% – kiegyensúlyozott. (kísérleti)", r, l)
+        }
+    }
+}

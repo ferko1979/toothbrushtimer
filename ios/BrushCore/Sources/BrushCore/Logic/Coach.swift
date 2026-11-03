@@ -39,15 +39,18 @@ public struct BrushRecord: Codable, Equatable, Identifiable {
     public var waterRunningS: Double = 0
     public var source: String = "phone"  // "phone", "watch", "manual"
     public var brushF0: Double? = nil
+    /// Loudness of the scrubbing (dBFS, median while brushing); for the "too hard" note.
+    public var brushDb: Double? = nil
 
     public init(profileId: String, start: Date, durationS: Double, waterRunningS: Double = 0,
-                source: String = "phone", brushF0: Double? = nil) {
+                source: String = "phone", brushF0: Double? = nil, brushDb: Double? = nil) {
         self.profileId = profileId
         self.start = start
         self.durationS = durationS
         self.waterRunningS = waterRunningS
         self.source = source
         self.brushF0 = brushF0
+        self.brushDb = brushDb
     }
 
     public var tapOff: Bool { waterRunningS < 5 }

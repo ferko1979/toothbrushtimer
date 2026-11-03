@@ -584,7 +584,13 @@ struct ClinicLinkSection: View {
             NavigationStack {
                 QRScannerView { raw in
                     scanning = false
-                    if let c = parseClinicLink(raw) { model.pendingClinic = c } else { error = true }
+                    if let c = parseClinicLink(raw) {
+                        model.pendingClinic = c
+                    } else if let c = parseCareLink(raw) {
+                        model.pendingCare = c
+                    } else {
+                        error = true
+                    }
                 }
                 .ignoresSafeArea()
                 .navigationTitle(tr("QR-kód")).navigationBarTitleDisplayMode(.inline)

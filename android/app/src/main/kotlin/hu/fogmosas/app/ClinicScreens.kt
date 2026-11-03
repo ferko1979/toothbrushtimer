@@ -489,8 +489,11 @@ fun ClinicLinkCard(activity: MainActivity, store: AppStore) {
                 OutlinedButton(onClick = {
                     WebShare.scan(activity) { raw ->
                         val found = raw?.let { parseClinicLink(it) }
+                        val care = raw?.let { hu.fogmosas.core.parseCareLink(it) }
                         if (found != null) {
                             activity.pendingClinic.value = found
+                        } else if (care != null) {
+                            activity.pendingCare.value = care
                         } else if (raw != null) {
                             error = true
                         }

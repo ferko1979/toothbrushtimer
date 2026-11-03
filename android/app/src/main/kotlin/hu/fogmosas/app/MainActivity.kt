@@ -31,6 +31,8 @@ class MainActivity : FragmentActivity() {
     val pendingClinic = mutableStateOf<hu.fogmosas.core.ClinicInfo?>(null)
     /** The clinic logo screen is shown once per app start. */
     val splashShown = mutableStateOf(false)
+    /** Care instructions from the clinic (denthub://care link / QR), waiting for confirmation. */
+    val pendingCare = mutableStateOf<hu.fogmosas.core.CareInstruction?>(null)
     lateinit var speaker: Speaker
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +43,7 @@ class MainActivity : FragmentActivity() {
             if (r.durationS >= 5) {
                 val d = store.data.value
                 val rec = BrushRecord(profileId = d.activeProfileId, startMs = r.startMs, durationS = r.durationS,
-                    waterRunningS = r.waterRunningS, source = if (r.manual) "manual" else "phone", brushF0 = r.brushF0)
+                    waterRunningS = r.waterRunningS, source = if (r.manual) "manual" else "phone", brushF0 = r.brushF0, brushDb = r.brushDb)
                 lastRecordId = rec.id
                 newAchievements.value = store.addRecord(rec)
                 // Battery running low: remember it and suggest charging until the user charges it
@@ -68,7 +70,12 @@ class MainActivity : FragmentActivity() {
         // Reminder notification or the "Fogmosás indítása" launcher shortcut: brushing is expected right away.
         if (i?.getBooleanExtra(EXTRA_ARM, false) == true || i?.action == "hu.fogmosas.action.START_BRUSHING") armRequest.value = true
         // DentHub clinic link (QR code or link from the clinic).
-        if (i?.action == Intent.ACTION_VIEW) i.dataString?.let { hu.fogmosas.core.parseClinicLink(it) }?.let { pendingClinic.value = it }
+        if (i?.action == Intent.ACTION_VIEW) i.dataString?.let { s ->
+            hu.fogmosas.core.parseClinicLink(s)?.let { pendingClinic.value = it }
+            hu.fogmosas.core.parseCareLink(s)?.let { pendingCare.value = it }
+        }
+        // "Panaszom van" launcher shortcut.
+        if (i?.action == "hu.fogmosas.action.COMPLAINT") overlay.value = "symptom"
     }
 
     override fun onStart() {

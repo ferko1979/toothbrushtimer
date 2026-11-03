@@ -37,6 +37,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,7 +74,7 @@ fun ToothMapPicker(selected: Set<String>, onChange: (Set<String>) -> Unit) {
                 teeth.forEach { t ->
                     val on = t in selected
                     OutlinedButton(onClick = { onChange(if (on) selected - t else selected + t) },
-                        Modifier.weight(1f).height(44.dp), shape = RoundedCornerShape(10.dp),
+                        Modifier.weight(1f).height(44.dp).semantics { contentDescription = ToothMap.name(t); selected = on }, shape = RoundedCornerShape(10.dp),
                         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                         border = BorderStroke(if (on) 2.dp else 1.dp, if (on) C.brand else Color(0xFFC9D6DD)),
                         colors = ButtonDefaults.outlinedButtonColors(containerColor = if (on) C.brand else Color(0xFFF2F6F8))) {
@@ -250,4 +253,26 @@ fun AddCareTaskButton(store: AppStore) {
     var add by remember { mutableStateOf(false) }
     TextButton(onClick = { add = true }) { Text(tr("💊 Gyógyszer / teendő emlékeztető")) }
     if (add) CareTaskDialog(store, p.id) { add = false }
+}
+
+/** Care instructions from the clinic (denthub://care link or QR): add as a reminder after confirming. */
+@Composable
+fun CareLinkDialog(activity: MainActivity, store: AppStore) {
+    val c = activity.pendingCare.value ?: return
+    val ctx = LocalContext.current
+    val p = store.data.collectAsStateWithLifecycle().value.activeProfile
+    AlertDialog(onDismissRequest = { activity.pendingCare.value = null },
+        title = { Text(tr("Utasítás a rendelőtől")) },
+        text = {
+            Text(listOfNotNull(c.clinic, c.title, tr("Naponta {0}×: {1}", c.times.size, c.times.joinToString(", ")), tr("{0} napig", c.days),
+                tr("Emlékeztetőként felvesszük ide: {0}", p.name)).joinToString("\n"))
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                store.putCareTask(CareTask(profileId = p.id, title = c.title, times = c.times, start = LocalDate.now().toString(), days = c.days))
+                ReminderScheduler.reschedule(ctx)
+                activity.pendingCare.value = null
+            }) { Text(tr("Felvétel")) }
+        },
+        dismissButton = { TextButton(onClick = { activity.pendingCare.value = null }) { Text(tr("Mégse")) } })
 }

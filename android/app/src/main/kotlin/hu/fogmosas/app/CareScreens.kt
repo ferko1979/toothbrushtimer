@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -106,10 +108,12 @@ fun CareCheckIn(store: AppStore) {
             if (!pictures) Text(tr("Érzékeny volt a fogad?"), fontSize = 13.sp, color = C.muted)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("😀" to tr("Nem"), "😐" to tr("Kicsit"), "😣" to tr("Nagyon")).forEachIndexed { i, (emoji, label) ->
-                    FilterChip(selected = sens == i, onClick = { sens = i }, label = { Text(if (pictures) emoji else "$emoji $label", fontSize = if (pictures) 26.sp else 14.sp) })
+                    FilterChip(selected = sens == i, onClick = { sens = i }, label = { Text(if (pictures) emoji else "$emoji $label", fontSize = if (pictures) 26.sp else 14.sp) },
+                        modifier = Modifier.semantics { contentDescription = tr("Érzékenység: {0}", label) })
                 }
             }
-            FilterChip(selected = bleed, onClick = { bleed = !bleed }, label = { Text(if (pictures) "🩸" else tr("🩸 Vérzett az ínyem"), fontSize = if (pictures) 26.sp else 14.sp) })
+            FilterChip(selected = bleed, onClick = { bleed = !bleed }, label = { Text(if (pictures) "🩸" else tr("🩸 Vérzett az ínyem"), fontSize = if (pictures) 26.sp else 14.sp) },
+                modifier = Modifier.semantics { contentDescription = tr("Vérzett az ínyem") })
         }
         if (!saved && extras.isNotEmpty()) {
             if (!pictures) Text(tr("Ma ezt is csináltam:"), fontSize = 13.sp, color = C.muted)
@@ -117,7 +121,8 @@ fun CareCheckIn(store: AppStore) {
                 extras.forEach { k ->
                     val on = k in ticked.value
                     FilterChip(selected = on, onClick = { ticked.value = if (on) ticked.value - k else ticked.value + k },
-                        label = { Text(if (pictures) k.icon else "${k.icon} ${k.label}", fontSize = if (pictures) 26.sp else 14.sp) })
+                        label = { Text(if (pictures) k.icon else "${k.icon} ${k.label}", fontSize = if (pictures) 26.sp else 14.sp) },
+                        modifier = Modifier.semantics { contentDescription = k.label })
                 }
             }
         }
@@ -365,6 +370,7 @@ fun MeasurementFeedbackCard(activity: MainActivity, store: AppStore, onResume: (
     InfoCard {
         if (!r.manual) Text(hu.fogmosas.core.endReasonText(r.endReason), fontSize = 13.sp, color = C.muted)
         r.notes.forEach { Text(it, fontSize = 13.sp, color = C.warn) }
+        r.scrubNote?.let { Text(it, fontSize = 13.sp, color = C.warn) }
         val log = hu.fogmosas.shared.BrushingEngine.state.collectAsStateWithLifecycle().value.testLog
         if (log.isNotEmpty()) {
             Text(tr("Mit észlel az app"), fontWeight = FontWeight.Bold)

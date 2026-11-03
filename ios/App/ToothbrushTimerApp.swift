@@ -17,6 +17,7 @@ struct ToothbrushTimerApp: App {
                 // DentHub clinic link (QR code or link from the clinic): denthub://link?d=...
                 .onOpenURL { url in
                     if let c = parseClinicLink(url.absoluteString) { model.pendingClinic = c }
+                    if let c = parseCareLink(url.absoluteString) { model.pendingCare = c }
                 }
         }
     }
@@ -33,6 +34,8 @@ final class AppRouter: ObservableObject {
     static let shared = AppRouter()
     @Published var startRequest: StartRequest?
     @Published var selectedTab = 0
+    /// "Panaszom van" shortcut / quick action: open the complaint questions.
+    @Published var complaintRequest: UUID?
 }
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {

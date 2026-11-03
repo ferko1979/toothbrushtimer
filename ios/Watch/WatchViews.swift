@@ -34,6 +34,7 @@ struct WatchBrushingView: View {
     @State private var runtime = ExtendedSession()
     @State private var motion = CMMotionManager()
     @State private var rhythm = MotionRhythm()
+    @State private var side = SideBalance()
     @State private var floss = false
     @State private var bleed = false
     @State private var sens = false
@@ -89,6 +90,10 @@ struct WatchBrushingView: View {
             Text(r.durationS >= model.goals.targetS ? tr("Cél elérve") : tr("Még {0} s hiányzott", Int(model.goals.targetS - r.durationS)))
                 .font(.caption2).foregroundStyle(.secondary)
             Text(r.waterRunningS >= 5 ? tr("🚰 folyt a csap") : tr("💧 elzárt csap")).font(.caption2)
+            if model.placement.useMotion, let n = side.note() {
+                Text(n).font(.caption2).multilineTextAlignment(.center).foregroundStyle(.secondary)
+            }
+            if let n = r.notes.first { Text(n).font(.caption2).multilineTextAlignment(.center).foregroundStyle(.orange) }
             // Quick journal: floss, bleeding gums, sensitivity (saved on the phone).
             HStack(spacing: 4) {
                 toggle("🧵", $floss, tr("Fogselyem"))
@@ -135,11 +140,14 @@ struct WatchBrushingView: View {
             let place = model.placement
             if place.useMotion && motion.isDeviceMotionAvailable {
                 rhythm.reset()
+                side.reset()
                 var n = 0
                 motion.deviceMotionUpdateInterval = 1.0 / 50
                 motion.startDeviceMotionUpdates(to: .main) { m, _ in
-                    guard let a = m?.userAcceleration else { return }
+                    guard let m = m else { return }
+                    let a = m.userAcceleration
                     rhythm.add(a.x, a.y, a.z)
+                    side.add(gx: m.gravity.x, dt: 1.0 / 50, brushing: controller.phase == .brushing, elapsedS: controller.elapsedS)
                     n += 1
                     if n % 25 == 0 { controller.setMotionBrush(rhythm.score()) }
                 }

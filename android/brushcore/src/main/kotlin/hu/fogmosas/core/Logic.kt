@@ -64,6 +64,8 @@ data class BrushRecord(
     val waterRunningS: Double = 0.0,
     val source: String = "phone",
     val brushF0: Double? = null,
+    /** Loudness of the scrubbing (dBFS, median while brushing); for the "too hard" note. */
+    val brushDb: Double? = null,
 ) {
     val tapOff get() = waterRunningS < 5.0
     fun start(zone: ZoneId): LocalDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(startMs), zone)

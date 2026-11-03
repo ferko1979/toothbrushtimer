@@ -47,3 +47,19 @@ class WatchHandTest {
         assertEquals(0.0, MotionRhythm().score())
     }
 }
+
+class SideBalanceTest {
+    @Test
+    fun calibratesOnTheFirstQuarter() {
+        val b = SideBalance()
+        var t = 0.0
+        // 30 s right (gx +0.6 here), then 10 s left: left gets too little.
+        repeat(1500) { b.add(0.6, 0.02, true, t); t += 0.02 }
+        repeat(500) { b.add(-0.6, 0.02, true, t); t += 0.02 }
+        assertEquals(75 to 25, b.result())
+        assertTrue(b.note()!!.contains("bal"))
+        val none = SideBalance()
+        repeat(3000) { none.add(0.0, 0.02, true, 0.0) }
+        assertEquals(null, none.result())
+    }
+}

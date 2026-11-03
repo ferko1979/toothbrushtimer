@@ -32,6 +32,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="denthub" android:host="link" />
+                <data android:scheme="denthub" android:host="care" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="hu.fogmosas.action.COMPLAINT" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>

@@ -67,3 +67,43 @@ public final class MotionRhythm {
         return Stats.ramp(band / total, 0.35, 0.6) * Stats.ramp(variance.squareRoot(), 0.03, 0.08)
     }
 }
+
+/// Experimental: left/right balance from the wrist roll (gravity along the watch's x axis) while
+/// brushing. The first quarter is the upper right (the cue order), so the roll seen in the first
+/// `calibrationS` seconds of brushing is taken as "right".
+public final class SideBalance {
+    private let calibrationS: Double
+    private let threshold: Double
+    private var calib = 0.0, pos = 0.0, neg = 0.0
+
+    public init(calibrationS: Double = 15, threshold: Double = 0.25) {
+        self.calibrationS = calibrationS
+        self.threshold = threshold
+    }
+
+    public func reset() { calib = 0; pos = 0; neg = 0 }
+
+    /// `gx` gravity along x in g, `dt` seconds since the last sample, `elapsedS` brushing time so far.
+    public func add(gx: Double, dt: Double, brushing: Bool, elapsedS: Double) {
+        guard brushing else { return }
+        let s = gx > threshold ? 1.0 : (gx < -threshold ? -1.0 : 0)
+        guard s != 0 else { return }
+        if elapsedS < calibrationS { calib += s * dt }
+        if s > 0 { pos += dt } else { neg += dt }
+    }
+
+    /// (right %, left %), or nil when the start was unclear or too little was measured.
+    public func result() -> (right: Int, left: Int)? {
+        guard abs(calib) >= 4, pos + neg >= 30 else { return nil }
+        let right = calib > 0 ? pos : neg
+        let r = Int((100 * right / (pos + neg)).rounded())
+        return (r, 100 - r)
+    }
+
+    public func note() -> String? {
+        guard let (r, l) = result() else { return nil }
+        if l < 30 { return tr("A bal oldalra kevesebb idő jutott (kb. {0}%). (kísérleti)", l) }
+        if r < 30 { return tr("A jobb oldalra kevesebb idő jutott (kb. {0}%). (kísérleti)", r) }
+        return tr("Jobb {0}% · bal {1}% – kiegyensúlyozott. (kísérleti)", r, l)
+    }
+}

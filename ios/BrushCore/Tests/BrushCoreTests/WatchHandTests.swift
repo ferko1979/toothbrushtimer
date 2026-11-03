@@ -30,3 +30,18 @@ final class WatchHandTests: XCTestCase {
         XCTAssertEqual(MotionRhythm().score(), 0)
     }
 }
+
+final class SideBalanceTests: XCTestCase {
+    func testCalibratesOnTheFirstQuarter() {
+        let b = SideBalance()
+        var t = 0.0
+        for _ in 0..<1500 { b.add(gx: 0.6, dt: 0.02, brushing: true, elapsedS: t); t += 0.02 }
+        for _ in 0..<500 { b.add(gx: -0.6, dt: 0.02, brushing: true, elapsedS: t); t += 0.02 }
+        XCTAssertEqual(b.result()?.right, 75)
+        XCTAssertEqual(b.result()?.left, 25)
+        XCTAssertTrue(b.note()?.contains("bal") == true)
+        let none = SideBalance()
+        for _ in 0..<3000 { none.add(gx: 0, dt: 0.02, brushing: true, elapsedS: 0) }
+        XCTAssertNil(none.result())
+    }
+}

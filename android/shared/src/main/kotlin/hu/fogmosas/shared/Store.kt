@@ -39,6 +39,8 @@ data class AppData(
     val clinic: hu.fogmosas.core.ClinicInfo? = null,
     val followUps: List<hu.fogmosas.core.SymptomFollowUp> = emptyList(),
     val careTasks: List<hu.fogmosas.core.CareTask> = emptyList(),
+    /** When the user agreed to the health data notice (null: not yet). */
+    val consentMs: Long? = null,
 ) {
     val activeProfile get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.first()
     fun profile(id: String) = profiles.firstOrNull { it.id == id }
@@ -47,6 +49,17 @@ data class AppData(
     /** Journal entries of a profile, including old floss / mouthwash ticks. */
     fun care(profileId: String) = care.filter { it.profileId == profileId } + extras(profileId).map { it.toCare() }
 }
+
+/** One profile with everything recorded for it (family transfer between phones). */
+@Serializable
+data class ProfilePackage(
+    val profile: Profile,
+    val records: List<BrushRecord> = emptyList(),
+    val care: List<CareEntry> = emptyList(),
+    val symptoms: List<hu.fogmosas.core.SymptomReport> = emptyList(),
+    val followUps: List<hu.fogmosas.core.SymptomFollowUp> = emptyList(),
+    val careTasks: List<hu.fogmosas.core.CareTask> = emptyList(),
+)
 
 class AppStore private constructor(context: Context) {
     companion object {
@@ -123,5 +136,45 @@ class AppStore private constructor(context: Context) {
     fun putCareTask(t: hu.fogmosas.core.CareTask) = update { d -> d.copy(careTasks = d.careTasks.filter { it.id != t.id } + t) }
     fun removeCareTask(id: String) = update { d -> d.copy(careTasks = d.careTasks.filter { it.id != id }) }
     fun setClinic(c: hu.fogmosas.core.ClinicInfo?) = update { d -> d.copy(clinic = c) }
+    /** Whole data as JSON (backup). */
+    fun exportJson(): String = json.encodeToString(AppData.serializer(), _data.value)
+
+    /** Replaces everything with a backup's data; throws when it is not valid. */
+    fun importJson(text: String) {
+        val d = json.decodeFromString(AppData.serializer(), text)
+        update { d }
+    }
+
+    /** One profile with its data, for another family member's phone. */
+    fun exportProfile(profileId: String): String {
+        val d = _data.value
+        val p = d.profile(profileId) ?: error("no profile")
+        val pkg = ProfilePackage(p, d.records(profileId), d.care.filter { it.profileId == profileId },
+            d.symptoms.filter { it.profileId == profileId }, d.followUps.filter { f -> d.symptoms.any { it.id == f.reportId && it.profileId == profileId } },
+            d.careTasks.filter { it.profileId == profileId })
+        return json.encodeToString(ProfilePackage.serializer(), pkg)
+    }
+
+    /** Merges a profile package into [targetId] (null: as a new profile). Returns the profile id. */
+    fun importProfile(text: String, targetId: String?): String {
+        val pkg = json.decodeFromString(ProfilePackage.serializer(), text)
+        val id = targetId ?: java.util.UUID.randomUUID().toString()
+        update { d ->
+            val profiles = if (targetId == null) d.profiles + pkg.profile.copy(id = id) else d.profiles
+            d.copy(
+                profiles = profiles,
+                records = d.records + pkg.records.filter { r -> d.records.none { it.id == r.id } }.map { it.copy(profileId = id) },
+                care = d.care + pkg.care.filter { c -> d.care.none { it.id == c.id } }.map { it.copy(profileId = id) },
+                symptoms = d.symptoms + pkg.symptoms.filter { s -> d.symptoms.none { it.id == s.id } }.map { it.copy(profileId = id) },
+                followUps = d.followUps + pkg.followUps.filter { f -> d.followUps.none { it.reportId == f.reportId && it.day == f.day } },
+                careTasks = d.careTasks + pkg.careTasks.filter { t -> d.careTasks.none { it.id == t.id } }.map { it.copy(profileId = id) },
+            )
+        }
+        return id
+    }
+
+    /** "Minden adatom törlése": back to a fresh start (files are removed by the caller). */
+    fun wipe() = update { AppData(profiles = listOf(Profile("me", tr("Én"))), settings = AppSettings(language = it.settings.language)) }
+
     fun removeRecord(id: String) = update { d -> d.copy(records = d.records.filter { it.id != id }) }
 }

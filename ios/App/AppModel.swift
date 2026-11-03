@@ -1,4 +1,5 @@
 import BrushCore
+import UserNotifications
 import Foundation
 
 /// Everything the app stores (on the device only, as JSON in Application Support).
@@ -22,6 +23,8 @@ struct AppData: Codable {
     var clinic: ClinicInfo?
     var followUps: [SymptomFollowUp] = []
     var careTasks: [CareTask] = []
+    /// When the user agreed to the health data notice (nil: not yet).
+    var consentAt: Date?
 
     init() {}
 
@@ -45,7 +48,18 @@ struct AppData: Codable {
         clinic = try c.decodeIfPresent(ClinicInfo.self, forKey: .clinic)
         followUps = try c.decodeIfPresent([SymptomFollowUp].self, forKey: .followUps) ?? []
         careTasks = try c.decodeIfPresent([CareTask].self, forKey: .careTasks) ?? []
+        consentAt = try c.decodeIfPresent(Date.self, forKey: .consentAt)
     }
+}
+
+/// One profile with everything recorded for it (family transfer between phones).
+struct ProfilePackage: Codable {
+    var profile: Profile
+    var records: [BrushRecord] = []
+    var care: [CareEntry] = []
+    var symptoms: [SymptomReport] = []
+    var followUps: [SymptomFollowUp] = []
+    var careTasks: [CareTask] = []
 }
 
 final class AppModel: ObservableObject {
@@ -63,6 +77,8 @@ final class AppModel: ObservableObject {
     @Published var splashShown = false
     /// Onboarding: "Szeretnék időpontot kérni" — the home page opens the visit request once.
     @Published var pendingVisit = false
+    /// Care instructions from the clinic (denthub://care link / QR), waiting for confirmation.
+    @Published var pendingCare: CareInstruction?
     let heads: ModelHeads?
 
     /// Test mode recordings (WAV + JSON), newest kept.
@@ -180,6 +196,51 @@ final class AppModel: ObservableObject {
     func addVisit(_ v: VisitRequest) {
         data.visits.removeAll { $0.id == v.id }
         data.visits.append(v)
+    }
+
+    // MARK: - Backup, family transfer, wipe
+
+    func exportJSON() throws -> String { String(decoding: try JSONEncoder().encode(data), as: UTF8.self) }
+
+    func importJSON(_ text: String) throws {
+        data = try JSONDecoder().decode(AppData.self, from: Data(text.utf8))
+        NotificationScheduler.reschedule(model: self)
+    }
+
+    func exportProfile(_ id: String) throws -> String {
+        guard let p = profile(id) else { throw CocoaError(.fileReadUnknown) }
+        let ids = Set(data.symptoms.filter { $0.profileId == id }.map(\.id))
+        let pkg = ProfilePackage(profile: p, records: records(for: id), care: data.care.filter { $0.profileId == id },
+                                 symptoms: data.symptoms.filter { $0.profileId == id }, followUps: data.followUps.filter { ids.contains($0.reportId) },
+                                 careTasks: data.careTasks.filter { $0.profileId == id })
+        return String(decoding: try JSONEncoder().encode(pkg), as: UTF8.self)
+    }
+
+    /// Merges a profile package into `target` (nil: as a new profile); duplicates are skipped.
+    @discardableResult
+    func importProfile(_ text: String, into target: String?) throws -> String {
+        let pkg = try JSONDecoder().decode(ProfilePackage.self, from: Data(text.utf8))
+        let id = target ?? UUID().uuidString
+        var d = data
+        if target == nil { var p = pkg.profile; p.id = id; d.profiles.append(p) }
+        for var r in pkg.records where !d.records.contains(where: { $0.id == r.id }) { r.profileId = id; d.records.append(r) }
+        for var c in pkg.care where !d.care.contains(where: { $0.id == c.id }) { c.profileId = id; d.care.append(c) }
+        for var s in pkg.symptoms where !d.symptoms.contains(where: { $0.id == s.id }) { s.profileId = id; d.symptoms.append(s) }
+        for f in pkg.followUps where !d.followUps.contains(where: { $0.reportId == f.reportId && $0.day == f.day }) { d.followUps.append(f) }
+        for var t in pkg.careTasks where !d.careTasks.contains(where: { $0.id == t.id }) { t.profileId = id; d.careTasks.append(t) }
+        data = d
+        NotificationScheduler.reschedule(model: self)
+        return id
+    }
+
+    /// "Minden adatom törlése": files and data, back to a fresh start.
+    func wipeEverything() {
+        let fm = FileManager.default
+        for dir in [AppModel.photosDir, AppModel.recordingsDir] { try? fm.removeItem(at: dir) }
+        var fresh = AppData()
+        fresh.settings.language = data.settings.language
+        data = fresh
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
     }
 
     /// Complaint photos (JPEG) live here.

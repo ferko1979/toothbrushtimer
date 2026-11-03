@@ -26,6 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -74,6 +77,9 @@ class WearActivity : ComponentActivity() {
     // Watch on the brushing hand: the wrist rhythm (linear acceleration) is brushing evidence.
     private val rhythm = hu.fogmosas.core.MotionRhythm()
     private var motionListener: android.hardware.SensorEventListener? = null
+    private var gravityListener: android.hardware.SensorEventListener? = null
+    /** Experimental left/right balance from the wrist roll. */
+    val side = hu.fogmosas.core.SideBalance()
 
     fun startMotion() {
         if (motionListener != null) return
@@ -91,11 +97,28 @@ class WearActivity : ComponentActivity() {
         }
         sm.registerListener(l, sensor, 20_000)   // 50 Hz
         motionListener = l
+        side.reset()
+        sm.getDefaultSensor(android.hardware.Sensor.TYPE_GRAVITY)?.let { gs ->
+            var last = 0L
+            val gl = object : android.hardware.SensorEventListener {
+                override fun onSensorChanged(e: android.hardware.SensorEvent) {
+                    val dt = if (last == 0L) 0.0 else (e.timestamp - last) / 1e9
+                    last = e.timestamp
+                    val st = BrushingEngine.state.value
+                    side.add(e.values[0] / 9.80665, dt.coerceIn(0.0, 0.5), st.phase == BrushingEngine.Phase.BRUSHING, st.elapsedS)
+                }
+                override fun onAccuracyChanged(s: android.hardware.Sensor?, a: Int) {}
+            }
+            sm.registerListener(gl, gs, 100_000)   // 10 Hz is plenty for the roll
+            gravityListener = gl
+        }
     }
 
     fun stopMotion() {
         motionListener?.let { getSystemService(android.hardware.SensorManager::class.java)?.unregisterListener(it) }
+        gravityListener?.let { getSystemService(android.hardware.SensorManager::class.java)?.unregisterListener(it) }
         motionListener = null
+        gravityListener = null
     }
 
     fun keepScreenOn(on: Boolean) {
@@ -127,6 +150,8 @@ fun WearRoot(activity: WearActivity, store: AppStore) {
                 Text(if (r.durationS >= goals.targetS) tr("Cél elérve") else tr("Még {0} s hiányzott", (goals.targetS - r.durationS).toInt()),
                     fontSize = 12.sp, color = Color.LightGray)
                 Text(if (r.waterRunningS >= 5) tr("🚰 folyt a csap") else tr("💧 elzárt csap"), fontSize = 12.sp)
+                if (placement.useMotion) activity.side.note()?.let { Text(it, fontSize = 11.sp, color = Color.LightGray, textAlign = TextAlign.Center) }
+                r.notes.firstOrNull()?.let { Text(it, fontSize = 11.sp, color = Color(0xFFE8833A), textAlign = TextAlign.Center) }
                 // Quick journal: floss, bleeding gums, sensitivity (saved on the phone).
                 var floss by remember(r) { mutableStateOf(false) }
                 var bleed by remember(r) { mutableStateOf(false) }
@@ -134,7 +159,8 @@ fun WearRoot(activity: WearActivity, store: AppStore) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     for ((label, on, flip) in listOf(
                         Triple("🧵", floss) { floss = !floss }, Triple("🩸", bleed) { bleed = !bleed }, Triple("⚡", sens) { sens = !sens })) {
-                        Button(onClick = flip, modifier = Modifier.size(36.dp),
+                        val desc = when (label) { "🧵" -> tr("Fogselyem"); "🩸" -> tr("Vérzett az íny"); else -> tr("Érzékeny fog") }
+                        Button(onClick = flip, modifier = Modifier.size(36.dp).semantics { contentDescription = desc; selected = on },
                             colors = if (on) ButtonDefaults.buttonColors(backgroundColor = brand) else ButtonDefaults.secondaryButtonColors()) { Text(label, fontSize = 14.sp) }
                     }
                 }

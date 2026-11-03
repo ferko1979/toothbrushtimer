@@ -25,7 +25,21 @@ android {
             keyPassword = "fogmosas-test"
         }
     }
-    buildTypes { getByName("debug") { signingConfig = signingConfigs.getByName("debug") } }
+    // Store release: signed with the upload key from the CI secrets (see docs/RELEASE.md).
+    val releaseKey = System.getenv("RELEASE_KEYSTORE")?.let { file(it) }?.takeIf { it.exists() }
+    if (releaseKey != null) signingConfigs.create("release") {
+        storeFile = releaseKey
+        storePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+        keyAlias = System.getenv("RELEASE_KEY_ALIAS")
+        keyPassword = System.getenv("RELEASE_KEY_PASSWORD")
+    }
+    buildTypes {
+        getByName("debug") { signingConfig = signingConfigs.getByName("debug") }
+        getByName("release") {
+            isMinifyEnabled = false
+            if (releaseKey != null) signingConfig = signingConfigs.getByName("release")
+        }
+    }
 
     buildFeatures { compose = true }
     compileOptions {

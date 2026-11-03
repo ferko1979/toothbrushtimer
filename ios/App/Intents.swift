@@ -14,6 +14,19 @@ struct StartBrushingIntent: AppIntent {
     }
 }
 
+/// "Panaszom van": opens the complaint questions (Shortcuts / Siri / Action button).
+struct ComplaintIntent: AppIntent {
+    static var title: LocalizedStringResource = "Panaszom van"
+    static var description = IntentDescription("Megnyitja a panasz-kérdéseket (fog, íny, sérülés).")
+    static var openAppWhenRun: Bool = true
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        AppRouter.shared.complaintRequest = UUID()
+        return .result()
+    }
+}
+
 struct BrushShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(intent: StartBrushingIntent(),
@@ -22,5 +35,10 @@ struct BrushShortcuts: AppShortcutsProvider {
                               "Fogmosás \(.applicationName)"],
                     shortTitle: "Fogmosás",
                     systemImageName: "mouth")
+        AppShortcut(intent: ComplaintIntent(),
+                    phrases: ["Record a complaint in \(.applicationName)",
+                              "Panaszom van \(.applicationName)"],
+                    shortTitle: "Panaszom van",
+                    systemImageName: "cross.case")
     }
 }

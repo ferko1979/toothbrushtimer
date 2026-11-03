@@ -52,6 +52,8 @@ class BrushingSession(var start: Double, var cue: String = "water") {
     var manualAfterSonicS = 0.0
     /** Motor frequency while humming, one value per 0.5 s. */
     val sonicF0s = ArrayList<Double>()
+    /** Typical loudness while brushing (dBFS), when the loudness was known. */
+    var brushLevelDb: Double? = null
     val events = ArrayList<Pair<Double, SessionEvent>>()
     val durationS get() = max(end - start, 0.0)
     val wastedWater get() = waterRunningS >= 5.0
@@ -103,6 +105,7 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
 
     private fun endSession(time: Double, end: Double, reason: String = "finish") {
         sessions.last().end = end
+        sessions.last().brushLevelDb = brushLevelDb
         sessions.last().endReason = reason
         if (wasteIcon) { wasteIcon = false; event(time, SessionEvent.WASTE_ICON_OFF) }
         event(time, SessionEvent.SESSION_END)

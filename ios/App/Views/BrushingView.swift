@@ -29,7 +29,7 @@ struct BrushingView: View {
                 if let rec = record {
                     ResultView(profile: profile, record: rec, achievements: achievements, testLog: controller.testLog,
                                endReason: lastResult?.endReason ?? "finish", manual: lastResult?.manual ?? false,
-                               notes: lastResult?.notes ?? [],
+                               notes: (lastResult?.notes ?? []) + [lastResult?.scrubNote].compactMap { $0 },
                                onResume: { resume(rec) }) { dismiss() }
                 } else {
                     listening
@@ -192,6 +192,8 @@ struct BrushingView: View {
         sc.wetCue = true
         sc.sonicStopWatch = profile.brushType.powered
         controller.f0History = profile.calibration.f0s
+        controller.scrubHistory = model.records(for: profile.id).sorted { $0.start < $1.start }.compactMap(\.brushDb)
+        controller.manualBrush = !profile.brushType.powered
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         let faceDown = UIDevice.current.orientation == .faceDown
         let testing = settings.isOn("test_recording", platform: .ios)
@@ -242,7 +244,7 @@ struct BrushingView: View {
         }
         lastResult = r
         let rec = BrushRecord(profileId: profile.id, start: r.start, durationS: r.durationS,
-                              waterRunningS: r.waterRunningS, source: r.manual ? "manual" : "phone", brushF0: r.brushF0)
+                              waterRunningS: r.waterRunningS, source: r.manual ? "manual" : "phone", brushF0: r.brushF0, brushDb: r.brushDb)
         achievements = model.add(record: rec)
         record = rec
         model.noteBattery(r.notes, manual: r.manual, brushF0: r.brushF0)

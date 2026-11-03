@@ -10,6 +10,7 @@ struct RootView: View {
     @EnvironmentObject var model: AppModel
     @EnvironmentObject var router: AppRouter
     @State private var brushing: BrushingRequest?
+    @State private var complaint = false
     @ObservedObject private var lock = AppLock.shared
     @Environment(\.scenePhase) private var scenePhase
 
@@ -19,6 +20,8 @@ struct RootView: View {
                 ClinicSplashView(clinic: c) { model.splashShown = true }
             } else if model.data.onboarded && model.settings.isOn("app_lock", platform: .ios) && !lock.unlocked && brushing == nil {
                 LockView(title: tr("DentHub-Brush – zárolva"), reason: tr("DentHub-Brush feloldása")) { lock.unlocked = true }
+            } else if model.data.onboarded && model.data.consentAt == nil && brushing == nil {
+                ConsentView()
             } else if model.data.onboarded && !model.data.tourSeen && brushing == nil {
                 TourView { model.data.tourSeen = true }
             } else if model.data.onboarded {
@@ -42,6 +45,14 @@ struct RootView: View {
                 .environmentObject(model)
         }
         .onAppear { NotificationScheduler.reschedule(model: model) }
+        .modifier(CareLinkAlert(model: model))
+        .onChange(of: router.complaintRequest) { _, req in
+            if req != nil && model.data.onboarded && brushing == nil { complaint = true }
+            router.complaintRequest = nil
+        }
+        .sheet(isPresented: $complaint) {
+            SymptomFlowView(profile: model.activeProfile, reports: model.data.symptoms).environmentObject(model)
+        }
         .alert(tr("Összekötöd a rendelőddel?"), isPresented: Binding(get: { model.pendingClinic != nil }, set: { if !$0 { model.pendingClinic = nil } })) {
             Button(tr("Összekötés")) {
                 model.data.clinic = model.pendingClinic

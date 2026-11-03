@@ -76,6 +76,8 @@ public struct BrushingSession: Equatable {
     public var manualAfterSonicS = 0.0
     /// Motor frequency while humming, one value per 0.5 s.
     public var sonicF0s: [Double] = []
+    /// Typical loudness while brushing (dBFS), when the loudness was known.
+    public var brushLevelDb: Double? = nil
 
     public var durationS: Double { Swift.max(end - start, 0) }
     public var wastedWater: Bool { waterRunningS >= 5.0 }
@@ -141,6 +143,7 @@ public final class SessionDetector {
     private func endSession(_ time: Double, end: Double, reason: String = "finish") {
         sessions[sessions.count - 1].end = end
         sessions[sessions.count - 1].endReason = reason
+        sessions[sessions.count - 1].brushLevelDb = brushLevelDb
         if wasteIcon {
             wasteIcon = false
             event(time, .wasteIconOff)

@@ -59,6 +59,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 quietExtraS = p.quietExtraS,
                 testRecording = s.isOn("test_recording", "android"),
                 f0History = p.calibration.f0s,
+                scrubHistory = d.records(p.id).sortedBy { it.startMs }.mapNotNull { it.brushDb },
                 nearOnly = s.isOn("near_only", "android"),
                 directional = s.isOn("mic_direction", "android"),
                 meta = mapOf("platform" to "android", "device" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
@@ -79,6 +80,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
         // navigation bar and the keyboard (the tabbed pages get this from the Scaffold).
         val safe = Modifier.fillMaxSize().background(C.bg).safeDrawingPadding()
         ClinicLinkDialog(activity, store)
+        CareLinkDialog(activity, store)
         when {
             data.onboarded && data.settings.isOn("app_lock", "android") && !activity.unlocked.value && !engine.active -> Box(safe) {
                 LockScreen(tr("DentHub-Brush – zárolva")) {
@@ -86,6 +88,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 }
             }
             !data.onboarded -> Box(safe) { OnboardingScreen(activity, store) }
+            data.consentMs == null && !engine.active -> Box(safe) { ConsentScreen(store) }
             data.clinic != null && !activity.splashShown.value && !engine.active -> ClinicSplash(data.clinic!!) { activity.splashShown.value = true }
             !data.tourSeen && !engine.active -> Box(safe) { TourScreen { store.update { it.copy(tourSeen = true) } } }
             activity.overlay.value != null && !engine.active -> Box(safe) {
