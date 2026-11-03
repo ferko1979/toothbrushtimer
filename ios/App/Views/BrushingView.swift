@@ -27,7 +27,7 @@ struct BrushingView: View {
         NavigationStack {
             Group {
                 if let rec = record {
-                    ResultView(profile: profile, record: rec, achievements: achievements,
+                    ResultView(profile: profile, record: rec, achievements: achievements, testLog: controller.testLog,
                                endReason: lastResult?.endReason ?? "finish", manual: lastResult?.manual ?? false,
                                onResume: { resume(rec) }) { dismiss() }
                 } else {
@@ -50,7 +50,7 @@ struct BrushingView: View {
             let t = Date().timeIntervalSince(began)
             if phase == .background {
                 policy.appBackgrounded(t: t)
-                if !policy.listening && controller.isListening && !controller.manual {
+                if !policy.listening && controller.isListening && !controller.manual && !controller.testMode {
                     stopNote = policy.stopReason
                     controller.stop()
                 }
@@ -64,7 +64,12 @@ struct BrushingView: View {
 
     private var listening: some View {
         VStack(spacing: 18) {
+            if controller.testMode {
+                Text(tr("🔴 Teszt mód: a felvétel addig megy, amíg le nem állítod")).font(.caption).foregroundStyle(Theme.danger)
+            }
             statusBanner
+            if controller.testMode || !controller.testLog.isEmpty { TestLogCard(lines: controller.testLog) }
+            if !controller.testMode && !controller.testLog.isEmpty && controller.result == nil { TestRecordingShareButton() }
             switch controller.phase {
             case .brushing, .rinsing:
                 let p = brushProgress(elapsedS: controller.elapsedS, targetS: profile.goals.targetS)
@@ -98,7 +103,7 @@ struct BrushingView: View {
             }
             Spacer()
             Button { controller.stop() } label: {
-                Text(tr("Kész")).font(.headline).frame(maxWidth: .infinity).padding()
+                Text(controller.testMode ? tr("⏹ Felvétel leállítása") : tr("Kész")).font(.headline).frame(maxWidth: .infinity).padding()
                     .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.brand, lineWidth: 2))
             }.buttonStyle(.plain)
         }
@@ -147,7 +152,7 @@ struct BrushingView: View {
         if settings.isOn("keep_listening_when_placed", platform: .ios) {
             motion.start { gx, gy, gz in
                 policy.motion(t: now(), gx: gx, gy: gy, gz: gz)
-                if !policy.listening && controller.isListening && !controller.manual {
+                if !policy.listening && controller.isListening && !controller.manual && !controller.testMode {
                     stopNote = policy.stopReason
                     controller.stop()
                 }
@@ -163,7 +168,7 @@ struct BrushingView: View {
         controller.onFinished = { result in finished(result) }
         ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             policy.tick(t: now())
-            if !policy.listening && controller.isListening && !controller.manual && controller.phase != .brushing {
+            if !policy.listening && controller.isListening && !controller.manual && !controller.testMode && controller.phase != .brushing {
                 stopNote = policy.stopReason
                 controller.stop()
             }
@@ -178,8 +183,18 @@ struct BrushingView: View {
         sc.holdUntilS = profile.goals.targetS
         sc.endQuietS += profile.quietExtraS
         sc.holdQuietS += profile.quietExtraS
+        sc.sonicSuppressesWater = profile.brushType == .electric
+        UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+        let faceDown = UIDevice.current.orientation == .faceDown
+        let testing = settings.isOn("test_recording", platform: .ios)
         controller.start(heads: heads, sessionConfig: sc, sonicConfig: sonicCfg,
-                         useSonic: profile.brushType == .electric, batterySaver: settings.isOn("battery_saver"))
+                         useSonic: profile.brushType == .electric, batterySaver: settings.isOn("battery_saver"),
+                         nearGateDb: settings.isOn("near_only") ? 10 : nil,
+                         towardsScreen: settings.isOn("mic_direction", platform: .ios) ? !faceDown : nil,
+                         testRecordTo: testing ? AppModel.recordingsDir : nil,
+                         testMeta: ["platform": "ios", "device": UIDevice.current.model, "ios": UIDevice.current.systemVersion,
+                                    "brushType": profile.brushType.rawValue, "targetS": profile.goals.targetS,
+                                    "quietExtraS": profile.quietExtraS, "faceDown": faceDown, "language": I18n.lang])
     }
 
     private func updateLiveActivity() {

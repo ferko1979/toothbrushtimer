@@ -12,6 +12,8 @@ data class SessionConfig(
     val rinseDoneS: Double = 5.0, val minBrushingBeforeRinseS: Double = 10.0, val wasteIconS: Double = 5.0,
     /** App: until the session is this long (the goal), stop only after a long silence or a clear rinse. */
     val holdUntilS: Double? = null, val holdQuietS: Double = 45.0, val rinseMinEarlyS: Double = 4.0,
+    /** App, electric brush: while the sonic hum is heard, the session never ends and water is ignored. */
+    val sonicSuppressesWater: Boolean = false,
 ) {
     companion object {
         /** Opened from a reminder: start sooner, wait longer for the water cue. */
@@ -86,7 +88,9 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
         val c = cfg
         t = time
         val brushing = max(brush, sonic)
-        if (water >= c.waterOn) waterOn = true else if (water < c.waterOff) waterOn = false
+        val humming = c.sonicSuppressesWater && sonic >= c.off && (state == State.BRUSHING || state == State.RINSE)
+        if (humming) waterOn = false
+        else if (water >= c.waterOn) waterOn = true else if (water < c.waterOff) waterOn = false
         val isWater = waterOn
         val noWater = !waterOn
         if (isWater && waterRun == 0.0) dryBeforeWater = sinceWater
@@ -147,7 +151,7 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
             State.RINSE -> {
                 val s = sessions.last()
                 if (isWater) { rinseWater += dt; s.waterRunningS += dt }
-                if (dryRun > 0 && brushRun >= c.resumeS && dryRun >= c.resumeS) {
+                if (humming || (dryRun > 0 && brushRun >= c.resumeS && dryRun >= c.resumeS)) {
                     state = State.BRUSHING
                     event(time, SessionEvent.BRUSHING_RESUMED)
                 } else if (dryRun >= c.rinseDoneS) {
@@ -194,8 +198,18 @@ class StreamingDetector(
     sonicConfig: SonicConfig = SonicConfig(),
     var useSonic: Boolean = true,
     batterySaver: Boolean = false,
+    /**
+     * Near-sound filter: a new brushing/water cue is only considered when the sound is at least this
+     * many dB above the room's background level (far, quiet sources are ignored). A running session is
+     * never gated. null = off.
+     */
+    nearGateDb: Double? = null,
 ) {
     companion object { const val HOP_S = 0.5 }
+
+    /** Loudness of the newest 0.5 s (dBFS), for test recordings. */
+    var lastRmsDb = -120.0; private set
+    private val nearGate = nearGateDb != null
 
     val session = SessionDetector(sessionConfig)
     var onRow: ((ScoreRow) -> Unit)? = null
@@ -204,7 +218,11 @@ class StreamingDetector(
     private val brushEx = WindowFeatureExtractor(WindowFeatureExtractor.BRUSH_WINDOW)
     private val waterEx = WindowFeatureExtractor(WindowFeatureExtractor.WATER_WINDOW)
     private val sonic = SonicDetector(sonicConfig)
-    private val gate = if (batterySaver) EnergyGate() else null
+    private val gate = when {
+        nearGateDb != null -> EnergyGate(openDb = nearGateDb, holdS = 2.0)
+        batterySaver -> EnergyGate()
+        else -> null
+    }
 
     private var samples = DoubleArray(1 shl 16)
     private var sampleCount = 0      // valid samples in `samples`
@@ -287,7 +305,6 @@ class StreamingDetector(
     }
 
     private fun updateGate(k: Int) {
-        val g = gate ?: return
         val end = (k * WindowFeatureExtractor.HOP_FRAMES + WindowFeatureExtractor.WATER_WINDOW) * LogMelExtractor.HOP
         val n = SAMPLE_RATE / 2
         val st = maxOf(end - n, bufferStart)
@@ -295,7 +312,11 @@ class StreamingDetector(
         if (len <= 0) return
         var e = 0.0
         for (i in rel(st) until rel(st) + len) e += samples[i] * samples[i]
-        gateOpen = g.update(0.5 * k + 0.5, 10 * kotlin.math.log10(e / len + 1e-12))
+        lastRmsDb = 10 * kotlin.math.log10(e / len + 1e-12)
+        val g = gate ?: return
+        val open = g.update(0.5 * k + 0.5, lastRmsDb)
+        val inSession = session.state == SessionDetector.State.BRUSHING || session.state == SessionDetector.State.RINSE
+        gateOpen = open || (nearGate && inSession)
     }
 
     private fun trim() {

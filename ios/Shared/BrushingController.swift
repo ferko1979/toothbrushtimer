@@ -24,6 +24,10 @@ final class BrushingController: ObservableObject {
     @Published private(set) var liveF0: Double?
     @Published private(set) var result: Result?
     @Published private(set) var manual = false
+    /// Test mode: what the detector noticed (shown live) and the session it measured on its own.
+    @Published private(set) var testMode = false
+    @Published private(set) var testLog: [String] = []
+    @Published private(set) var testResult: Result?
 
     var targetS: Double = 120
     var cuesEnabled = true
@@ -40,21 +44,33 @@ final class BrushingController: ObservableObject {
     private var manualStart: Date?
     private var manualTimer: Timer?
     private var userStop = false
+    private var recording: TestRecording?
+    private var recordDir: URL?
 
     var isListening: Bool { capture.isRunning || manualStart != nil }
 
+    /// testRecordTo: test mode: record audio + timeline there, keep listening until the tester stops.
     func start(heads: ModelHeads, sessionConfig: SessionConfig, sonicConfig: SonicConfig,
-               useSonic: Bool, batterySaver: Bool) {
+               useSonic: Bool, batterySaver: Bool, nearGateDb: Double? = nil, towardsScreen: Bool? = nil,
+               testRecordTo: URL? = nil, testMeta: [String: Any] = [:]) {
         guard !isListening else { return }
         reset()
         let det = StreamingDetector(heads: heads, sessionConfig: sessionConfig, sonicConfig: sonicConfig,
-                                    useSonic: useSonic, batterySaver: batterySaver)
+                                    useSonic: useSonic, batterySaver: batterySaver, nearGateDb: nearGateDb)
+        recordDir = testRecordTo
+        testMode = testRecordTo != nil
+        recording = testRecordTo.flatMap { try? TestRecording(directory: $0, meta: testMeta.merging(["useSonic": useSonic]) { a, _ in a }) }
+        #if os(iOS)
+        capture.towardsScreen = towardsScreen
+        #endif
         det.onRow = { [weak self, weak det] row in
             guard let det = det else { return }
+            self?.recording?.row(row, state: det.session.state.rawValue, rmsDb: det.lastRmsDb)
             self?.handle(row: row, detector: det)
         }
         det.session.onEvent = { [weak self, weak det] t, e in
             guard let det = det else { return }
+            self?.recording?.event(t, e.rawValue)
             self?.handle(event: e, at: t, detector: det)
         }
         detector = det
@@ -68,7 +84,10 @@ final class BrushingController: ObservableObject {
             }
             do {
                 try self.capture.start { [weak self] samples in
-                    self?.queue.async { det.append(samples) }
+                    self?.queue.async {
+                        det.append(samples)
+                        self?.recording?.append(samples)
+                    }
                 }
                 self.phase = .listening
             } catch {
@@ -90,6 +109,11 @@ final class BrushingController: ObservableObject {
             det.finish()
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                if self.testMode {
+                    // The tester ended the recording: report what the detector measured on its own.
+                    self.testMode = false
+                    if let r = self.testResult { self.finish(with: r) } else { self.closeRecording(nil) }
+                }
                 if self.result == nil && self.phase != .finished { self.phase = .idle }
                 self.detector = nil
             }
@@ -132,6 +156,8 @@ final class BrushingController: ObservableObject {
         result = nil
         manual = false
         cueTracker = nil
+        testLog = []
+        testResult = nil
     }
 
     private func fireCues() {
@@ -170,6 +196,25 @@ final class BrushingController: ObservableObject {
 
     // Called on the detector queue.
     private func handle(event: SessionEvent, at t: Double, detector det: StreamingDetector) {
+        if testMode {
+            let clock = formatClock(t)
+            if event == .sessionEnd, let session = det.session.sessions.last {
+                let reason = session.endReason == "finish" && userStop ? "user" : session.endReason
+                let r = Result(start: listenStarted.addingTimeInterval(session.start), durationS: session.durationS,
+                               waterRunningS: session.waterRunningS, cue: session.cue, brushF0: nil, manual: false, endReason: reason)
+                DispatchQueue.main.async {
+                    if self.testResult == nil || r.durationS > self.testResult!.durationS { self.testResult = r }
+                    self.testLog.append(clock + " " + tr("🏁 vége – mért idő: {0}", formatClock(r.durationS)))
+                    Haptics.play(.success)
+                }
+            } else if let label = testLabel(event) {
+                DispatchQueue.main.async {
+                    if event == .brushingDetected { self.cueTracker = CueTracker(targetS: self.targetS); Haptics.play(.tap) }
+                    self.testLog.append(clock + " " + label)
+                }
+            }
+            return
+        }
         switch event {
         case .brushingDetected:
             DispatchQueue.main.async { self.cueTracker = CueTracker(targetS: self.targetS) }
@@ -191,8 +236,33 @@ final class BrushingController: ObservableObject {
         }
     }
 
+    private func closeRecording(_ r: Result?) {
+        guard let rec = recording else { return }
+        recording = nil
+        let dir = recordDir
+        var res: [String: Any] = ["endReason": r?.endReason ?? "no_session"]
+        if let r = r { res["durationS"] = r.durationS; res["cue"] = r.cue; res["waterRunningS"] = r.waterRunningS; res["manual"] = r.manual }
+        queue.async {
+            rec.finish(result: res)
+            if let d = dir { TestRecording.prune(in: d) }
+        }
+    }
+
+    private func testLabel(_ e: SessionEvent) -> String? {
+        switch e {
+        case .waterStart: return tr("🚰 víz")
+        case .waterStop: return tr("víz elzárva")
+        case .brushingDetected: return tr("🪥 fogmosás észlelve")
+        case .rinseStart: return tr("💧 öblítés")
+        case .brushingResumed: return tr("🪥 folytatódik")
+        case .wasteIconOn: return tr("⚠️ folyik a csap")
+        default: return nil
+        }
+    }
+
     private func finish(with r: Result) {
         guard result == nil else { return }
+        closeRecording(r)
         result = r
         elapsedS = r.durationS
         phase = .finished

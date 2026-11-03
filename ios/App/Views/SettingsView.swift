@@ -38,6 +38,13 @@ struct SettingsView: View {
                         ForEach(groups[i].1) { f in featureToggle(f) }
                     }
                 }
+                if model.settings.isOn("test_recording", platform: .ios) {
+                    Section(tr("Tesztfelvétel")) {
+                        Text(tr("Az utolsó fogmosás (vagy próbálkozás) hangja és a felismerés adatai. Küldd el Google Drive-ra vagy e-mailben, és töltsd fel a fejlesztőnek."))
+                            .font(.caption).foregroundStyle(.secondary)
+                        TestRecordingShareButton()
+                    }
+                }
                 waterSection
                 Section(tr("Adatvédelem")) {
                     Text(tr("A hang csak ezen a készüléken, a memóriában dolgozódik fel. Hangfelvétel nem készül, és semmi nem kerül szerverre. A webes megtekintés csak akkor küld adatot, ha te olvasod be a QR-kódot, és akkor is titkosítva."))

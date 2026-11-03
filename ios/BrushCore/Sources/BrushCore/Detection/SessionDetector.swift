@@ -22,6 +22,8 @@ public struct SessionConfig: Equatable {
     public var holdUntilS: Double? = nil
     public var holdQuietS = 45.0
     public var rinseMinEarlyS = 4.0
+    /// App, electric brush: while the sonic hum is heard, the session never ends and water is ignored.
+    public var sonicSuppressesWater = false
 
     public init() {}
 
@@ -123,7 +125,10 @@ public final class SessionDetector {
         let c = cfg
         t = time
         let brushing = Swift.max(brush, sonic)
-        if water >= c.waterOn {
+        let humming = c.sonicSuppressesWater && sonic >= c.off && (state == .brushing || state == .rinse)
+        if humming {
+            waterOn = false
+        } else if water >= c.waterOn {
             waterOn = true
         } else if water < c.waterOff {
             waterOn = false
@@ -197,7 +202,7 @@ public final class SessionDetector {
                 rinseWater += dt
                 sessions[idx].waterRunningS += dt
             }
-            if dryRun > 0 && brushRun >= c.resumeS && dryRun >= c.resumeS {
+            if humming || (dryRun > 0 && brushRun >= c.resumeS && dryRun >= c.resumeS) {
                 state = .brushing
                 event(time, .brushingResumed)
             } else if dryRun >= c.rinseDoneS {

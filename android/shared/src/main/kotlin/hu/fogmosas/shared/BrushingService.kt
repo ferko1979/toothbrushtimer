@@ -47,7 +47,8 @@ class BrushingService : Service(), SensorEventListener {
         }
         val type = if (Build.VERSION.SDK_INT >= 30) ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0
         ServiceCompat.startForeground(this, ID, build("Figyelek…"), type)
-        if (intent?.getBooleanExtra(EXTRA_KEEP_LISTENING, false) == true && sensors == null) {
+        // Gravity: lying flat (listening policy) and which side faces up (microphone direction).
+        if (sensors == null) {
             sensors = getSystemService(SensorManager::class.java)?.also { sm ->
                 sm.getDefaultSensor(Sensor.TYPE_GRAVITY)?.let { sm.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
             }

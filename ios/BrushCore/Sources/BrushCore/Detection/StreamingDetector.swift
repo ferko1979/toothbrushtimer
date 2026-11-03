@@ -26,6 +26,9 @@ public final class StreamingDetector {
     private let waterEx = WindowFeatureExtractor(win: WindowFeatureExtractor.waterWindow)
     private let sonic: SonicDetector
     private let gate: EnergyGate?
+    private let nearGate: Bool
+    /// Loudness of the newest 0.5 s (dBFS), for test recordings.
+    public private(set) var lastRmsDb = -120.0
 
     // Audio buffer (absolute sample index of samples[0] = bufferStart).
     private var samples: [Double] = []
@@ -48,12 +51,20 @@ public final class StreamingDetector {
     public static let hopS = 0.5
 
     public init(heads: ModelHeads, sessionConfig: SessionConfig = SessionConfig(),
-                sonicConfig: SonicConfig = SonicConfig(), useSonic: Bool = true, batterySaver: Bool = false) {
+                sonicConfig: SonicConfig = SonicConfig(), useSonic: Bool = true, batterySaver: Bool = false,
+                nearGateDb: Double? = nil) {
         self.heads = heads
         self.session = SessionDetector(cfg: sessionConfig)
         self.sonic = SonicDetector(cfg: sonicConfig)
         self.useSonic = useSonic
-        self.gate = batterySaver ? EnergyGate() : nil
+        // Near-sound filter: a new cue only counts when it is clearly above the background; a running
+        // session is never gated. Otherwise the battery saver's gate (or none).
+        if let db = nearGateDb {
+            self.gate = EnergyGate(openDb: db, holdS: 2.0)
+        } else {
+            self.gate = batterySaver ? EnergyGate() : nil
+        }
+        self.nearGate = nearGateDb != nil
     }
 
     /// Seconds of audio processed so far.
@@ -145,7 +156,6 @@ public final class StreamingDetector {
     }
 
     private func updateGate(forWindow k: Int) {
-        guard let gate = gate else { return }
         // RMS of the newest 0.5 s of audio covered by this water window.
         let endSample = (k * WindowFeatureExtractor.hopFrames + WindowFeatureExtractor.waterWindow) * LogMelExtractor.hop
         let n = Audio.sampleRate / 2
@@ -155,7 +165,11 @@ public final class StreamingDetector {
         var e = 0.0
         for v in sampleSlice(st, len) { e += v * v }
         let db = 10 * log10(e / Double(len) + 1e-12)
-        gateOpen = gate.update(t: 0.5 * Double(k) + 0.5, rmsDb: db)
+        lastRmsDb = db
+        guard let gate = gate else { return }
+        let open = gate.update(t: 0.5 * Double(k) + 0.5, rmsDb: db)
+        let inSession = session.state == .brushing || session.state == .rinse
+        gateOpen = open || (nearGate && inSession)
     }
 
     private func trimBuffers() {

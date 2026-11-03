@@ -45,6 +45,11 @@ final class AppModel: ObservableObject {
     /// "Not linked to DentHub yet" banner: shown again every time the app is opened.
     @Published var linkReminder = true
     let heads: ModelHeads?
+
+    /// Test mode recordings (WAV + JSON), newest kept.
+    static var recordingsDir: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("recordings")
+    }
     let coach = Coach()
     private let url: URL
 

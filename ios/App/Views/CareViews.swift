@@ -454,3 +454,32 @@ struct MeasurementFeedbackCard: View {
         return feedbackReport(e, platform: "ios", appVersion: v, quietExtraS: model.profile(e.profileId)?.quietExtraS ?? 0)
     }
 }
+
+// MARK: - Test mode
+
+/// What the detector noticed, live and on the result screen.
+struct TestLogCard: View {
+    let lines: [String]
+    var body: some View {
+        Card {
+            Text(tr("Mit észlel az app")).font(.subheadline.bold())
+            if lines.isEmpty { Text(tr("Még semmit.")).font(.caption).foregroundStyle(.secondary) }
+            ForEach(Array(lines.suffix(8).enumerated()), id: \.offset) { item in
+                Text(item.element).font(.caption.monospacedDigit())
+            }
+        }
+    }
+}
+
+/// "📤 Tesztfelvétel küldése": the newest recording (WAV + JSON timeline) through the share sheet.
+struct TestRecordingShareButton: View {
+    var body: some View {
+        let files = TestRecording.latest(in: AppModel.recordingsDir)
+        if files.isEmpty {
+            Text(tr("Még nincs tesztfelvétel.")).font(.caption).foregroundStyle(.secondary)
+        } else {
+            ShareLink(items: files) { Label(tr("📤 Tesztfelvétel küldése"), systemImage: "square.and.arrow.up") }
+                .buttonStyle(.bordered)
+        }
+    }
+}

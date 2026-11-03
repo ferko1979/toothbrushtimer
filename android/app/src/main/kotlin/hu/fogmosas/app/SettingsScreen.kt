@@ -163,6 +163,12 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
             }
         }
 
+        if (data.settings.isOn("test_recording", "android")) InfoCard {
+            Text(tr("Tesztfelvétel"), fontWeight = FontWeight.Bold)
+            Text(tr("Az utolsó fogmosás (vagy próbálkozás) hangja és a felismerés adatai. Küldd el Google Drive-ra vagy e-mailben, és töltsd fel a fejlesztőnek."), fontSize = 13.sp, color = C.muted)
+            TestRecordingShareButton()
+        }
+
         Section(tr("Víz"))
         InfoCard {
             SwitchRow(tr("USA mértékegységek (gallon, \$)"), "", data.settings.locale == "us") { on ->

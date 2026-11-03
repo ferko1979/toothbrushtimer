@@ -11,6 +11,11 @@ public final class EnergyGate {
 
     public init() {}
 
+    public init(openDb: Double, holdS: Double) {
+        self.openDb = openDb
+        self.holdS = holdS
+    }
+
     public func update(t: Double, rmsDb: Double) -> Bool {
         if let f = floor, rmsDb >= f {
             floor = f + floorRiseDbPerS * hopS

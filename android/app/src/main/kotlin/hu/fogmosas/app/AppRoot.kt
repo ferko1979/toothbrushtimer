@@ -56,6 +56,12 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 cues = s.isOn("quadrant_cues"),
                 keepListeningWhenPlaced = s.isOn("keep_listening_when_placed", "android"),
                 quietExtraS = p.quietExtraS,
+                testRecording = s.isOn("test_recording", "android"),
+                nearOnly = s.isOn("near_only", "android"),
+                directional = s.isOn("mic_direction", "android"),
+                meta = mapOf("platform" to "android", "device" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",
+                    "android" to android.os.Build.VERSION.SDK_INT, "brushType" to p.brushType, "targetS" to p.goals.targetS,
+                    "quietExtraS" to p.quietExtraS, "language" to hu.fogmosas.core.I18n.lang),
             ))
             showBrushing = true
         }

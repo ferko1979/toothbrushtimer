@@ -306,6 +306,13 @@ fun BrushingScreen(activity: MainActivity, store: AppStore, onClose: () -> Unit)
         Modifier.fillMaxSize().let { if (p.child) it.background(kidBrush) else it.background(Color.White) }.padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        if (s.testMode && s.active) Text(tr("🔴 Teszt mód: a felvétel addig megy, amíg le nem állítod"), fontSize = 12.sp, color = C.danger)
+        if (s.testLog.isNotEmpty() || s.testMode) InfoCard {
+            Text(tr("Mit észlel az app"), fontWeight = FontWeight.Bold)
+            if (s.testLog.isEmpty()) Text(tr("Még semmit."), fontSize = 13.sp, color = C.muted)
+            s.testLog.takeLast(8).forEach { Text(it, fontSize = 13.sp) }
+        }
+        if (!s.active && s.testLog.isNotEmpty() && data.settings.isOn("test_recording", "android")) TestRecordingShareButton()
         when {
             s.phase == BrushingEngine.Phase.BRUSHING && s.wasteIcon && data.settings.isOn("water_warnings") -> Banner(tr("🚰 Folyik a csap! Zárd el, amíg fogat mosol."), C.danger)
             s.phase == BrushingEngine.Phase.BRUSHING && s.manual -> Banner(tr("⏱️ Kézi időzítő"), C.brand)
@@ -348,7 +355,9 @@ fun BrushingScreen(activity: MainActivity, store: AppStore, onClose: () -> Unit)
             }
         }
         Spacer(Modifier.weight(1f))
-        if (s.active) OutlinedButton(onClick = { BrushingEngine.stop() }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Kész"), fontSize = 18.sp) }
+        if (s.active) OutlinedButton(onClick = { BrushingEngine.stop() }, Modifier.fillMaxWidth().height(52.dp)) {
+            Text(if (s.testMode) tr("⏹ Felvétel leállítása") else tr("Kész"), fontSize = 18.sp)
+        }
         else Button(onClick = onClose, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Bezárás")) }
     }
 }

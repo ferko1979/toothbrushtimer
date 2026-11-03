@@ -6,6 +6,7 @@ struct ResultView: View {
     let profile: Profile
     let record: BrushRecord
     let achievements: [Achievement]
+    var testLog: [String] = []
     var endReason = "finish"
     var manual = false
     var onResume: () -> Void = {}
@@ -48,6 +49,10 @@ struct ResultView: View {
                             if profile.canRead { Text(a.description).font(.subheadline).foregroundStyle(.secondary) }
                         }
                     }
+                }
+                if !testLog.isEmpty {
+                    TestLogCard(lines: testLog)
+                    TestRecordingShareButton()
                 }
                 MeasurementFeedbackCard(profile: profile, record: record, endReason: endReason, manual: manual, onResume: onResume)
                 CareCheckInCard(profile: profile)

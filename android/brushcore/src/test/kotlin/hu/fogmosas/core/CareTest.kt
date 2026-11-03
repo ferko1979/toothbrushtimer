@@ -194,3 +194,49 @@ class HoldUntilGoalTest {
         assertEquals(0.0, adjustedQuietExtra(0.0, "too_late"))
     }
 }
+
+class SonicHumTest {
+    /** Electric brush: water flickers and short silences in the brush signal while the hum is clear. */
+    private fun run(cfg: SessionConfig): List<BrushingSession> {
+        val det = SessionDetector(cfg)
+        var t = 0.0
+        fun feed(secs: Double, w: Double, b: Double, s: Double) { repeat((secs / 0.5).toInt()) { det.update(t + 0.25, w, b, s, 0.5); t += 0.5 } }
+        feed(2.0, 0.0, 0.0, 0.0); feed(3.0, 1.0, 0.0, 0.0)            // water cue
+        feed(20.0, 0.0, 0.2, 0.9)                                    // brushing, hum
+        feed(8.0, 0.9, 0.1, 0.9)                                     // hum + "water" (false positive)
+        feed(100.0, 0.0, 0.1, 0.9)                                   // hum continues
+        feed(6.0, 1.0, 0.0, 0.0); feed(10.0, 0.0, 0.0, 0.0)          // brush off, real rinse
+        return det.finish()
+    }
+
+    @Test fun humIgnoresWaterAndKeepsGoing() {
+        val s = run(SessionConfig(holdUntilS = 120.0, sonicSuppressesWater = true))
+        assertEquals(1, s.size)
+        assertEquals("rinse", s.first().endReason)
+        assertTrue(s.first().durationS > 120, "duration ${s.first().durationS}")
+        assertTrue(s.first().waterRunningS < 1.0, "water ${s.first().waterRunningS}")
+    }
+
+    @Test fun withoutTheFlagFalseWaterCountsAsWaste() {
+        val s = run(SessionConfig())
+        assertTrue(s.first().waterRunningS > 5, "water ${s.first().waterRunningS}")
+    }
+}
+
+class TestRecordingTest {
+    @Test fun writesReadableWavAndJson() {
+        val dir = kotlin.io.path.createTempDirectory("rec").toFile()
+        val rec = TestRecording(dir, mapOf("platform" to "test", "targetS" to 120.0))
+        val x = FloatArray(16000) { (kotlin.math.sin(it * 0.1) * 0.5).toFloat() }
+        rec.append(x, x.size)
+        rec.row(ScoreRow(0.5, 0.1, 0.9, 0.0, 0.0), "WATER")
+        rec.event(1.0, "water_start")
+        val files = rec.finish(mapOf("durationS" to 0.0, "endReason" to "user"))
+        val (samples, rate) = WavReader.read(files[0].readBytes())
+        assertEquals(16000, rate)
+        assertEquals(16000, samples.size)
+        val js = Json.parseToJsonElement(files[1].readText()).jsonObject
+        assertEquals("denthub-brush-test-1", js["format"]!!.jsonPrimitive.content)
+        assertEquals(listOf(files[0], files[1]), TestRecording.latest(dir))
+    }
+}

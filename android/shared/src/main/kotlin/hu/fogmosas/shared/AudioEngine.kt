@@ -30,6 +30,7 @@ class AudioEngine(private val onSamples: (FloatArray, Int) -> Unit) {
         check(r.state == AudioRecord.STATE_INITIALIZED) { tr("A mikrofon nem érhető el.") }
         r.startRecording()
         record = r
+        direction?.let { applyDirection(r, it) }
         running = true
         thread = Thread({
             val buf = FloatArray(1600)
@@ -38,6 +39,27 @@ class AudioEngine(private val onSamples: (FloatArray, Int) -> Unit) {
                 if (n > 0) onSamples(buf, n)
             }
         }, "brush-audio").apply { start() }
+    }
+
+    private var direction: Boolean? = null
+
+    /**
+     * Directional pickup where the phone supports it (Android 10+): towards the user = the screen /
+     * selfie-camera side (phone face up), away = the back (phone face down).
+     */
+    fun setDirection(towardsScreen: Boolean) {
+        if (direction == towardsScreen) return
+        direction = towardsScreen
+        record?.let { applyDirection(it, towardsScreen) }
+    }
+
+    private fun applyDirection(r: AudioRecord, towardsScreen: Boolean) {
+        if (android.os.Build.VERSION.SDK_INT < 29) return
+        runCatching {
+            r.setPreferredMicrophoneDirection(
+                if (towardsScreen) android.media.MicrophoneDirection.MIC_DIRECTION_TOWARDS_USER
+                else android.media.MicrophoneDirection.MIC_DIRECTION_AWAY_FROM_USER)
+        }
     }
 
     fun stop() {

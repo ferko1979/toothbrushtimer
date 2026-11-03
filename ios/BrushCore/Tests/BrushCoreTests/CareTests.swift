@@ -199,3 +199,43 @@ final class HoldUntilGoalTests: XCTestCase {
         XCTAssertEqual(adjustedQuietExtra(10, reason: "too_late"), 5)
     }
 }
+
+final class SonicHumTests: XCTestCase {
+    private func run(_ cfg: SessionConfig) -> [BrushingSession] {
+        let det = SessionDetector(cfg: cfg)
+        var t = 0.0
+        func feed(_ secs: Double, _ w: Double, _ b: Double, _ s: Double) {
+            for _ in 0..<Int(secs / 0.5) { det.update(t: t + 0.25, water: w, brush: b, sonic: s, dt: 0.5); t += 0.5 }
+        }
+        feed(2, 0, 0, 0); feed(3, 1, 0, 0); feed(20, 0, 0.2, 0.9); feed(8, 0.9, 0.1, 0.9)
+        feed(100, 0, 0.1, 0.9); feed(6, 1, 0, 0); feed(10, 0, 0, 0)
+        return det.finish()
+    }
+
+    func testHumIgnoresWaterAndKeepsGoing() {
+        var c = SessionConfig()
+        c.holdUntilS = 120
+        c.sonicSuppressesWater = true
+        let s = run(c)
+        XCTAssertEqual(s.count, 1)
+        XCTAssertEqual(s.first?.endReason, "rinse")
+        XCTAssertGreaterThan(s.first?.durationS ?? 0, 120)
+        XCTAssertLessThan(s.first?.waterRunningS ?? 99, 1)
+    }
+}
+
+final class TestRecordingTests: XCTestCase {
+    func testWritesReadableWavAndJson() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let rec = try TestRecording(directory: dir, meta: ["platform": "test"])
+        rec.append((0..<16000).map { Float(sin(Double($0) * 0.1) * 0.5) })
+        rec.row(ScoreRow(t: 0.5, brush: 0.1, water: 0.9, sonic: 0, sonicF0: 0), state: "water", rmsDb: -30)
+        rec.event(1.0, "water_start")
+        let files = rec.finish(result: ["endReason": "user"])
+        let wav = try WAVReader.read(files[0])
+        XCTAssertEqual(wav.samples.count, 16000)
+        let js = try JSONSerialization.jsonObject(with: Data(contentsOf: files[1])) as! [String: Any]
+        XCTAssertEqual(js["format"] as? String, "denthub-brush-test-1")
+        XCTAssertEqual(TestRecording.latest(in: dir), files)
+    }
+}

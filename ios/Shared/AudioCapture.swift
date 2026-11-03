@@ -15,6 +15,21 @@ final class AudioCapture {
         }
     }
 
+    #if os(iOS)
+    /// Directional pickup where the iPhone supports it: the screen-side (front) or back microphone,
+    /// cardioid pattern. Set before starting.
+    var towardsScreen: Bool?
+
+    private func applyDirection(_ session: AVAudioSession) {
+        guard let towards = towardsScreen,
+              let mic = session.availableInputs?.first(where: { $0.portType == .builtInMic }),
+              let src = mic.dataSources?.first(where: { $0.orientation == (towards ? .front : .back) }) else { return }
+        if src.supportedPolarPatterns?.contains(.cardioid) == true { try? src.setPreferredPolarPattern(.cardioid) }
+        try? mic.setPreferredDataSource(src)
+        try? session.setPreferredInput(mic)
+    }
+    #endif
+
     func start(onSamples: @escaping ([Float]) -> Void) throws {
         guard !isRunning else { return }
         let session = AVAudioSession.sharedInstance()
@@ -26,6 +41,9 @@ final class AudioCapture {
         try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .mixWithOthers])
         #endif
         try session.setActive(true)
+        #if os(iOS)
+        applyDirection(session)
+        #endif
 
         let input = engine.inputNode
         let inFormat = input.outputFormat(forBus: 0)

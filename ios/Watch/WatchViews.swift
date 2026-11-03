@@ -117,7 +117,10 @@ struct WatchBrushingView: View {
         }
         if let heads = model.heads {
             // The watch does not know the brush type: listen for both scrubbing and sonic hum.
-            controller.start(heads: heads, sessionConfig: SessionConfig(), sonicConfig: SonicConfig(),
+            var sc = SessionConfig()
+            sc.holdUntilS = model.goals.targetS
+            sc.sonicSuppressesWater = true
+            controller.start(heads: heads, sessionConfig: sc, sonicConfig: SonicConfig(),
                              useSonic: true, batterySaver: true)
         } else {
             controller.startManual()

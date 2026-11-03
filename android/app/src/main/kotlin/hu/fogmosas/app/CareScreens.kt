@@ -364,6 +364,13 @@ fun MeasurementFeedbackCard(activity: MainActivity, store: AppStore, onResume: (
 
     InfoCard {
         if (!r.manual) Text(hu.fogmosas.core.endReasonText(r.endReason), fontSize = 13.sp, color = C.muted)
+        val log = hu.fogmosas.shared.BrushingEngine.state.collectAsStateWithLifecycle().value.testLog
+        if (log.isNotEmpty()) {
+            Text(tr("Mit észlel az app"), fontWeight = FontWeight.Bold)
+            log.forEach { Text(it, fontSize = 12.sp, color = C.muted) }
+        }
+        if (data.settings.isOn("test_recording", "android")) TestRecordingShareButton(saved?.let { s ->
+            hu.fogmosas.core.feedbackReport(s, "android", "", p.quietExtraS) } ?: "")
         if (!r.manual && r.endReason != "user" && r.durationS < p.goals.targetS) {
             OutlinedButton(onClick = {
                 activity.lastRecordId?.let { store.removeRecord(it) }
@@ -407,4 +414,24 @@ fun MeasurementFeedbackCard(activity: MainActivity, store: AppStore, onResume: (
             }, enabled = answer == true || reason != null) { Text(tr("Mentés")) }
         }
     }
+}
+
+// ------------------------------------------------------------------ test recordings
+
+/** "📤 Tesztfelvétel küldése": shares the newest recording (WAV + JSON timeline) through the share sheet. */
+@Composable
+fun TestRecordingShareButton(note: String = "") {
+    val ctx = LocalContext.current
+    val dir = hu.fogmosas.shared.BrushingEngine.recordingsDir(ctx)
+    OutlinedButton(onClick = {
+        val files = hu.fogmosas.core.TestRecording.latest(dir)
+        if (files.isEmpty()) { toast(ctx, tr("Még nincs tesztfelvétel.")); return@OutlinedButton }
+        val uris = ArrayList(files.map { androidx.core.content.FileProvider.getUriForFile(ctx, ctx.packageName + ".files", it) })
+        val i = android.content.Intent(android.content.Intent.ACTION_SEND_MULTIPLE).setType("*/*")
+            .putParcelableArrayListExtra(android.content.Intent.EXTRA_STREAM, uris)
+            .putExtra(android.content.Intent.EXTRA_SUBJECT, "DentHub-Brush " + files.last().nameWithoutExtension)
+            .putExtra(android.content.Intent.EXTRA_TEXT, note.ifBlank { files.last().name })
+            .addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        ctx.startActivity(android.content.Intent.createChooser(i, tr("Tesztfelvétel küldése")))
+    }) { Text(tr("📤 Tesztfelvétel küldése")) }
 }

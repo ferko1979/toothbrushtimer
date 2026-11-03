@@ -147,6 +147,8 @@ data class Feature(
         val all get() = listOf(
             Feature("auto_detect", tr("Automatikus felismerés"), tr("A víz, a súrolás és a szónikus zúgás alapján indul és áll le a mérés."), true, tr("Mérés")),
             Feature("keep_listening_when_placed", tr("Figyelés letett telefonnal"), tr("Ha a telefon vízszintesen, nyugalomban fekszik, a képernyő lezárása után is figyel."), true, tr("Mérés"), setOf("ios", "android")),
+            Feature("near_only", tr("Csak a közeli hangok"), tr("Csak a telefon közeléből (kb. 2 m) érkező hangok indíthatnak mérést; a távoli zajokat (TV, beszéd) figyelmen kívül hagyja."), true, tr("Mérés")),
+            Feature("mic_direction", tr("Irányított mikrofon"), tr("A telefon fekvése szerint figyel: képernyővel felfelé a kijelző (szelfikamera) felé, képernyővel lefelé a hátoldal felé. Csak ha a telefon támogatja."), true, tr("Mérés"), setOf("ios", "android")),
             Feature("calibration", tr("Kalibráció"), tr("Az első 3 fogmosásból megtanulja a fogkeféd hangját."), true, tr("Mérés")),
             Feature("battery_saver", tr("Akkumulátorkímélő mód"), tr("Csak akkor futtatja a felismerő modellt, ha egyáltalán hallatszik valami."), true, tr("Mérés")),
             Feature("quadrant_cues", tr("Rezgés a negyedeknél"), tr("Indításkor, 30/60/90 másodpercnél és a célidőnél jelez."), true, tr("Fogmosás közben")),
@@ -172,6 +174,7 @@ data class Feature(
             Feature("monthly_report", tr("Havi összefoglaló"), tr("Kinyomtatható, a fogorvosnak is megmutatható."), true, tr("Adatok")),
             Feature("dentist_report", tr("Jelentés a fogorvosnak (PDF)"), tr("Fogmosás, fogselyem, tünetek az utóbbi 30/90 napból."), true, tr("Adatok")),
             Feature("web_link", tr("Webes megtekintés QR-kóddal"), tr("A weboldalon megjelenő QR-kódot beolvasva a statisztikád a böngészőben is látszik. Titkosítva, a szerver nem tárolja."), true, tr("Adatok"), setOf("ios", "android")),
+            Feature("test_recording", tr("Teszt mód (hangfelvétellel)"), tr("A felvétel addig megy, amíg te le nem állítod; közben az app kiírja, mit észlel, és magától méri a fogmosást. A hang és a felismerés adatai elküldhetők a fejlesztőknek. Csak bekapcsolva, és csak a telefonon marad, amíg el nem küldöd."), false, tr("Teszt"), setOf("ios", "android")),
             Feature("app_lock", tr("Zárolás Face ID-val / ujjlenyomattal"), tr("Megnyitáskor azonosítás kell."), false, tr("Adatvédelem"), setOf("ios", "android")),
             Feature("parent_lock", tr("Szülői zár"), tr("A Beállítások és a webes megosztás csak azonosítás után nyílik meg."), false, tr("Adatvédelem"), setOf("ios", "android")),
             Feature("family_sync", tr("Családi szinkron"), tr("A gyerekek órája és a szülő telefonja között."), false, tr("Adatok"), available = false),
