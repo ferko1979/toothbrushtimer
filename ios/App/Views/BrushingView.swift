@@ -29,6 +29,7 @@ struct BrushingView: View {
                 if let rec = record {
                     ResultView(profile: profile, record: rec, achievements: achievements, testLog: controller.testLog,
                                endReason: lastResult?.endReason ?? "finish", manual: lastResult?.manual ?? false,
+                               notes: lastResult?.notes ?? [],
                                onResume: { resume(rec) }) { dismiss() }
                 } else {
                     listening
@@ -187,6 +188,10 @@ struct BrushingView: View {
         sc.holdQuietS += profile.quietExtraS
         sc.sonicSuppressesWater = profile.brushType.powered
         sc.runHysteresis = true
+        sc.quietWaterRinseS = 3.5
+        sc.wetCue = true
+        sc.sonicStopWatch = profile.brushType.powered
+        controller.f0History = profile.calibration.f0s
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         let faceDown = UIDevice.current.orientation == .faceDown
         let testing = settings.isOn("test_recording", platform: .ios)

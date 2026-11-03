@@ -26,6 +26,14 @@ public struct SessionConfig: Equatable {
     public var sonicSuppressesWater = false
     /// App: the brushing run only restarts when the signal drops below `off` (short dips keep it).
     public var runHysteresis = false
+    /// App: while brushing, "water" that is not clearly louder than the brushing itself (scrubbing
+    /// without the motor can sound like water) must run this long before it counts as a rinse. nil = off.
+    public var quietWaterRinseS: Double? = nil
+    public var loudWaterDb = 6.0
+    /// App: a short loud splash before brushing (wetting the brush head) arms the session like the water cue.
+    public var wetCue = false
+    /// App, electric brush: notice when the motor stops mid-session (flat battery) and the user goes on by hand.
+    public var sonicStopWatch = false
 
     public init() {}
 
@@ -47,6 +55,9 @@ public enum SessionEvent: String, Codable {
     case wasteIconOn = "waste_icon_on"
     case wasteIconOff = "waste_icon_off"
     case sessionEnd = "session_end"
+    case brushWet = "brush_wet"
+    case sonicStopped = "sonic_stopped"
+    case sonicResumed = "sonic_resumed"
 }
 
 public struct BrushingSession: Equatable {
@@ -57,6 +68,14 @@ public struct BrushingSession: Equatable {
     public var events: [(Double, SessionEvent)] = []
     /// Why the session ended: "rinse", "quiet" or "finish" (listening stopped).
     public var endReason = "finish"
+    /// The brush head was wetted just before (short splash cue).
+    public var wetBefore = false
+    /// Session time when the motor stopped mid-session (nil: it did not, or it came back).
+    public var sonicStoppedAt: Double? = nil
+    /// Brushing by hand after the motor stopped.
+    public var manualAfterSonicS = 0.0
+    /// Motor frequency while humming, one value per 0.5 s.
+    public var sonicF0s: [Double] = []
 
     public var durationS: Double { Swift.max(end - start, 0) }
     public var wastedWater: Bool { waterRunningS >= 5.0 }
@@ -81,6 +100,9 @@ public final class SessionDetector {
     private var waterEnd = 0.0, rinseStart = 0.0, lastBrush = 0.0, rinseWater = 0.0
     private var dryBeforeWater = 0.0, sinceWater = 0.0
     private var t = 0.0
+    private var brushLevelDb: Double? = nil, waterLoud = false
+    private var floorDb: Double? = nil, loudRun = 0.0, wetArmed = false, wetAt = -1e9
+    private var sonicRun = 0.0, sonicGap = 0.0, sonicBack = 0.0
 
     public init(cfg: SessionConfig = SessionConfig()) {
         self.cfg = cfg
@@ -90,6 +112,8 @@ public final class SessionDetector {
         waterRun = 0; dryRun = 0; brushRun = 0; quietRun = 0
         waterEnd = 0; rinseStart = 0; lastBrush = 0; rinseWater = 0
         dryBeforeWater = 0; sinceWater = 0
+        brushLevelDb = nil; waterLoud = false; loudRun = 0; wetArmed = false
+        sonicRun = 0; sonicGap = 0; sonicBack = 0
     }
 
     private var hasCurrent: Bool { state == .brushing || state == .rinse }
@@ -104,7 +128,10 @@ public final class SessionDetector {
     }
 
     private func startSession(_ time: Double, start: Double, cue: String) {
-        sessions.append(BrushingSession(start: start, cue: cue))
+        var s = BrushingSession(start: start, cue: wetArmed && cue == "water" ? "wet" : cue)
+        s.wetBefore = wetArmed
+        sessions.append(s)
+        wetArmed = false
         state = .brushing
         lastBrush = time
         quietRun = 0
@@ -123,7 +150,9 @@ public final class SessionDetector {
         resetRuns()
     }
 
-    public func update(t time: Double, water: Double, brush: Double, sonic: Double, dt: Double) {
+    /// `rmsDb`: loudness of this step (dBFS), NaN if unknown; `sonicF0`: motor frequency, 0 if none.
+    public func update(t time: Double, water: Double, brush: Double, sonic: Double, dt: Double,
+                       rmsDb: Double = .nan, sonicF0: Double = 0) {
         let c = cfg
         t = time
         let brushing = Swift.max(brush, sonic)
@@ -142,6 +171,20 @@ public final class SessionDetector {
         waterRun = isWater ? waterRun + dt : 0
         dryRun = noWater ? dryRun + dt : 0
         brushRun = brushing >= c.on ? brushRun + dt : ((c.runHysteresis && brushing >= c.off) ? brushRun : 0)
+        let level = !rmsDb.isNaN
+        if !isWater {
+            waterLoud = false
+        } else if level, let b = brushLevelDb, rmsDb >= b + c.loudWaterDb {
+            waterLoud = true
+        }
+        if level && state == .brushing && brushing >= c.on && !isWater {
+            brushLevelDb = brushLevelDb.map { $0 + 0.1 * (rmsDb - $0) } ?? rmsDb
+        }
+        if c.wetCue && level && (state == .listening || state == .armed) && !wetArmed {
+            wetSplash(time, rmsDb: rmsDb, sonic: sonic, dt: dt)
+        }
+        // The splash itself sounds like scrubbing for a few seconds (smoothed scores): not brushing yet.
+        if wetArmed && time - wetAt < 3 { brushRun = 0 }
 
         switch state {
         case .listening:
@@ -150,6 +193,10 @@ public final class SessionDetector {
                 event(time, .waterStart)
             } else if brushRun >= c.fallbackS {
                 startSession(time, start: time - brushRun, cue: "no_water")
+            }
+            if state == .listening && wetArmed {
+                state = .armed
+                waterEnd = time
             }
 
         case .water:
@@ -165,9 +212,11 @@ public final class SessionDetector {
             if waterRun >= c.waterMinS {
                 state = .water
             } else if brushRun >= c.brushConfirmS {
-                startSession(time, start: waterEnd, cue: "water")
+                // After wetting, toothpaste comes first: brushing starts with the brushing itself.
+                startSession(time, start: wetArmed ? time - brushRun : waterEnd, cue: "water")
             } else if time - waterEnd > c.armS {
                 state = .listening
+                wetArmed = false
             }
 
         case .brushing:
@@ -180,7 +229,9 @@ public final class SessionDetector {
             }
             if isWater { sessions[idx].waterRunningS += dt }
             let early = c.holdUntilS.map { time - sessions[idx].start < $0 } ?? false
-            let rinseMin = early ? Swift.max(c.rinseMinS, c.rinseMinEarlyS) : c.rinseMinS
+            var rinseMin = early ? Swift.max(c.rinseMinS, c.rinseMinEarlyS) : c.rinseMinS
+            if let q = c.quietWaterRinseS, level, brushLevelDb != nil, !waterLoud { rinseMin = Swift.max(rinseMin, q) }
+            if c.sonicStopWatch { watchSonic(time, idx: idx, brush: brush, sonic: sonic, f0: sonicF0, dt: dt) }
             if waterRun >= rinseMin && !wasteIcon && dryBeforeWater >= c.wasteIconS
                 && time - sessions[idx].start >= c.minBrushingBeforeRinseS {
                 rinseStart = time - waterRun
@@ -210,6 +261,50 @@ public final class SessionDetector {
             } else if dryRun >= c.rinseDoneS {
                 sessions[idx].waterRunningS = Swift.max(sessions[idx].waterRunningS - rinseWater, 0)
                 endSession(time, end: rinseStart, reason: "rinse")
+            }
+        }
+    }
+
+    /// Short loud burst (about 1–3 s, 10 dB over the quiet room) without the motor = wetting the brush.
+    private func wetSplash(_ time: Double, rmsDb: Double, sonic: Double, dt: Double) {
+        let floor: Double
+        if let f = floorDb, rmsDb >= f { floor = f + 0.04 * dt } else { floor = rmsDb }
+        floorDb = floor
+        if rmsDb >= floor + 10 && sonic < cfg.off {
+            loudRun += dt
+            return
+        }
+        if loudRun >= 1 && loudRun <= 3 {
+            wetArmed = true
+            wetAt = time
+            brushRun = 0
+            event(time, .brushWet)
+        }
+        loudRun = 0
+    }
+
+    private func watchSonic(_ time: Double, idx: Int, brush: Double, sonic: Double, f0: Double, dt: Double) {
+        let c = cfg
+        if sonic >= c.on && f0 > 0 { sessions[idx].sonicF0s.append(f0) }
+        if sonic >= c.off {
+            sonicGap = 0
+            if sonic >= c.on { sonicRun += dt }
+        } else {
+            sonicGap += dt
+        }
+        let stopped = sessions[idx].sonicStoppedAt != nil
+        if !stopped && sonicGap >= 3 && sonicRun >= 30 {
+            sessions[idx].sonicStoppedAt = time - sonicGap - sessions[idx].start
+            sonicRun = 0
+            event(time, .sonicStopped)
+        } else if stopped {
+            if sonic < c.off && brush >= c.off { sessions[idx].manualAfterSonicS += dt }
+            sonicBack = sonic >= c.on ? sonicBack + dt : 0
+            if sonicBack >= 2 {
+                sessions[idx].sonicStoppedAt = nil
+                sessions[idx].manualAfterSonicS = 0
+                sonicBack = 0
+                event(time, .sonicResumed)
             }
         }
     }

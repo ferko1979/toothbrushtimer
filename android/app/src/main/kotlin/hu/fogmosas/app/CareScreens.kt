@@ -382,6 +382,7 @@ fun MeasurementFeedbackCard(activity: MainActivity, store: AppStore, onResume: (
 
     InfoCard {
         if (!r.manual) Text(hu.fogmosas.core.endReasonText(r.endReason), fontSize = 13.sp, color = C.muted)
+        r.notes.forEach { Text(it, fontSize = 13.sp, color = C.warn) }
         val log = hu.fogmosas.shared.BrushingEngine.state.collectAsStateWithLifecycle().value.testLog
         if (log.isNotEmpty()) {
             Text(tr("Mit észlel az app"), fontWeight = FontWeight.Bold)

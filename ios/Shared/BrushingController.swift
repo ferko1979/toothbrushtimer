@@ -15,6 +15,8 @@ final class BrushingController: ObservableObject {
         let manual: Bool
         /// rinse, quiet, user or finish
         var endReason = "finish"
+        /// Electric brush: battery notes (motor stopped / slowed down).
+        var notes: [String] = []
     }
 
     @Published private(set) var phase: Phase = .idle
@@ -30,6 +32,8 @@ final class BrushingController: ObservableObject {
     @Published private(set) var testResult: Result?
 
     var targetS: Double = 120
+    /// Earlier sessions' motor frequencies (battery trend); set before start().
+    var f0History: [Double] = []
     var cuesEnabled = true
     var onCue: ((Cue) -> Void)?
     var onActivity: (() -> Void)?
@@ -207,7 +211,8 @@ final class BrushingController: ObservableObject {
             if event == .sessionEnd, let session = det.session.sessions.last {
                 let reason = session.endReason == "finish" && userStop ? "user" : session.endReason
                 let r = Result(start: listenStarted.addingTimeInterval(session.start), durationS: session.durationS,
-                               waterRunningS: session.waterRunningS, cue: session.cue, brushF0: nil, manual: false, endReason: reason)
+                               waterRunningS: session.waterRunningS, cue: session.cue, brushF0: nil, manual: false, endReason: reason,
+                               notes: brushPowerNotes(session, history: f0History))
                 DispatchQueue.main.async {
                     if self.testResult == nil || r.durationS > self.testResult!.durationS { self.testResult = r }
                     self.testLog.append(clock + " " + tr("🏁 vége – mért idő: {0}", formatClock(r.durationS)))
@@ -232,7 +237,8 @@ final class BrushingController: ObservableObject {
             let start = listenStarted.addingTimeInterval(session.start)
             let reason = session.endReason == "finish" && userStop ? "user" : session.endReason
             let r = Result(start: start, durationS: session.durationS, waterRunningS: session.waterRunningS,
-                           cue: session.cue, brushF0: f0, manual: false, endReason: reason)
+                           cue: session.cue, brushF0: f0, manual: false, endReason: reason,
+                           notes: brushPowerNotes(session, history: f0History))
             DispatchQueue.main.async {
                 self.capture.stop()
                 self.finish(with: r)
@@ -262,6 +268,9 @@ final class BrushingController: ObservableObject {
         case .rinseStart: return tr("💧 öblítés")
         case .brushingResumed: return tr("🪥 folytatódik")
         case .wasteIconOn: return tr("⚠️ folyik a csap")
+        case .brushWet: return tr("💦 fogkefe nedvesítése")
+        case .sonicStopped: return tr("🔋 a fogkefe motorja leállt")
+        case .sonicResumed: return tr("🔋 a motor újra zúg")
         default: return nil
         }
     }

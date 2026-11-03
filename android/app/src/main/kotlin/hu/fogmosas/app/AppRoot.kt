@@ -58,6 +58,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 keepListeningWhenPlaced = s.isOn("keep_listening_when_placed", "android"),
                 quietExtraS = p.quietExtraS,
                 testRecording = s.isOn("test_recording", "android"),
+                f0History = p.calibration.f0s,
                 nearOnly = s.isOn("near_only", "android"),
                 directional = s.isOn("mic_direction", "android"),
                 meta = mapOf("platform" to "android", "device" to "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}",

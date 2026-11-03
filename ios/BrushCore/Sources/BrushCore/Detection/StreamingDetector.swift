@@ -47,6 +47,7 @@ public final class StreamingDetector {
     private var brushSmoothed: [Double] = []
     private var sonicScores: [SonicResult] = []
     private var pendingWater: [Double] = []  // water probabilities not yet emitted
+    private var pendingRms: [Double] = []    // loudness of the same windows
     private var emitted = 0
     private var gateOpen = true
 
@@ -101,6 +102,7 @@ public final class StreamingDetector {
                 ? heads.water.predict(waterEx.features(frames[s..<(s + WindowFeatureExtractor.waterWindow)]))
                 : 0
             pendingWater.append(p)
+            pendingRms.append(lastRmsDb)
             waterCount += 1
         }
         while brushRaw.count * hf + WindowFeatureExtractor.brushWindow <= frameCount {
@@ -153,7 +155,8 @@ public final class StreamingDetector {
                                sonic: son, sonicF0: f0)
             emitted += 1
             session.update(t: row.t + StreamingDetector.hopS / 2, water: row.water, brush: row.brush,
-                           sonic: row.sonic, dt: StreamingDetector.hopS)
+                           sonic: row.sonic, dt: StreamingDetector.hopS,
+                           rmsDb: pendingRms[k - (waterCount - pendingRms.count)], sonicF0: row.sonicF0)
             onRow?(row)
         }
     }
@@ -194,6 +197,7 @@ public final class StreamingDetector {
         let dropW = pendingWater.count - (waterCount - emitted)
         if dropW > 50 {
             pendingWater.removeFirst(dropW)
+            pendingRms.removeFirst(dropW)
         }
     }
 

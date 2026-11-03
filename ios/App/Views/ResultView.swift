@@ -9,6 +9,7 @@ struct ResultView: View {
     var testLog: [String] = []
     var endReason = "finish"
     var manual = false
+    var notes: [String] = []
     var onResume: () -> Void = {}
     let onDone: () -> Void
 
@@ -54,7 +55,7 @@ struct ResultView: View {
                     TestLogCard(lines: testLog)
                     TestRecordingShareButton()
                 }
-                MeasurementFeedbackCard(profile: profile, record: record, endReason: endReason, manual: manual, onResume: onResume)
+                MeasurementFeedbackCard(profile: profile, record: record, endReason: endReason, manual: manual, notes: notes, onResume: onResume)
                 CareCheckInCard(profile: profile)
                 Button(tr("Kész"), action: onDone).buttonStyle(.borderedProminent).controlSize(.large).padding(.top)
             }

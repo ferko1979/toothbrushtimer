@@ -394,6 +394,7 @@ struct MeasurementFeedbackCard: View {
     let record: BrushRecord
     let endReason: String
     let manual: Bool
+    var notes: [String] = []
     let onResume: () -> Void
     @State private var answer: Bool?
     @State private var reason: String?
@@ -405,6 +406,7 @@ struct MeasurementFeedbackCard: View {
         if profile.canRead {
             Card {
                 if !manual { Text(endReasonText(endReason)).font(.caption).foregroundStyle(.secondary) }
+                ForEach(notes, id: \.self) { Text($0).font(.caption).foregroundStyle(Theme.warn) }
                 if !manual && endReason != "user" && record.durationS < profile.goals.targetS {
                     Button(tr("↩️ Még mostam – folytatás"), action: onResume).buttonStyle(.bordered)
                 }

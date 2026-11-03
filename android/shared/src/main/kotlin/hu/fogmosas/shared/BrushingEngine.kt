@@ -30,7 +30,9 @@ object BrushingEngine {
     enum class Phase { IDLE, LISTENING, WATER, ARMED, BRUSHING, RINSING, FINISHED, FAILED }
 
     data class Result(val startMs: Long, val durationS: Double, val waterRunningS: Double, val cue: String,
-                      val brushF0: Double?, val manual: Boolean, val endReason: String = "finish")
+                      val brushF0: Double?, val manual: Boolean, val endReason: String = "finish",
+                      /** Electric brush: battery notes (motor stopped / slowed down). */
+                      val notes: List<String> = emptyList())
 
     data class State(
         val phase: Phase = Phase.IDLE,
@@ -72,6 +74,8 @@ object BrushingEngine {
         val directional: Boolean = false,
         /** Test builds: save audio + detector timeline for the developers. */
         val testRecording: Boolean = false,
+        /** Earlier sessions' motor frequencies (battery trend). */
+        val f0History: List<Double> = emptyList(),
         val meta: Map<String, Any?> = emptyMap(),
     )
 
@@ -92,6 +96,7 @@ object BrushingEngine {
     private var cueTracker: CueTracker? = null
     private var cuesOn = true
     private var targetS = 120.0
+    private var f0History: List<Double> = emptyList()
     /** Goal of the running brushing (for the ongoing notification). */
     val currentTargetS get() = targetS
     private val f0s = ArrayList<Double>()
@@ -126,6 +131,7 @@ object BrushingEngine {
         val ctx = context.applicationContext
         appContext = ctx
         targetS = cfg.targetS
+        f0History = cfg.f0History
         cuesOn = cfg.cues
         f0s.clear()
         cueTracker = null
@@ -144,7 +150,8 @@ object BrushingEngine {
         // Until the goal is reached, stop only after a long silence or a clear rinse.
         val sc = policy.sessionConfig.let {
             it.copy(holdUntilS = cfg.targetS, endQuietS = it.endQuietS + cfg.quietExtraS, holdQuietS = it.holdQuietS + cfg.quietExtraS,
-                sonicSuppressesWater = cfg.useSonic, runHysteresis = true)
+                sonicSuppressesWater = cfg.useSonic, runHysteresis = true,
+                quietWaterRinseS = 3.5, wetCue = true, sonicStopWatch = cfg.useSonic)
         }
         userStop = false
         val det = StreamingDetector(heads, sc, cfg.sonicConfig, cfg.useSonic, cfg.batterySaver,
@@ -307,6 +314,9 @@ object BrushingEngine {
         SessionEvent.RINSE_START -> tr("💧 öblítés")
         SessionEvent.BRUSHING_RESUMED -> tr("🪥 folytatódik")
         SessionEvent.WASTE_ICON_ON -> tr("⚠️ folyik a csap")
+        SessionEvent.BRUSH_WET -> tr("💦 fogkefe nedvesítése")
+        SessionEvent.SONIC_STOPPED -> tr("🔋 a fogkefe motorja leállt")
+        SessionEvent.SONIC_RESUMED -> tr("🔋 a motor újra zúg")
         else -> null
     }
 
@@ -317,7 +327,7 @@ object BrushingEngine {
                 val session = det.session.sessions.last()
                 val reason = if (session.endReason == "finish" && userStop) "user" else session.endReason
                 val r = Result(listenStartMs + (session.start * 1000).toLong(), session.durationS, session.waterRunningS,
-                    session.cue, null, false, reason)
+                    session.cue, null, false, reason, hu.fogmosas.core.brushPowerNotes(session, f0History))
                 // Keep the longest session the detector found.
                 if (testResult == null || r.durationS > testResult!!.durationS) testResult = r
                 val line = "$clock " + tr("🏁 vége – mért idő: {0}", Formatting.clock(r.durationS))
@@ -343,7 +353,7 @@ object BrushingEngine {
                 val f0 = synchronized(f0s) { if (f0s.size >= 4) f0s.sorted()[f0s.size / 2] else null }
                 val reason = if (session.endReason == "finish" && userStop) "user" else session.endReason
                 val r = Result(listenStartMs + (session.start * 1000).toLong(), session.durationS, session.waterRunningS,
-                    session.cue, f0, false, reason)
+                    session.cue, f0, false, reason, hu.fogmosas.core.brushPowerNotes(session, f0History))
                 scope.launch {
                     stopAudio()
                     detector = null
