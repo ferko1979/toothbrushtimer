@@ -8,7 +8,7 @@ final class Connectivity: NSObject, WCSessionDelegate {
 
     var onRecord: ((BrushRecord) -> Void)?
     var onCare: ((CareEntry) -> Void)?
-    var onContext: ((Goals, String) -> Void)?   // goals, owner profile name
+    var onContext: ((Goals, String, String) -> Void)?   // goals, owner profile name, brushing hand
 
     func activate() {
         guard WCSession.isSupported() else { return }
@@ -26,10 +26,10 @@ final class Connectivity: NSObject, WCSessionDelegate {
         WCSession.default.transferUserInfo(["care": data])
     }
 
-    func pushContext(goals: Goals, ownerName: String) {
+    func pushContext(goals: Goals, ownerName: String, brushHand: String = "right") {
         guard WCSession.isSupported(), WCSession.default.activationState == .activated,
               let data = try? JSONEncoder().encode(goals) else { return }
-        try? WCSession.default.updateApplicationContext(["goals": data, "owner": ownerName])
+        try? WCSession.default.updateApplicationContext(["goals": data, "owner": ownerName, "brushHand": brushHand])
     }
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
@@ -48,7 +48,8 @@ final class Connectivity: NSObject, WCSessionDelegate {
         guard let data = applicationContext["goals"] as? Data,
               let goals = try? JSONDecoder().decode(Goals.self, from: data) else { return }
         let owner = applicationContext["owner"] as? String ?? ""
-        DispatchQueue.main.async { self.onContext?(goals, owner) }
+        let hand = applicationContext["brushHand"] as? String ?? "right"
+        DispatchQueue.main.async { self.onContext?(goals, owner, hand) }
     }
 
     #if os(iOS)

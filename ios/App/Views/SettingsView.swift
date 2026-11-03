@@ -204,6 +204,18 @@ struct ProfileEditView: View {
                         Button(tr("Kalibráció újrakezdése")) { var q = p; q.calibration = BrushCalibration(); model.updateProfile(q) }
                     }
                 }
+                if p.id == "me" {
+                    Section(header: Text(tr("Melyik kézzel mosol fogat?")),
+                            footer: Text(tr("Az Apple Watch magától tudja, melyik csuklódon van.")).font(.caption)) {
+                        Picker(tr("Melyik kézzel mosol fogat?"), selection: Binding(get: { p.brushHand }, set: { v in
+                            var q = p; q.brushHand = v; model.updateProfile(q)
+                        })) {
+                            Text(tr("Bal")).tag("left")
+                            Text(tr("Jobb")).tag("right")
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
                 ProfileCareSection(profileId: p.id)
                 if p.child {
                     Section(tr("Gyerek")) {

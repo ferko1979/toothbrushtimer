@@ -33,10 +33,13 @@ object WearSync {
     fun decodeRecord(bytes: ByteArray): BrushRecord? =
         runCatching { AppStore.json.decodeFromString(BrushRecord.serializer(), String(bytes)) }.getOrNull()
 
-    fun pushGoals(ctx: Context, goals: Goals) {
+    fun pushGoals(ctx: Context, goals: Goals, brushHand: String = AppStore.get(ctx).data.value.profile("me")?.brushHand ?: "right",
+                  watchWrist: String = AppStore.get(ctx).data.value.profile("me")?.watchWrist ?: "left") {
         val req = PutDataMapRequest.create(PATH_GOALS).apply {
             dataMap.putInt("perDay", goals.perDay)
             dataMap.putDouble("targetS", goals.targetS)
+            dataMap.putString("brushHand", brushHand)
+            dataMap.putString("watchWrist", watchWrist)
             dataMap.putLong("ts", System.currentTimeMillis())
         }.asPutDataRequest().setUrgent()
         Wearable.getDataClient(ctx).putDataItem(req)

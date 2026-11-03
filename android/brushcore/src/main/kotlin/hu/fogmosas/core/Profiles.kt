@@ -37,6 +37,9 @@ data class Profile(
     val rewardSinceMs: Long? = null,
     /** Learned from feedback: extra seconds of silence before the measurement stops. */
     val quietExtraS: Double = 0.0,
+    /** Which hand brushes, and which wrist wears the watch ("left" / "right"). */
+    val brushHand: String = "right",
+    val watchWrist: String = "left",
 ) {
     val avatarEmoji get() = Avatar.emoji(avatar)
     /** Any powered brush (sonic or oscillating-rotating). */

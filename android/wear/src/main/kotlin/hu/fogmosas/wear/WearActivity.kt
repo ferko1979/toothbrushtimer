@@ -71,6 +71,33 @@ class WearActivity : ComponentActivity() {
         setContent { MaterialTheme { WearRoot(this, store) } }
     }
 
+    // Watch on the brushing hand: the wrist rhythm (linear acceleration) is brushing evidence.
+    private val rhythm = hu.fogmosas.core.MotionRhythm()
+    private var motionListener: android.hardware.SensorEventListener? = null
+
+    fun startMotion() {
+        if (motionListener != null) return
+        val sm = getSystemService(android.hardware.SensorManager::class.java) ?: return
+        val sensor = sm.getDefaultSensor(android.hardware.Sensor.TYPE_LINEAR_ACCELERATION) ?: return
+        rhythm.reset()
+        var n = 0
+        val l = object : android.hardware.SensorEventListener {
+            override fun onSensorChanged(e: android.hardware.SensorEvent) {
+                val g = 9.80665
+                rhythm.add(e.values[0] / g, e.values[1] / g, e.values[2] / g)
+                if (++n % 25 == 0) BrushingEngine.setMotionBrush(rhythm.score())
+            }
+            override fun onAccuracyChanged(s: android.hardware.Sensor?, a: Int) {}
+        }
+        sm.registerListener(l, sensor, 20_000)   // 50 Hz
+        motionListener = l
+    }
+
+    fun stopMotion() {
+        motionListener?.let { getSystemService(android.hardware.SensorManager::class.java)?.unregisterListener(it) }
+        motionListener = null
+    }
+
     fun keepScreenOn(on: Boolean) {
         if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -83,7 +110,13 @@ fun WearRoot(activity: WearActivity, store: AppStore) {
     val s by BrushingEngine.state.collectAsStateWithLifecycle()
     val heads = remember { runCatching { ModelHeads.bundled() }.getOrNull() }
     val goals = data.activeProfile.goals
-    LaunchedEffect(s.active) { activity.keepScreenOn(s.active) }
+    val placement = remember(data.activeProfile.brushHand, data.activeProfile.watchWrist) {
+        hu.fogmosas.core.watchListening(data.activeProfile.brushHand, data.activeProfile.watchWrist)
+    }
+    LaunchedEffect(s.active) {
+        activity.keepScreenOn(s.active)
+        if (s.active && placement.useMotion) activity.startMotion() else activity.stopMotion()
+    }
 
     Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
         val r = s.result
@@ -138,7 +171,8 @@ fun WearRoot(activity: WearActivity, store: AppStore) {
                 Button(onClick = {
                     BrushingEngine.start(activity, BrushingEngine.Config(
                         heads = heads, autoDetect = true, armed = false, sonicConfig = SonicConfig(bandLowHz = 60.0, lockOn = true), useSonic = true,
-                        batterySaver = true, targetS = goals.targetS, cues = true, keepListeningWhenPlaced = false))
+                        batterySaver = true, targetS = goals.targetS, cues = true, keepListeningWhenPlaced = false,
+                        nearGateDb = placement.nearGateDb))
                 }, colors = ButtonDefaults.buttonColors(backgroundColor = brand)) { Text("▶", fontSize = 20.sp) }
             }
         }
@@ -154,7 +188,9 @@ class WearListenerService : WearableListenerService() {
             val map = DataMapItem.fromDataItem(e.dataItem).dataMap
             val g = Goals(map.getInt("perDay", 2), map.getDouble("targetS", 120.0)).clamped()
             val store = AppStore.get(this)
-            store.data.value.profile("me")?.let { store.updateProfile(it.copy(goals = g)) }
+            store.data.value.profile("me")?.let {
+                store.updateProfile(it.copy(goals = g, brushHand = map.getString("brushHand", "right"), watchWrist = map.getString("watchWrist", "left")))
+            }
             androidx.wear.tiles.TileService.getUpdater(this).requestUpdate(ProgressTileService::class.java)
         }
     }

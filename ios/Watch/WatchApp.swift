@@ -1,5 +1,6 @@
 import BrushCore
 import SwiftUI
+import WatchKit
 
 @main
 struct ToothbrushTimerWatchApp: App {
@@ -16,12 +17,13 @@ struct ToothbrushTimerWatchApp: App {
 final class WatchModel: ObservableObject {
     @Published var goals = Goals() { didSet { save() } }
     @Published var ownerName = "" { didSet { save() } }
+    @Published var brushHand = "right" { didSet { save() } }
     @Published var records: [BrushRecord] = [] { didSet { save() } }
     let heads: ModelHeads?
     let coach = Coach()
     private let url: URL
 
-    struct Stored: Codable { var goals: Goals; var ownerName: String; var records: [BrushRecord] }
+    struct Stored: Codable { var goals: Goals; var ownerName: String; var records: [BrushRecord]; var brushHand: String? }
 
     init() {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -33,11 +35,13 @@ final class WatchModel: ObservableObject {
             goals = s.goals
             ownerName = s.ownerName
             records = s.records
+            brushHand = s.brushHand ?? "right"
         }
-        Connectivity.shared.onContext = { [weak self] goals, owner in
+        Connectivity.shared.onContext = { [weak self] goals, owner, hand in
             guard let self = self else { return }
             self.goals = goals
             self.ownerName = owner
+            self.brushHand = hand
             WatchSummary.publish(records: self.records, goals: goals, coach: self.coach)
         }
         Connectivity.shared.activate()
@@ -46,9 +50,15 @@ final class WatchModel: ObservableObject {
 
     private func save() {
         let recent = records.filter { $0.start > Date().addingTimeInterval(-60 * 86400) }
-        if let d = try? JSONEncoder().encode(Stored(goals: goals, ownerName: ownerName, records: recent)) {
+        if let d = try? JSONEncoder().encode(Stored(goals: goals, ownerName: ownerName, records: recent, brushHand: brushHand)) {
             try? d.write(to: url, options: .atomic)
         }
+    }
+
+    /// The watch knows its wrist; together with the brushing hand this decides distance and motion use.
+    var placement: WatchListening {
+        let wrist = WKInterfaceDevice.current().wristLocation == .left ? "left" : "right"
+        return watchListening(brushHand: brushHand, watchWrist: wrist)
     }
 
     func add(_ r: BrushingController.Result) {

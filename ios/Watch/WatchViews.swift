@@ -1,4 +1,5 @@
 import BrushCore
+import CoreMotion
 import SwiftUI
 
 private let brand = Color(red: 0.341, green: 0.773, blue: 0.714)
@@ -31,6 +32,8 @@ struct WatchBrushingView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var controller = BrushingController()
     @State private var runtime = ExtendedSession()
+    @State private var motion = CMMotionManager()
+    @State private var rhythm = MotionRhythm()
     @State private var floss = false
     @State private var bleed = false
     @State private var sens = false
@@ -46,6 +49,7 @@ struct WatchBrushingView: View {
         .onAppear(perform: begin)
         .onDisappear {
             if controller.isListening { controller.stop() }
+            motion.stopDeviceMotionUpdates()
             runtime.stop()
         }
     }
@@ -125,7 +129,19 @@ struct WatchBrushingView: View {
             var son = SonicConfig()
             son.bandLowHz = 60
             son.lockOn = true
-            controller.start(heads: heads, sessionConfig: sc, sonicConfig: son,
+            let place = model.placement
+            if place.useMotion && motion.isDeviceMotionAvailable {
+                rhythm.reset()
+                var n = 0
+                motion.deviceMotionUpdateInterval = 1.0 / 50
+                motion.startDeviceMotionUpdates(to: .main) { m, _ in
+                    guard let a = m?.userAcceleration else { return }
+                    rhythm.add(a.x, a.y, a.z)
+                    n += 1
+                    if n % 25 == 0 { controller.setMotionBrush(rhythm.score()) }
+                }
+            }
+            controller.start(heads: heads, sessionConfig: sc, sonicConfig: son, nearGateDb: place.nearGateDb,
                              useSonic: true, batterySaver: true)
         } else {
             controller.startManual()

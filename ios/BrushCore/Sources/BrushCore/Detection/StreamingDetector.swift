@@ -27,6 +27,8 @@ public final class StreamingDetector {
     private let sonic: SonicDetector
     private let gate: EnergyGate?
     private let nearGate: Bool
+    /// Watch on the brushing hand: wrist-rhythm score (MotionRhythm), counted as brushing evidence.
+    public var motionBrush = 0.0
     /// Loudness of the newest 0.5 s (dBFS), for test recordings.
     public private(set) var lastRmsDb = -120.0
 
@@ -146,6 +148,7 @@ public final class StreamingDetector {
                     f0 = last.f0Hz
                 }
             }
+            if !final { brush = Swift.max(brush, motionBrush) }
             let row = ScoreRow(t: 0.5 * Double(k) + 0.5, brush: brush, water: pendingWater[k - (waterCount - pendingWater.count)],
                                sonic: son, sonicF0: f0)
             emitted += 1

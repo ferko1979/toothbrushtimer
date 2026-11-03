@@ -120,6 +120,12 @@ final class BrushingController: ObservableObject {
         }
     }
 
+    /// Watch on the brushing hand: wrist-rhythm score as brushing evidence.
+    func setMotionBrush(_ score: Double) {
+        guard let det = detector else { return }
+        queue.async { det.motionBrush = score }
+    }
+
     /// Fallback: plain timer without detection ("Kézi indítás").
     func startManual(resumeFrom fromS: Double = 0) {
         capture.stop()

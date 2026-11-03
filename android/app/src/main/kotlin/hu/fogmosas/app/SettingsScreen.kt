@@ -131,6 +131,9 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
             }
             if (p.electric && data.settings.isOn("calibration")) Text(p.calibration.statusText, fontSize = 12.sp, color = C.muted)
             if (p.child) SwitchRow(tr("Tud olvasni"), "", p.canRead) { on -> store.updateProfile(p.copy(canRead = on)) }
+            if (p.id == "me") HandSettings(store, p) {
+                store.data.value.profile("me")?.let { WearSync.pushGoals(activity, it.goals, it.brushHand, it.watchWrist) }
+            }
             ProfileCareSettings(store, p) {
                 store.data.value.profile(p.id)?.let { if (it.id == "me") WearSync.pushGoals(activity, it.goals) }
                 ReminderScheduler.reschedule(activity)

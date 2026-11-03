@@ -65,6 +65,9 @@ public struct Profile: Codable, Equatable, Identifiable {
     public var rewardSince: Date? = nil
     /// Learned from feedback: extra seconds of silence before the measurement stops.
     public var quietExtraS = 0.0
+    /// Which hand brushes ("left" / "right"); the Apple Watch knows its own wrist.
+    public var brushHand = "right"
+    public var watchWrist = "left"
 
     public init(id: String, name: String, child: Bool = false, age: Int? = nil, canRead: Bool = true,
                 avatar: String? = nil, brushType: BrushType = .manual) {
@@ -95,6 +98,8 @@ public struct Profile: Codable, Equatable, Identifiable {
         rewardStickers = try c.decodeIfPresent(Int.self, forKey: .rewardStickers) ?? 14
         rewardSince = try c.decodeIfPresent(Date.self, forKey: .rewardSince)
         quietExtraS = try c.decodeIfPresent(Double.self, forKey: .quietExtraS) ?? 0
+        brushHand = try c.decodeIfPresent(String.self, forKey: .brushHand) ?? "right"
+        watchWrist = try c.decodeIfPresent(String.self, forKey: .watchWrist) ?? "left"
     }
 }
 

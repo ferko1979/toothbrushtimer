@@ -209,6 +209,9 @@ class StreamingDetector(
 ) {
     companion object { const val HOP_S = 0.5 }
 
+    /** Watch on the brushing hand: wrist-rhythm score (MotionRhythm), counted as brushing evidence. */
+    @Volatile var motionBrush = 0.0
+
     /** Loudness of the newest 0.5 s (dBFS), for test recordings. */
     var lastRmsDb = -120.0; private set
     private val nearGate = nearGateDb != null
@@ -299,6 +302,7 @@ class StreamingDetector(
                 if (sr != null) { son = sr.score; f0 = sr.f0Hz }
             }
             val water = pendingWater[k - (waterCount - pendingWater.size)]
+            if (!final) brush = maxOf(brush, motionBrush)
             val row = ScoreRow(0.5 * k + 0.5, brush, water, son, f0)
             emitted++
             session.update(row.t + HOP_S / 2, row.water, row.brush, row.sonic, HOP_S)

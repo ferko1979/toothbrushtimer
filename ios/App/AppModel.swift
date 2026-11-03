@@ -138,6 +138,6 @@ final class AppModel: ObservableObject {
 
     func pushContextToWatch() {
         let me = profile("me") ?? data.profiles[0]
-        Connectivity.shared.pushContext(goals: me.goals, ownerName: me.name)
+        Connectivity.shared.pushContext(goals: me.goals, ownerName: me.name, brushHand: me.brushHand)
     }
 }

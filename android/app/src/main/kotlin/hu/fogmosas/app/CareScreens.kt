@@ -332,6 +332,24 @@ fun LinkReminderBanner(activity: MainActivity, store: AppStore, onLink: () -> Un
     }
 }
 
+// ------------------------------------------------------------------ watch placement
+
+/** "Melyik kézzel mosol fogat?" and "Melyik kezeden hordod az órát?" (Wear OS cannot tell its wrist). */
+@Composable
+fun HandSettings(store: AppStore, p: Profile, onChanged: () -> Unit) {
+    if (p.child) return
+    val hands = listOf("left" to tr("Bal"), "right" to tr("Jobb"))
+    Text(tr("Melyik kézzel mosol fogat?"), fontSize = 13.sp, color = C.muted)
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        hands.forEach { (id, label) -> FilterChip(selected = p.brushHand == id, onClick = { store.updateProfile(p.copy(brushHand = id)); onChanged() }, label = { Text(label) }) }
+    }
+    Text(tr("Melyik kezeden hordod az órát?"), fontSize = 13.sp, color = C.muted)
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        hands.forEach { (id, label) -> FilterChip(selected = p.watchWrist == id, onClick = { store.updateProfile(p.copy(watchWrist = id)); onChanged() }, label = { Text(label) }) }
+    }
+    Text(hu.fogmosas.core.watchListening(p.brushHand, p.watchWrist).distanceText, fontSize = 12.sp, color = C.muted)
+}
+
 // ------------------------------------------------------------------ lock
 
 @Composable

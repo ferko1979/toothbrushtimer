@@ -66,6 +66,8 @@ object BrushingEngine {
         val quietExtraS: Double = 0.0,
         /** Only sounds close to the phone (about 2 m) may start a measurement. */
         val nearOnly: Boolean = false,
+        /** Overrides the near-sound threshold (watch: depends on which hand wears it). */
+        val nearGateDb: Double? = null,
         /** Point the microphone by orientation (screen side when face up, back when face down). */
         val directional: Boolean = false,
         /** Test builds: save audio + detector timeline for the developers. */
@@ -146,7 +148,7 @@ object BrushingEngine {
         }
         userStop = false
         val det = StreamingDetector(heads, sc, cfg.sonicConfig, cfg.useSonic, cfg.batterySaver,
-            nearGateDb = if (cfg.nearOnly) NEAR_GATE_DB else null)
+            nearGateDb = cfg.nearGateDb ?: if (cfg.nearOnly) NEAR_GATE_DB else null)
         recording = if (cfg.testRecording) runCatching {
             hu.fogmosas.core.TestRecording(recordingsDir(ctx), cfg.meta + mapOf("sessionConfig" to sc.toString(), "useSonic" to cfg.useSonic))
         }.getOrNull() else null
@@ -222,6 +224,9 @@ object BrushingEngine {
         policy.appBackgrounded(now())
         checkPolicy()
     }
+
+    /** Watch on the brushing hand: wrist-rhythm score as brushing evidence. */
+    fun setMotionBrush(score: Double) { detector?.motionBrush = score }
 
     fun motion(gx: Double, gy: Double, gz: Double) {
         if (policyUsesMotion) policy.motion(now(), gx, gy, gz)
