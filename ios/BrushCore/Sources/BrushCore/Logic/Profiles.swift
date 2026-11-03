@@ -68,6 +68,8 @@ public struct Profile: Codable, Equatable, Identifiable {
     /// Which hand brushes ("left" / "right"); the Apple Watch knows its own wrist.
     public var brushHand = "right"
     public var watchWrist = "left"
+    /// Electric brush: the battery was running low at the last brushing (cleared when charged).
+    public var chargeReminder: Date? = nil
 
     public init(id: String, name: String, child: Bool = false, age: Int? = nil, canRead: Bool = true,
                 avatar: String? = nil, brushType: BrushType = .manual) {
@@ -100,6 +102,7 @@ public struct Profile: Codable, Equatable, Identifiable {
         quietExtraS = try c.decodeIfPresent(Double.self, forKey: .quietExtraS) ?? 0
         brushHand = try c.decodeIfPresent(String.self, forKey: .brushHand) ?? "right"
         watchWrist = try c.decodeIfPresent(String.self, forKey: .watchWrist) ?? "left"
+        chargeReminder = try c.decodeIfPresent(Date.self, forKey: .chargeReminder)
     }
 }
 

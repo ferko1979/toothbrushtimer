@@ -28,6 +28,9 @@ struct StatsView: View {
                     }
                 }
                 CareStatsSections()
+                if profile.canRead {
+                    Section { SymptomHistoryCard() }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
+                }
                 Section(tr("Legutóbbiak")) {
                     if records.isEmpty { Text(tr("Még nincs mért fogmosás.")).foregroundStyle(.secondary) }
                     ForEach(records.sorted { $0.start > $1.start }.prefix(30)) { r in

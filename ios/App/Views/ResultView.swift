@@ -56,6 +56,7 @@ struct ResultView: View {
                     TestRecordingShareButton()
                 }
                 MeasurementFeedbackCard(profile: profile, record: record, endReason: endReason, manual: manual, notes: notes, onResume: onResume)
+                if profile.canRead { BrushingExtrasView(profile: profile, record: record) }
                 CareCheckInCard(profile: profile)
                 Button(tr("Kész"), action: onDone).buttonStyle(.borderedProminent).controlSize(.large).padding(.top)
             }

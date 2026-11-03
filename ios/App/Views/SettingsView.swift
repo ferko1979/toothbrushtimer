@@ -30,6 +30,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                ClinicLinkSection()
                 profilesSection
                 remindersSection
                 let groups = model.settings.groups(platform: .ios)

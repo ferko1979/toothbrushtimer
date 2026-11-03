@@ -15,6 +15,11 @@ struct AppData: Codable {
     var denthubLinkedAt: Date?
     var denthubHost: String?
     var feedback: [FeedbackEntry] = []
+    var symptoms: [SymptomReport] = []
+    var visits: [VisitRequest] = []
+    var messages: [ClinicMessage] = []
+    /// The clinic linked through DentHub (logo at start, messages, booking).
+    var clinic: ClinicInfo?
 
     init() {}
 
@@ -32,6 +37,10 @@ struct AppData: Codable {
         denthubLinkedAt = try c.decodeIfPresent(Date.self, forKey: .denthubLinkedAt)
         denthubHost = try c.decodeIfPresent(String.self, forKey: .denthubHost)
         feedback = try c.decodeIfPresent([FeedbackEntry].self, forKey: .feedback) ?? []
+        symptoms = try c.decodeIfPresent([SymptomReport].self, forKey: .symptoms) ?? []
+        visits = try c.decodeIfPresent([VisitRequest].self, forKey: .visits) ?? []
+        messages = try c.decodeIfPresent([ClinicMessage].self, forKey: .messages) ?? []
+        clinic = try c.decodeIfPresent(ClinicInfo.self, forKey: .clinic)
     }
 }
 
@@ -44,6 +53,12 @@ final class AppModel: ObservableObject {
     }
     /// "Not linked to DentHub yet" banner: shown again every time the app is opened.
     @Published var linkReminder = true
+    /// A clinic link code opened from a QR / link, waiting for the user's confirmation.
+    @Published var pendingClinic: ClinicInfo?
+    /// The clinic logo screen is shown once per app start.
+    @Published var splashShown = false
+    /// Onboarding: "Szeretnék időpontot kérni" — the home page opens the visit request once.
+    @Published var pendingVisit = false
     let heads: ModelHeads?
 
     /// Test mode recordings (WAV + JSON), newest kept.
@@ -135,6 +150,36 @@ final class AppModel: ObservableObject {
     }
 
     func addCare(_ e: CareEntry) { data.care.append(e) }
+
+    func addSymptom(_ r: SymptomReport) {
+        data.symptoms.removeAll { $0.id == r.id }
+        data.symptoms.append(r)
+    }
+
+    func addVisit(_ v: VisitRequest) {
+        data.visits.removeAll { $0.id == v.id }
+        data.visits.append(v)
+    }
+
+    /// Complaint photos (JPEG) live here.
+    static var photosDir: URL {
+        let d = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("photos")
+        try? FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
+        return d
+    }
+
+    /// Battery running low: remember it and suggest charging until the user charges it
+    /// (or a later brushing hums normally).
+    func noteBattery(_ notes: [String], manual: Bool, brushF0: Double?) {
+        var p = activeProfile
+        if !notes.isEmpty {
+            p.chargeReminder = Date()
+            updateProfile(p)
+        } else if p.chargeReminder != nil && !manual && brushF0 != nil {
+            p.chargeReminder = nil
+            updateProfile(p)
+        }
+    }
 
     func pushContextToWatch() {
         let me = profile("me") ?? data.profiles[0]

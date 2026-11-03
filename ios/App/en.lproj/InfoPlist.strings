@@ -4,4 +4,5 @@
 "NSHealthShareUsageDescription" = "To show your brushings in the Health app.";
 "NSHealthUpdateUsageDescription" = "To save your brushings to the Health app (Toothbrushing).";
 "NSFaceIDUsageDescription" = "To lock the app and the parental settings, and to confirm sharing with the website.";
-"NSCameraUsageDescription" = "To scan the QR code on the website (View on the web). No photos are taken.";
+"NSCameraUsageDescription" = "To scan QR codes (website, clinic) and, if you want, to take a photo of your complaint for the doctor.";
+"NSPhotoLibraryUsageDescription" = "If you want, you can attach a photo of your complaint for the doctor.";

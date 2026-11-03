@@ -78,6 +78,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
         // Android 15+ draws edge to edge: full-screen pages keep clear of the status bar, the
         // navigation bar and the keyboard (the tabbed pages get this from the Scaffold).
         val safe = Modifier.fillMaxSize().background(C.bg).safeDrawingPadding()
+        ClinicLinkDialog(activity, store)
         when {
             data.onboarded && data.settings.isOn("app_lock", "android") && !activity.unlocked.value && !engine.active -> Box(safe) {
                 LockScreen(tr("DentHub-Brush – zárolva")) {
@@ -85,7 +86,14 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 }
             }
             !data.onboarded -> Box(safe) { OnboardingScreen(activity, store) }
+            data.clinic != null && !activity.splashShown.value && !engine.active -> ClinicSplash(data.clinic!!) { activity.splashShown.value = true }
             !data.tourSeen && !engine.active -> Box(safe) { TourScreen { store.update { it.copy(tourSeen = true) } } }
+            activity.overlay.value != null && !engine.active -> Box(safe) {
+                val o = activity.overlay.value!!
+                val close = { activity.overlay.value = null }
+                if (o == "symptom") SymptomWizard(activity, store, close)
+                else VisitRequestScreen(store, o.removePrefix("visit").removePrefix(":").ifEmpty { null }, close)
+            }
             showBrushing || engine.active || engine.result != null -> Box(safe) {
                 BrushingScreen(activity, store) {
                     BrushingEngine.reset()
@@ -106,7 +114,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                         when (tab) {
                             0 -> Column {
                                 LinkReminderBanner(activity, store) { tab = 1 }
-                                HomeScreen(store) { activity.requestPermissions(); startBrushing(false) }
+                                HomeScreen(activity, store) { activity.requestPermissions(); startBrushing(false) }
                             }
                             1 -> StatsScreen(activity, store)
                             2 -> AchievementsScreen(store)

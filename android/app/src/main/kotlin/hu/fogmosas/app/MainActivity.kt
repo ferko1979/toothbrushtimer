@@ -25,6 +25,12 @@ class MainActivity : FragmentActivity() {
     val parentUnlocked = mutableStateOf(false)
     /** "Not linked to DentHub yet" banner: shown again every time the app is opened. */
     val linkReminder = mutableStateOf(true)
+    /** Full-screen page over the tabs: "symptom", "visit", "visit:<symptomId>" (null: none). */
+    val overlay = mutableStateOf<String?>(null)
+    /** A clinic link code opened from a QR / link, waiting for the user's confirmation. */
+    val pendingClinic = mutableStateOf<hu.fogmosas.core.ClinicInfo?>(null)
+    /** The clinic logo screen is shown once per app start. */
+    val splashShown = mutableStateOf(false)
     lateinit var speaker: Speaker
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +44,12 @@ class MainActivity : FragmentActivity() {
                     waterRunningS = r.waterRunningS, source = if (r.manual) "manual" else "phone", brushF0 = r.brushF0)
                 lastRecordId = rec.id
                 newAchievements.value = store.addRecord(rec)
+                // Battery running low: remember it and suggest charging until the user charges it
+                // (or a later brushing hums normally).
+                store.data.value.activeProfile.let { p ->
+                    if (r.notes.isNotEmpty()) store.updateProfile(p.copy(chargeReminderMs = System.currentTimeMillis()))
+                    else if (p.chargeReminderMs != null && !r.manual && r.brushF0 != null) store.updateProfile(p.copy(chargeReminderMs = null))
+                }
                 ReminderScheduler.reschedule(this)
             }
         }
@@ -55,6 +67,8 @@ class MainActivity : FragmentActivity() {
     private fun handleIntent(i: Intent?) {
         // Reminder notification or the "Fogmosás indítása" launcher shortcut: brushing is expected right away.
         if (i?.getBooleanExtra(EXTRA_ARM, false) == true || i?.action == "hu.fogmosas.action.START_BRUSHING") armRequest.value = true
+        // DentHub clinic link (QR code or link from the clinic).
+        if (i?.action == Intent.ACTION_VIEW) i.dataString?.let { hu.fogmosas.core.parseClinicLink(it) }?.let { pendingClinic.value = it }
     }
 
     override fun onStart() {

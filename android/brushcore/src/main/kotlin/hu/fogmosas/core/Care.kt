@@ -209,6 +209,7 @@ data class DentistReport(val title: String, val subtitle: String, val sections: 
 fun dentistReport(
     profile: Profile, records: List<BrushRecord>, entries: List<CareEntry>, today: LocalDate, days: Int, zone: ZoneId,
     locale: WaterLocale = WaterLocale.HU,
+    complaints: List<SymptomReport> = emptyList(),
 ): DentistReport {
     val start = today.minusDays(days - 1L)
     val coach = Coach(zone)
@@ -254,10 +255,16 @@ fun dentistReport(
     profile.lastCleaning?.let { other += tr("Utolsó fogkőeltávolítás: {0}", I18n.date(LocalDate.parse(it))) }
     other += tr("Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül). A tüneteket a felhasználó jelölte.")
 
+    val startMs = start.atStartOfDay(zone).toInstant().toEpochMilli()
+    val endMs = today.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+    val cs = complaints.filter { it.profileId == profile.id && it.dateMs in startMs until endMs }.sortedBy { it.dateMs }
+    val sections = mutableListOf(ReportSection(tr("Fogmosás"), brushing), ReportSection(tr("Fogköztisztítás és kiegészítők"), care),
+        ReportSection(tr("Tünetek"), symptoms))
+    if (cs.isNotEmpty()) sections += ReportSection(tr("Panaszok"), cs.flatMap { r -> symptomSummary(r, zone).let { l -> listOf(l.first()) + l.drop(1).map { "   $it" } } })
+    sections += ReportSection(tr("Egyéb"), other)
     return DentistReport(
         tr("Fogápolási jelentés – {0}", profile.name),
         tr("{0} – {1} ({2} nap)", I18n.date(start), I18n.date(today), days),
-        listOf(ReportSection(tr("Fogmosás"), brushing), ReportSection(tr("Fogköztisztítás és kiegészítők"), care),
-            ReportSection(tr("Tünetek"), symptoms), ReportSection(tr("Egyéb"), other)),
+        sections,
     )
 }

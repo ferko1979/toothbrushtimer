@@ -245,6 +245,7 @@ struct BrushingView: View {
                               waterRunningS: r.waterRunningS, source: r.manual ? "manual" : "phone", brushF0: r.brushF0)
         achievements = model.add(record: rec)
         record = rec
+        model.noteBattery(r.notes, manual: r.manual, brushF0: r.brushF0)
         let fb = feedback(for: profile, durationS: r.durationS, coach: model.coach)
         if settings.isOn("spoken_feedback") && fb.speak { Speaker.shared.say(fb.text) }
     }

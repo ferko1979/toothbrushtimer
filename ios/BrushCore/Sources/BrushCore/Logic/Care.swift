@@ -266,7 +266,7 @@ public struct DentistReport: Equatable {
 public func huDate(_ d: Date, calendar: Calendar = .current) -> String { I18n.date(d, calendar: calendar) }
 
 public func dentistReport(profile: Profile, records: [BrushRecord], entries: [CareEntry], today: Date, days: Int,
-                          coach: Coach = Coach()) -> DentistReport {
+                          coach: Coach = Coach(), complaints: [SymptomReport] = []) -> DentistReport {
     let cal = coach.calendar
     let t0 = cal.startOfDay(for: today)
     let start = addDays(t0, -(days - 1), cal)
@@ -320,11 +320,19 @@ public func dentistReport(profile: Profile, records: [BrushRecord], entries: [Ca
     if let d = profile.lastCleaning { other.append(tr("Utolsó fogkőeltávolítás: {0}", huDate(d, calendar: cal))) }
     other.append(tr("Mérés: a telefon/óra mikrofonja alapján, a készüléken feldolgozva (hangfelvétel nem készül). A tüneteket a felhasználó jelölte."))
 
+    var sections = [ReportSection(title: tr("Fogmosás"), lines: brushing),
+                    ReportSection(title: tr("Fogköztisztítás és kiegészítők"), lines: care),
+                    ReportSection(title: tr("Tünetek"), lines: symptoms)]
+    let cs = complaints.filter { $0.profileId == profile.id && $0.date >= start && $0.date < end }.sorted { $0.date < $1.date }
+    if !cs.isEmpty {
+        sections.append(ReportSection(title: tr("Panaszok"), lines: cs.flatMap { r -> [String] in
+            let l = symptomSummary(r, calendar: cal)
+            return [l[0]] + l.dropFirst().map { "   " + $0 }
+        }))
+    }
+    sections.append(ReportSection(title: tr("Egyéb"), lines: other))
     return DentistReport(
         title: tr("Fogápolási jelentés – {0}", profile.name),
         subtitle: tr("{0} – {1} ({2} nap)", huDate(start, calendar: cal), huDate(t0, calendar: cal), days),
-        sections: [ReportSection(title: tr("Fogmosás"), lines: brushing),
-                   ReportSection(title: tr("Fogköztisztítás és kiegészítők"), lines: care),
-                   ReportSection(title: tr("Tünetek"), lines: symptoms),
-                   ReportSection(title: tr("Egyéb"), lines: other)])
+        sections: sections)
 }

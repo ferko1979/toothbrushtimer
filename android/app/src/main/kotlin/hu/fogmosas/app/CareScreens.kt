@@ -141,24 +141,6 @@ fun CareCheckIn(store: AppStore) {
 // ------------------------------------------------------------------ home cards
 
 @Composable
-fun DentistHomeCard(store: AppStore) {
-    val data by store.data.collectAsStateWithLifecycle()
-    val p = data.activeProfile
-    if (!data.settings.isOn("dentist_reminders") || !p.canRead) return
-    val st = dentistStatus(p.lastCheckup?.let(LocalDate::parse), p.lastCleaning?.let(LocalDate::parse), LocalDate.now())
-    val msg = st.message ?: if (p.lastCheckup == null) tr("Mikor voltál utoljára fogorvosnál? Add meg, és szólok, ha esedékes a kontroll.") else null
-    if (msg == null) return
-    InfoCard {
-        Text(tr("🦷 Fogorvos"), fontWeight = FontWeight.Bold)
-        Text(msg, fontSize = 13.sp, color = C.muted)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = { store.updateProfile(p.copy(lastCheckup = LocalDate.now().toString())) }) { Text(tr("Ma voltam kontrollon")) }
-            if (st.cleaningOverdue || p.lastCleaning == null) TextButton(onClick = { store.updateProfile(p.copy(lastCleaning = LocalDate.now().toString())) }) { Text(tr("Fogkő is")) }
-        }
-    }
-}
-
-@Composable
 fun RewardCard(store: AppStore, p: Profile) {
     val data by store.data.collectAsStateWithLifecycle()
     if (!data.settings.isOn("kid_rewards")) return
@@ -209,7 +191,7 @@ fun CareStatsCards(activity: MainActivity, store: AppStore) {
         Text(tr("Fogmosás, fogköztisztítás, tünetek és fogkrém egy kinyomtatható PDF-ben."), fontSize = 13.sp, color = C.muted)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (days in listOf(30, 90)) OutlinedButton(onClick = {
-                val rep = dentistReport(p, data.records(p.id), es, today, days, careZone, data.settings.waterLocale)
+                val rep = dentistReport(p, data.records(p.id), es, today, days, careZone, data.settings.waterLocale, data.symptoms)
                 ReportPdf.share(ctx, ReportPdf.write(ctx, rep))
             }) { Text(tr("PDF ({0} nap)", days)) }
         }

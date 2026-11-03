@@ -14,6 +14,10 @@ struct ToothbrushTimerApp: App {
                 .environmentObject(model)
                 .environmentObject(router)
                 .tint(Theme.brand)
+                // DentHub clinic link (QR code or link from the clinic): denthub://link?d=...
+                .onOpenURL { url in
+                    if let c = parseClinicLink(url.absoluteString) { model.pendingClinic = c }
+                }
         }
     }
 }

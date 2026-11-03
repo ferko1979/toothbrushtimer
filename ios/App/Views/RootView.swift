@@ -15,7 +15,9 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if model.data.onboarded && model.settings.isOn("app_lock", platform: .ios) && !lock.unlocked && brushing == nil {
+            if let c = model.data.clinic, model.data.onboarded, !model.splashShown, brushing == nil {
+                ClinicSplashView(clinic: c) { model.splashShown = true }
+            } else if model.data.onboarded && model.settings.isOn("app_lock", platform: .ios) && !lock.unlocked && brushing == nil {
                 LockView(title: tr("DentHub-Brush – zárolva"), reason: tr("DentHub-Brush feloldása")) { lock.unlocked = true }
             } else if model.data.onboarded && !model.data.tourSeen && brushing == nil {
                 TourView { model.data.tourSeen = true }
@@ -40,6 +42,15 @@ struct RootView: View {
                 .environmentObject(model)
         }
         .onAppear { NotificationScheduler.reschedule(model: model) }
+        .alert(tr("Összekötöd a rendelőddel?"), isPresented: Binding(get: { model.pendingClinic != nil }, set: { if !$0 { model.pendingClinic = nil } })) {
+            Button(tr("Összekötés")) {
+                model.data.clinic = model.pendingClinic
+                model.pendingClinic = nil
+            }
+            Button(tr("Mégse"), role: .cancel) { model.pendingClinic = nil }
+        } message: {
+            Text(tr("{0}\nA rendelő logója megjelenik indításkor, és nekik küldheted a panaszaidat, fotóidat és időpontkéréseidet.", model.pendingClinic?.name ?? ""))
+        }
         .onChange(of: scenePhase) { _, phase in
             // Lock again in the background, but never in the middle of a brushing.
             if phase == .background && brushing == nil { lock.lock() }

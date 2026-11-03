@@ -32,6 +32,11 @@ data class AppData(
     val denthubLinkedMs: Long? = null,
     val denthubHost: String? = null,
     val feedback: List<hu.fogmosas.core.FeedbackEntry> = emptyList(),
+    val symptoms: List<hu.fogmosas.core.SymptomReport> = emptyList(),
+    val visits: List<hu.fogmosas.core.VisitRequest> = emptyList(),
+    val messages: List<hu.fogmosas.core.ClinicMessage> = emptyList(),
+    /** The clinic linked through DentHub (logo at start, messages, booking). */
+    val clinic: hu.fogmosas.core.ClinicInfo? = null,
 ) {
     val activeProfile get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.first()
     fun profile(id: String) = profiles.firstOrNull { it.id == id }
@@ -109,5 +114,9 @@ class AppStore private constructor(context: Context) {
         })
     }
 
+    fun addSymptom(r: hu.fogmosas.core.SymptomReport) = update { d -> d.copy(symptoms = d.symptoms.filter { it.id != r.id } + r) }
+    fun addVisit(v: hu.fogmosas.core.VisitRequest) = update { d -> d.copy(visits = d.visits.filter { it.id != v.id } + v) }
+    fun addMessage(m: hu.fogmosas.core.ClinicMessage) = update { d -> d.copy(messages = d.messages + m) }
+    fun setClinic(c: hu.fogmosas.core.ClinicInfo?) = update { d -> d.copy(clinic = c) }
     fun removeRecord(id: String) = update { d -> d.copy(records = d.records.filter { it.id != id }) }
 }

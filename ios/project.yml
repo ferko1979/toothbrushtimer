@@ -47,7 +47,11 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSMicrophoneUsageDescription: "A fogmosás felismeréséhez figyeli a hangot (víz, súrolás, fogkefe zúgása). Hangfelvétel nem készül, minden a telefonon marad."
         NSFaceIDUsageDescription: "Az app és a szülői beállítások zárolásához, illetve a webes megosztás jóváhagyásához."
-        NSCameraUsageDescription: "A weboldalon megjelenő QR-kód beolvasásához (Megnézem a weben). Kép nem készül."
+        NSCameraUsageDescription: "QR-kód beolvasásához (weboldal, rendelő), és ha szeretnéd, a panaszodról fotó készítéséhez az orvosnak."
+        NSPhotoLibraryUsageDescription: "Ha szeretnéd, a panaszodról készült fotót csatolhatod az orvosnak."
+        CFBundleURLTypes:
+          - CFBundleURLName: hu.fogmosas.denthub-link
+            CFBundleURLSchemes: [denthub]
         NSMotionUsageDescription: "Annak felismeréséhez, hogy a telefon le van-e téve, így a képernyő lezárása után is mérhet."
         NSHealthShareUsageDescription: "A fogmosások megjelenítéséhez az Egészség appban."
         NSHealthUpdateUsageDescription: "A fogmosások mentéséhez az Egészség appba (Fogmosás)."

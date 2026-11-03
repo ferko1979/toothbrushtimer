@@ -97,6 +97,9 @@ struct OnboardingView: View {
     @State private var goals = Goals()
     @State private var micOK = false
     @State private var notifOK = false
+    @State private var lastVisit: String?
+    @State private var lastCleaning: String?
+    @State private var wantVisit = false
 
     var body: some View {
         NavigationStack {
@@ -106,6 +109,7 @@ struct OnboardingView: View {
                 case 1: QuestionFlowView(flow: flow) { step = 2 }
                 case 2: brushTypeStep
                 case 3: goalsStep
+                case 4: dentistStep
                 default: permissionsStep
                 }
             }
@@ -167,6 +171,33 @@ struct OnboardingView: View {
         }.padding()
     }
 
+    private var dentistStep: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(tr("🦷 Fogorvos")).font(.title2.bold())
+                Text(tr("Ebből tudjuk, mikor esedékes a következő kontroll és fogkő-eltávolítás. Szólunk, ha itt az ideje."))
+                    .foregroundStyle(.secondary)
+                Text(tr("Mikor voltál utoljára fogorvosi kontrollon?")).font(.headline)
+                ForEach(DentistIntake.options, id: \.0) { o in
+                    Button { lastVisit = o.0 } label: {
+                        Text(o.1).frame(maxWidth: .infinity, minHeight: 40, alignment: .leading).padding(.horizontal, 12)
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(lastVisit == o.0 ? Theme.brand : Color(.separator), lineWidth: lastVisit == o.0 ? 2 : 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+                Text(tr("És fogkő-eltávolításon?")).font(.headline)
+                Picker(tr("És fogkő-eltávolításon?"), selection: Binding(get: { lastCleaning ?? "" }, set: { lastCleaning = $0 })) {
+                    ForEach(DentistIntake.options, id: \.0) { Text($0.1).tag($0.0) }
+                }
+                .pickerStyle(.menu)
+                Toggle(tr("Szeretnék időpontot kérni (kontroll vagy panasz miatt)"), isOn: $wantVisit)
+                Button(lastVisit == nil ? tr("Kihagyom") : tr("Tovább")) { step = 5 }
+                    .buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
+            }
+            .padding()
+        }
+    }
+
     private var permissionsStep: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(tr("Engedélyek")).font(.title2.bold())
@@ -189,6 +220,9 @@ struct OnboardingView: View {
         var profiles = flow.profiles()
         profiles[0].brushType = brushType
         profiles[0].goals = goals
+        profiles[0].lastCheckup = lastVisit.flatMap { DentistIntake.date($0, today: Date()) }
+        profiles[0].lastCleaning = lastCleaning.flatMap { DentistIntake.date($0, today: Date()) }
+        model.pendingVisit = wantVisit
         model.data.profiles = profiles
         model.data.activeProfileId = "me"
         model.data.onboarded = true

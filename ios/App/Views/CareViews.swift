@@ -117,28 +117,6 @@ struct CareCheckInCard: View {
 
 // MARK: - Home cards
 
-struct DentistHomeCard: View {
-    @EnvironmentObject var model: AppModel
-    var body: some View {
-        let p = model.activeProfile
-        if model.settings.isOn("dentist_reminders") && p.canRead {
-            let st = dentistStatus(lastCheckup: p.lastCheckup, lastCleaning: p.lastCleaning, today: Date())
-            if let msg = st.message ?? (p.lastCheckup == nil ? tr("Mikor voltál utoljára fogorvosnál? Add meg, és szólok, ha esedékes a kontroll.") : nil) {
-                Card {
-                    Text(tr("🦷 Fogorvos")).font(.subheadline.bold())
-                    Text(msg).font(.caption).foregroundStyle(.secondary)
-                    HStack {
-                        Button(tr("Ma voltam kontrollon")) { var q = p; q.lastCheckup = Date(); model.updateProfile(q) }.buttonStyle(.bordered)
-                        if st.cleaningOverdue || p.lastCleaning == nil {
-                            Button(tr("Fogkő is")) { var q = p; q.lastCleaning = Date(); model.updateProfile(q) }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 struct RewardCard: View {
     @EnvironmentObject var model: AppModel
     let profile: Profile
@@ -203,7 +181,7 @@ struct CareStatsSections: View {
                 ForEach([30, 90], id: \.self) { days in
                     Button(tr("PDF – utóbbi {0} nap", days)) {
                         pdf = ReportPDF.write(dentistReport(profile: p, records: model.records(for: p.id), entries: es, today: today,
-                                                            days: days, coach: model.coach))
+                                                            days: days, coach: model.coach, complaints: model.data.symptoms))
                     }
                 }
             }

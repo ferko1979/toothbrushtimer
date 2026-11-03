@@ -26,6 +26,13 @@
                 <action android:name="hu.fogmosas.action.START_BRUSHING" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <!-- Clinic link code from DentHub (QR / link): denthub://link?d=... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="denthub" android:host="link" />
+            </intent-filter>
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
 

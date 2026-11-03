@@ -40,6 +40,8 @@ data class Profile(
     /** Which hand brushes, and which wrist wears the watch ("left" / "right"). */
     val brushHand: String = "right",
     val watchWrist: String = "left",
+    /** Electric brush: the battery was running low at the last brushing (cleared when charged). */
+    val chargeReminderMs: Long? = null,
 ) {
     val avatarEmoji get() = Avatar.emoji(avatar)
     /** Any powered brush (sonic or oscillating-rotating). */

@@ -38,7 +38,8 @@ struct HomeView: View {
                         }
                     }
                     if profile.child { RewardCard(profile: profile) }
-                    DentistHomeCard()
+                    ChargeReminderCard()
+                    DentistCard()
                     if model.settings.isOn("floss_tracking") {
                         let done = careDoneToday(model.care(for: profile.id), .floss, today: Date())
                         Card {

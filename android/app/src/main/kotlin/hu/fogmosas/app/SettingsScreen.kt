@@ -97,6 +97,9 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
             }
         }
 
+        Section(tr("Fogorvos"))
+        ClinicLinkCard(activity, store)
+
         Section(tr("Profilok"))
         InfoCard {
             data.profiles.forEach { pr ->

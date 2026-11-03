@@ -135,6 +135,7 @@ fun QuestionFlow(flow: OnboardingFlow, stopAtMore: Boolean = false, onFinish: ()
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun OnboardingScreen(activity: MainActivity, store: AppStore) {
     var step by remember { mutableIntStateOf(0) }
@@ -142,6 +143,9 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
     var flow by remember { mutableStateOf(OnboardingFlow()) }
     var brushType by remember { mutableStateOf("manual") }
     var goals by remember { mutableStateOf(Goals()) }
+    var lastVisit by remember { mutableStateOf<String?>(null) }
+    var lastCleaning by remember { mutableStateOf<String?>(null) }
+    var wantVisit by remember { mutableStateOf(false) }
 
     // Re-read texts when the language is switched on the first screen.
     var lang by remember { mutableStateOf(hu.fogmosas.core.I18n.lang) }
@@ -189,6 +193,27 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
             Spacer(Modifier.height(8.dp))
             Button(onClick = { step = 4 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
+        4 -> FormPage {
+            Text(tr("🦷 Fogorvos"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(tr("Ebből tudjuk, mikor esedékes a következő kontroll és fogkő-eltávolítás. Szólunk, ha itt az ideje."), color = C.muted)
+            Text(tr("Mikor voltál utoljára fogorvosi kontrollon?"), fontWeight = FontWeight.Bold)
+            hu.fogmosas.core.DentistIntake.options.forEach { (id, label) ->
+                OutlinedButton(onClick = { lastVisit = id }, Modifier.fillMaxWidth(),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, if (lastVisit == id) C.brand else Color.LightGray)) { Text(label) }
+            }
+            Text(tr("És fogkő-eltávolításon?"), fontWeight = FontWeight.Bold)
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                hu.fogmosas.core.DentistIntake.options.forEach { (id, label) ->
+                    androidx.compose.material3.FilterChip(selected = lastCleaning == id, onClick = { lastCleaning = id }, label = { Text(label) })
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Checkbox(wantVisit, { wantVisit = it })
+                Text(tr("Szeretnék időpontot kérni (kontroll vagy panasz miatt)"))
+            }
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = { step = 5 }, Modifier.fillMaxWidth().height(52.dp)) { Text(if (lastVisit == null) tr("Kihagyom") else tr("Tovább")) }
+        }
         else -> FormPage {
             Text(tr("Engedélyek"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             InfoCard {
@@ -200,7 +225,11 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
             Spacer(Modifier.height(8.dp))
             Button(onClick = {
                 val ps = flow.profiles().toMutableList()
-                ps[0] = ps[0].copy(brushType = brushType, goals = goals)
+                val today = java.time.LocalDate.now()
+                ps[0] = ps[0].copy(brushType = brushType, goals = goals,
+                    lastCheckup = lastVisit?.let { hu.fogmosas.core.DentistIntake.date(it, today)?.toString() },
+                    lastCleaning = lastCleaning?.let { hu.fogmosas.core.DentistIntake.date(it, today)?.toString() })
+                if (wantVisit) activity.overlay.value = "visit"
                 store.update { it.copy(profiles = ps, activeProfileId = "me", onboarded = true) }
                 ReminderScheduler.reschedule(activity)
                 WearSync.pushGoals(activity, goals)
@@ -233,7 +262,7 @@ fun Stepper(label: String, minus: () -> Unit, plus: () -> Unit) {
 // ------------------------------------------------------------------ home
 
 @Composable
-fun HomeScreen(store: AppStore, onStart: () -> Unit) {
+fun HomeScreen(activity: MainActivity, store: AppStore, onStart: () -> Unit) {
     val data by store.data.collectAsStateWithLifecycle()
     val p = data.activeProfile
     val rs = data.records(p.id)
@@ -279,7 +308,8 @@ fun HomeScreen(store: AppStore, onStart: () -> Unit) {
             }
         }
         if (p.child) RewardCard(store, p)
-        DentistHomeCard(store)
+        ChargeReminderCard(store)
+        DentistCard(activity, store)
         if (data.settings.isOn("floss_tracking")) {
             val done = careDoneToday(data.care(p.id), CareKind.FLOSS, today, zone)
             InfoCard {
@@ -404,6 +434,15 @@ fun ResultScreen(activity: MainActivity, store: AppStore, durationS: Double, wat
             }
         }
         MeasurementFeedbackCard(activity, store) { BrushingEngine.resume(activity, durationS) }
+        if (p.canRead) {
+            val anomaly = remember(durationS) {
+                val rs = data.records(p.id).filter { it.id != activity.lastRecordId }.sortedByDescending { it.startMs }
+                val today = java.time.LocalDate.now(zone)
+                hu.fogmosas.core.brushingAnomaly(durationS, rs.take(10).map { it.durationS },
+                    data.records(p.id).count { it.start(zone).toLocalDate() == today }, p.goals.perDay)
+            }
+            BrushingExtrasRow(activity, anomaly)
+        }
         CareCheckIn(store)
         Button(onClick = onClose, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Kész")) }
     }
@@ -449,7 +488,7 @@ fun StatsScreen(activity: MainActivity, store: AppStore) {
                 }
             }
         }
-        item { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { CareStatsCards(activity, store) } }
+        item { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { CareStatsCards(activity, store); if (data.activeProfile.canRead) SymptomHistoryCard(activity, store) } }
         item { Text(tr("Legutóbbiak"), fontWeight = FontWeight.Bold) }
         if (rs.isEmpty()) item { Text(tr("Még nincs mért fogmosás."), color = C.muted) }
         items(rs.sortedByDescending { it.startMs }.take(30)) { r ->
