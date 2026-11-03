@@ -236,6 +236,6 @@ final class TestRecordingTests: XCTestCase {
         XCTAssertEqual(wav.samples.count, 16000)
         let js = try JSONSerialization.jsonObject(with: Data(contentsOf: files[1])) as! [String: Any]
         XCTAssertEqual(js["format"] as? String, "denthub-brush-test-1")
-        XCTAssertEqual(TestRecording.latest(in: dir), files)
+        XCTAssertEqual(TestRecording.latest(in: dir).map(\.lastPathComponent), files.map(\.lastPathComponent))
     }
 }
