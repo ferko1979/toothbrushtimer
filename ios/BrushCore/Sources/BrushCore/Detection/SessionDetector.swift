@@ -24,6 +24,8 @@ public struct SessionConfig: Equatable {
     public var rinseMinEarlyS = 4.0
     /// App, electric brush: while the sonic hum is heard, the session never ends and water is ignored.
     public var sonicSuppressesWater = false
+    /// App: the brushing run only restarts when the signal drops below `off` (short dips keep it).
+    public var runHysteresis = false
 
     public init() {}
 
@@ -139,7 +141,7 @@ public final class SessionDetector {
         sinceWater = isWater ? 0 : sinceWater + dt
         waterRun = isWater ? waterRun + dt : 0
         dryRun = noWater ? dryRun + dt : 0
-        brushRun = brushing >= c.on ? brushRun + dt : 0
+        brushRun = brushing >= c.on ? brushRun + dt : ((c.runHysteresis && brushing >= c.off) ? brushRun : 0)
 
         switch state {
         case .listening:

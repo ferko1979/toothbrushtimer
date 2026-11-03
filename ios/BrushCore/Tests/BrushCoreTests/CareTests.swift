@@ -239,3 +239,12 @@ final class TestRecordingTests: XCTestCase {
         XCTAssertEqual(TestRecording.latest(in: dir).map(\.lastPathComponent), files.map(\.lastPathComponent))
     }
 }
+
+final class BrushTypeTests: XCTestCase {
+    func testPoweredAndDecoding() throws {
+        XCTAssertFalse(BrushType.manual.powered)
+        XCTAssertTrue(BrushType.oscillating.powered)
+        XCTAssertEqual(try JSONDecoder().decode(BrushType.self, from: Data(#""oscillating""#.utf8)), .oscillating)
+        XCTAssertEqual(SonicConfig.oscillating.bandLowHz, 60)
+    }
+}

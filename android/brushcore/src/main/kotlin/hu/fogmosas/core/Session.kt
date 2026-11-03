@@ -14,6 +14,8 @@ data class SessionConfig(
     val holdUntilS: Double? = null, val holdQuietS: Double = 45.0, val rinseMinEarlyS: Double = 4.0,
     /** App, electric brush: while the sonic hum is heard, the session never ends and water is ignored. */
     val sonicSuppressesWater: Boolean = false,
+    /** App: the brushing run only restarts when the signal drops below `off` (short dips keep it). */
+    val runHysteresis: Boolean = false,
 ) {
     companion object {
         /** Opened from a reminder: start sooner, wait longer for the water cue. */
@@ -97,7 +99,7 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
         sinceWater = if (isWater) 0.0 else sinceWater + dt
         waterRun = if (isWater) waterRun + dt else 0.0
         dryRun = if (noWater) dryRun + dt else 0.0
-        brushRun = if (brushing >= c.on) brushRun + dt else 0.0
+        brushRun = if (brushing >= c.on) brushRun + dt else if (c.runHysteresis && brushing >= c.off) brushRun else 0.0
 
         when (state) {
             State.LISTENING -> {

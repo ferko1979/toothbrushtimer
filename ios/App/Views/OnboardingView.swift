@@ -145,12 +145,11 @@ struct OnboardingView: View {
             Text(tr("Milyen fogkefét használsz?")).font(.title2.bold())
             Picker(tr("Fogkefe"), selection: $brushType) {
                 Text(tr("Kézi")).tag(BrushType.manual)
-                Text(tr("Elektromos")).tag(BrushType.electric)
+                Text(tr("Szónikus")).tag(BrushType.electric)
+                Text(tr("Forgófejes")).tag(BrushType.oscillating)
             }.pickerStyle(.segmented)
-            Text(brushType == .electric
-                 ? tr("Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.")
-                 : tr("Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását (pl. valaki más elektromos fogkeféjét) figyelmen kívül hagyjuk."))
-                .foregroundStyle(.secondary)
+            Text(brushType.title).font(.headline)
+            Text(brushType.info).foregroundStyle(.secondary)
             Spacer()
             Button(tr("Tovább")) { step = 3 }.buttonStyle(.borderedProminent).controlSize(.large).frame(maxWidth: .infinity)
         }.padding()

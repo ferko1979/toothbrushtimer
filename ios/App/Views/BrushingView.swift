@@ -79,7 +79,7 @@ struct BrushingView: View {
                              color: controller.wasteIcon ? Theme.warn : Theme.brand)
                 if profile.canRead { Text(tr("Most: {0} negyed", p.quadrantName)).font(.headline) }
                 QuadrantGrid(current: p.quadrant, labels: profile.canRead)
-                if profile.brushType == .electric, let f0 = controller.liveF0, profile.canRead {
+                if profile.brushType.powered, let f0 = controller.liveF0, profile.canRead {
                     Text("🔊 " + SonicDetector.describe(f0Hz: f0)).font(.footnote).foregroundStyle(.secondary)
                 }
                 if controller.wasteIcon && settings.isOn("water_warnings") {
@@ -177,18 +177,20 @@ struct BrushingView: View {
             controller.startManual()
             return
         }
-        let sonicCfg = settings.isOn("calibration") ? profile.calibration.sonicConfig() : SonicConfig()
+        var sonicCfg = settings.isOn("calibration") && profile.calibration.brushF0 != nil ? profile.calibration.sonicConfig()
+            : (profile.brushType == .oscillating ? SonicConfig.oscillating : SonicConfig())
+        sonicCfg.lockOn = true
         // Until the goal is reached, stop only after a long silence or a clear rinse; tolerance learned from feedback.
         var sc = policy.sessionConfig
         sc.holdUntilS = profile.goals.targetS
         sc.endQuietS += profile.quietExtraS
         sc.holdQuietS += profile.quietExtraS
-        sc.sonicSuppressesWater = profile.brushType == .electric
+        sc.sonicSuppressesWater = profile.brushType.powered
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         let faceDown = UIDevice.current.orientation == .faceDown
         let testing = settings.isOn("test_recording", platform: .ios)
         controller.start(heads: heads, sessionConfig: sc, sonicConfig: sonicCfg,
-                         useSonic: profile.brushType == .electric, batterySaver: settings.isOn("battery_saver"),
+                         useSonic: profile.brushType.powered, batterySaver: settings.isOn("battery_saver"),
                          nearGateDb: settings.isOn("near_only") ? 10 : nil,
                          towardsScreen: settings.isOn("mic_direction", platform: .ios) ? !faceDown : nil,
                          testRecordTo: testing ? AppModel.recordingsDir : nil,

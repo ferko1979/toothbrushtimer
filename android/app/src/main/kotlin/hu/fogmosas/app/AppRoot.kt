@@ -49,7 +49,8 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 heads = heads,
                 autoDetect = s.isOn("auto_detect"),
                 armed = armed,
-                sonicConfig = if (s.isOn("calibration")) p.calibration.sonicConfig() else SonicConfig(),
+                sonicConfig = (if (s.isOn("calibration") && p.calibration.brushF0 != null) p.calibration.sonicConfig()
+                    else if (p.oscillating) SonicConfig.OSCILLATING else SonicConfig()).copy(lockOn = true),
                 useSonic = p.electric,
                 batterySaver = s.isOn("battery_saver"),
                 targetS = p.goals.targetS,

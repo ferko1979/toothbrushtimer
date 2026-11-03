@@ -26,11 +26,11 @@ struct HomeView: View {
                         }
                     }
                     if model.settings.isOn("brush_head_reminder") {
-                        let st = brushHeadStatus(installed: profile.brushHeadInstalled, electric: profile.brushType == .electric,
+                        let st = brushHeadStatus(installed: profile.brushHeadInstalled, electric: profile.brushType.powered,
                                                  records: records, today: Date())
                         Card {
                             HStack {
-                                Text("🪥 " + (profile.brushType == .electric ? tr("Fogkefefej") : tr("Fogkefe")) + tr(": {0} napos", st.ageDays)).font(.subheadline)
+                                Text("🪥 " + (profile.brushType.powered ? tr("Fogkefefej") : tr("Fogkefe")) + tr(": {0} napos", st.ageDays)).font(.subheadline)
                                 Spacer()
                                 if st.due { Text("csere!").font(.caption.bold()).foregroundStyle(Theme.warn) }
                             }

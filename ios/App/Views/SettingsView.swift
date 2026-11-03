@@ -185,14 +185,21 @@ struct ProfileEditView: View {
                     ForEach(p.goals.warnings, id: \.self) { Text($0).font(.caption).foregroundStyle(Theme.warn) }
                 }
                 Section(tr("Fogkefe")) {
-                    Picker(tr("Típus"), selection: Binding(get: { p.brushType }, set: { v in var q = p; q.brushType = v; model.updateProfile(q) })) {
+                    Picker(tr("Típus"), selection: Binding(get: { p.brushType }, set: { v in
+                        var q = p
+                        // A new brush type: the learned brush frequency no longer applies.
+                        if v != p.brushType { q.calibration = BrushCalibration() }
+                        q.brushType = v
+                        model.updateProfile(q)
+                    })) {
                         Text(tr("Kézi")).tag(BrushType.manual)
-                        Text(tr("Elektromos")).tag(BrushType.electric)
+                        Text(tr("Szónikus (pl. Sonicare)")).tag(BrushType.electric)
+                        Text(tr("Forgófejes (pl. Oral-B)")).tag(BrushType.oscillating)
                     }
-                    Button(p.brushType == .electric ? tr("Új fogkefefejet tettem fel") : tr("Új fogkefét kezdtem")) {
+                    Button(p.brushType.powered ? tr("Új fogkefefejet tettem fel") : tr("Új fogkefét kezdtem")) {
                         var q = p; q.brushHeadInstalled = Date(); model.updateProfile(q)
                     }
-                    if p.brushType == .electric && model.settings.isOn("calibration") {
+                    if p.brushType.powered && model.settings.isOn("calibration") {
                         Text(p.calibration.statusText).font(.caption).foregroundStyle(.secondary)
                         Button(tr("Kalibráció újrakezdése")) { var q = p; q.calibration = BrushCalibration(); model.updateProfile(q) }
                     }

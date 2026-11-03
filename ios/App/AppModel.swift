@@ -113,7 +113,7 @@ final class AppModel: ObservableObject {
         let p = profile(record.profileId) ?? activeProfile
         let before = coach.earnedAchievements(records(for: p.id), goals: p.goals, today: Date())
         data.records.append(record)
-        if var prof = profile(p.id), settings.isOn("calibration"), prof.brushType == .electric {
+        if var prof = profile(p.id), settings.isOn("calibration"), prof.brushType.powered {
             prof.calibration.addSession(f0Hz: record.brushF0)
             updateProfile(prof)
         }

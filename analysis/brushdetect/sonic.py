@@ -38,6 +38,12 @@ class SonicConfig:
     novelty_ramp_db: tuple[float, float] = (3.0, 9.0)
     floor_rise_db_per_s: float = 0.1
     harmonic_min_db: float = 3.0
+    # Lock-on (app): once the brush tone was clearly confirmed, keep recognising the same frequency
+    # without the 2x harmonic and with a lower prominence (some phones barely pick up the harmonic).
+    lock_on: bool = False
+    lock_hold_s: float = 10.0
+    lock_prom_ramp_db: tuple[float, float] = (6.0, 12.0)
+    lock_novelty_ramp_db: tuple[float, float] = (2.0, 6.0)
 
 
 @dataclass
@@ -67,6 +73,7 @@ def detect_sonic(x: np.ndarray, cfg: SonicConfig | None = None) -> SonicResult:
 
     rows = []
     floor = None
+    locked_f0, locked_until = None, -1.0
     for s in range(0, len(x) - win + 1, hop):
         subs = []
         for k in range(win // sub):
@@ -92,7 +99,15 @@ def detect_sonic(x: np.ndarray, cfg: SonicConfig | None = None) -> SonicResult:
         novelty = spec[k] - floor[k]
         fk = f[wide][k]
         score = _ramp(prom[k], *cfg.prom_ramp_db) * _ramp(novelty, *cfg.novelty_ramp_db) * float(stable and harmonic)
-        rows.append(((s + win / 2) / SR, score, fk, prom[k], novelty))
+        t = (s + win / 2) / SR
+        if cfg.lock_on:
+            if score >= 0.9:
+                locked_f0, locked_until = fk, t + cfg.lock_hold_s
+            elif locked_f0 is not None and t <= locked_until and abs(fk - locked_f0) <= 2 * cfg.stability_hz:
+                score = max(score, _ramp(prom[k], *cfg.lock_prom_ramp_db) * _ramp(novelty, *cfg.lock_novelty_ramp_db))
+                if score >= 0.5:
+                    locked_until = t + cfg.lock_hold_s
+        rows.append((t, score, fk, prom[k], novelty))
 
     a = np.array(rows) if rows else np.zeros((0, 5))
     return SonicResult(t=a[:, 0], score=a[:, 1], f0_hz=a[:, 2], prominence_db=a[:, 3], novelty_db=a[:, 4])

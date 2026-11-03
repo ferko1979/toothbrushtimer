@@ -117,7 +117,15 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
             Stepper(tr("Naponta {0}×", p.goals.perDay), { updateGoals(store, activity, p.id, -1, 0.0) }, { updateGoals(store, activity, p.id, 1, 0.0) })
             Stepper(tr("Célidő: {0}", Formatting.clock(p.goals.targetS)), { updateGoals(store, activity, p.id, 0, -15.0) }, { updateGoals(store, activity, p.id, 0, 15.0) })
             p.goals.warnings.forEach { Text(it, color = C.warn, fontSize = 12.sp) }
-            SwitchRow(tr("Elektromos fogkefe"), "", p.electric) { on -> store.updateProfile(p.copy(brushType = if (on) "electric" else "manual")) }
+            Text(tr("Fogkefe"), fontSize = 13.sp, color = C.muted)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                hu.fogmosas.core.BrushTypes.all.forEach { k ->
+                    androidx.compose.material3.FilterChip(selected = p.brushType == k.id, onClick = {
+                        // A new brush type: the learned brush frequency no longer applies.
+                        if (p.brushType != k.id) store.updateProfile(p.copy(brushType = k.id, calibration = hu.fogmosas.core.BrushCalibration()))
+                    }, label = { Text(k.title.substringBefore(" ("), fontSize = 13.sp) })
+                }
+            }
             OutlinedButton(onClick = { store.updateProfile(p.copy(brushHeadInstalled = LocalDate.now().toString())) }) {
                 Text(if (p.electric) tr("Új fogkefefejet tettem fel") else tr("Új fogkefét kezdtem"))
             }

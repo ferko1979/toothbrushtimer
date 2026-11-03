@@ -137,7 +137,7 @@ fun WearRoot(activity: WearActivity, store: AppStore) {
                     fontSize = 12.sp, color = Color.LightGray)
                 Button(onClick = {
                     BrushingEngine.start(activity, BrushingEngine.Config(
-                        heads = heads, autoDetect = true, armed = false, sonicConfig = SonicConfig(), useSonic = true,
+                        heads = heads, autoDetect = true, armed = false, sonicConfig = SonicConfig(bandLowHz = 60.0, lockOn = true), useSonic = true,
                         batterySaver = true, targetS = goals.targetS, cues = true, keepListeningWhenPlaced = false))
                 }, colors = ButtonDefaults.buttonColors(backgroundColor = brand)) { Text("▶", fontSize = 20.sp) }
             }

@@ -12,8 +12,21 @@ public struct SonicConfig: Equatable {
     public var floorRiseDbPerS: Double = 0.1
     public var harmonicMinDb: Double = 3
     public var hopS: Double = 0.5
+    /// Lock-on (app): once the brush tone was clearly confirmed, keep recognising the same frequency
+    /// (±2×stability) without the 2x harmonic or the stability check and with a lower prominence.
+    /// Same as sonic.py lock_on.
+    public var lockOn = false
+    public var lockHoldS = 10.0
 
     public init() {}
+
+    /// Oscillating-rotating brushes (e.g. Oral-B): lower motor frequency.
+    public static var oscillating: SonicConfig {
+        var c = SonicConfig()
+        c.bandLowHz = 60
+        c.bandHighHz = 200
+        return c
+    }
 
     /// Narrow band around a calibrated brush frequency.
     public init(calibratedF0 f0: Double, toleranceHz: Double = 10) {
@@ -71,7 +84,11 @@ public final class SonicDetector {
         tol = Int((cfg.stabilityHz / df).rounded(.up))
     }
 
-    public func reset() { floor = nil }
+    private var lockedF0: Double?
+    private var lockedUntil = -1.0
+    private var windowIndex = 0
+
+    public func reset() { floor = nil; lockedF0 = nil; lockedUntil = -1; windowIndex = 0 }
 
     /// scipy.signal.welch(x, fs, nperseg=8192, noverlap=4096) restricted to the wide band, in dB.
     private func welchDb(_ x: ArraySlice<Double>) -> [Double] {
@@ -153,14 +170,26 @@ public final class SonicDetector {
         let novelty = spec[k] - (floor ?? spec)[k]
         let promScore = Stats.ramp(prom[k], cfg.promRamp.0, cfg.promRamp.1)
         let noveltyScore = Stats.ramp(novelty, cfg.noveltyRamp.0, cfg.noveltyRamp.1)
-        let score = promScore * noveltyScore * ((stable && harmonic) ? 1.0 : 0.0)
+        var score = promScore * noveltyScore * ((stable && harmonic) ? 1.0 : 0.0)
+        let t = Double(windowIndex) * cfg.hopS + Double(SonicDetector.windowSamples) / 2 / Double(Audio.sampleRate)
+        windowIndex += 1
+        if cfg.lockOn {
+            if score >= 0.9 {
+                lockedF0 = freqs[k]
+                lockedUntil = t + cfg.lockHoldS
+            } else if let lf = lockedF0, t <= lockedUntil, abs(freqs[k] - lf) <= 2 * cfg.stabilityHz {
+                score = Swift.max(score, Stats.ramp(prom[k], 6, 12) * Stats.ramp(novelty, 2, 6))
+                if score >= 0.5 { lockedUntil = t + cfg.lockHoldS }
+            }
+        }
         return SonicResult(score: score, f0Hz: freqs[k], prominenceDb: prom[k], noveltyDb: novelty)
     }
 
     /// Human-readable description of a detected brush tone.
     public static func describe(f0Hz: Double) -> String {
         let moves = Int((f0Hz * 120).rounded())
-        let kind = (220...300).contains(f0Hz) ? "szónikus fogkefe (Sonicare-típusú)" : "elektromos fogkefe"
-        return "\(kind): \(Int(f0Hz.rounded())) Hz-es zúgás, kb. \(Formatting.grouped(moves)) mozdulat/perc"
+        let kind = (220...300).contains(f0Hz) ? tr("szónikus fogkefe (Sonicare-típusú)")
+            : (f0Hz < 200 ? tr("forgófejes fogkefe (Oral-B-típusú)") : tr("elektromos fogkefe"))
+        return tr("{0}: {1} Hz-es zúgás, kb. {2} mozdulat/perc", kind, Int(f0Hz.rounded()), Formatting.grouped(moves))
     }
 }

@@ -21,7 +21,29 @@ public struct Avatar: Identifiable, Equatable {
     }
 }
 
-public enum BrushType: String, Codable, CaseIterable { case manual, electric }
+/// manual, electric (sonic, e.g. Sonicare) or oscillating (oscillating-rotating, e.g. Oral-B).
+public enum BrushType: String, Codable, CaseIterable {
+    case manual, electric, oscillating
+
+    /// Any powered brush.
+    public var powered: Bool { self != .manual }
+
+    public var title: String {
+        switch self {
+        case .manual: return tr("Kézi")
+        case .electric: return tr("Szónikus (pl. Sonicare)")
+        case .oscillating: return tr("Forgófejes (pl. Oral-B)")
+        }
+    }
+
+    public var info: String {
+        switch self {
+        case .manual: return tr("Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását figyelmen kívül hagyjuk.")
+        case .electric: return tr("Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.")
+        case .oscillating: return tr("Forgófejes fogkefénél a motor mélyebb zúgását figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.")
+        }
+    }
+}
 
 public struct Profile: Codable, Equatable, Identifiable {
     public var id: String

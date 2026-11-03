@@ -240,3 +240,33 @@ class TestRecordingTest {
         assertEquals(listOf(files[0], files[1]), TestRecording.latest(dir))
     }
 }
+
+class SonicLockOnTest {
+    /** A 256 Hz tone with a weak harmonic: plain detection flickers, lock-on keeps it after one strong window. */
+    @Test fun lockOnKeepsAWeakHarmonicTone() {
+        val sr = SAMPLE_RATE
+        val rnd = java.util.Random(1)
+        val secs = 30
+        val x = DoubleArray(secs * sr) { i ->
+            val t = i.toDouble() / sr
+            val strongHarmonic = t < 9.0           // the first seconds have a clear 2x harmonic
+            val tone = if (t >= 3.0) 0.05 * kotlin.math.sin(2 * Math.PI * 256 * t) + (if (strongHarmonic) 0.02 else 0.0005) * kotlin.math.sin(2 * Math.PI * 512 * t) else 0.0
+            tone + 0.01 * rnd.nextGaussian()
+        }
+        fun hits(cfg: SonicConfig): Int {
+            val d = SonicDetector(cfg)
+            var n = 0
+            var off = 0
+            while (off + SonicDetector.WINDOW_SAMPLES <= x.size) {
+                val r = d.process(x, off)
+                if (off >= 12 * sr && r.score >= 0.5) n++
+                off += SonicDetector.HOP_SAMPLES
+            }
+            return n
+        }
+        val plain = hits(SonicConfig())
+        val locked = hits(SonicConfig(lockOn = true))
+        assertTrue(locked > plain, "plain=$plain locked=$locked")
+        assertTrue(locked >= 25, "locked=$locked")
+    }
+}

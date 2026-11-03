@@ -22,7 +22,7 @@ data class Profile(
     val name: String,
     val child: Boolean = false,
     val goals: Goals = Goals(),
-    val brushType: String = "manual",   // "manual" or "electric"
+    val brushType: String = "manual",   // "manual", "electric" (sonic, e.g. Sonicare) or "oscillating" (e.g. Oral-B)
     val age: Int? = null,
     val canRead: Boolean = true,
     val avatar: String? = null,
@@ -39,7 +39,19 @@ data class Profile(
     val quietExtraS: Double = 0.0,
 ) {
     val avatarEmoji get() = Avatar.emoji(avatar)
-    val electric get() = brushType == "electric"
+    /** Any powered brush (sonic or oscillating-rotating). */
+    val electric get() = brushType != "manual"
+    val oscillating get() = brushType == "oscillating"
+}
+
+object BrushTypes {
+    data class Kind(val id: String, val title: String, val info: String)
+    val all get() = listOf(
+        Kind("manual", tr("Kézi"), tr("Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását figyelmen kívül hagyjuk.")),
+        Kind("electric", tr("Szónikus (pl. Sonicare)"), tr("Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.")),
+        Kind("oscillating", tr("Forgófejes (pl. Oral-B)"), tr("Forgófejes fogkefénél a motor mélyebb zúgását figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.")),
+    )
+    fun title(id: String) = all.firstOrNull { it.id == id }?.title ?: id
 }
 
 object KidTitles {

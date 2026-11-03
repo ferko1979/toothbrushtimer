@@ -126,7 +126,16 @@ class ModelHeads(val brush: LinearModel, val water: LinearModel) {
     }
 }
 
-data class SonicConfig(val bandLowHz: Double = 150.0, val bandHighHz: Double = 400.0) {
+data class SonicConfig(
+    val bandLowHz: Double = 150.0, val bandHighHz: Double = 400.0,
+    /**
+     * Lock-on (app): once the brush tone was clearly confirmed, keep recognising the same frequency
+     * (±2×stability) without the 2x harmonic or the stability check and with a lower prominence; some
+     * phones barely pick up the harmonic. Same as sonic.py lock_on.
+     */
+    val lockOn: Boolean = false,
+) {
+    val lockHoldS = 10.0
     val neighbourhoodHz = 30.0
     val stabilityHz = 3.0
     val floorRiseDbPerS = 0.1
@@ -135,6 +144,8 @@ data class SonicConfig(val bandLowHz: Double = 150.0, val bandHighHz: Double = 4
 
     companion object {
         fun calibrated(f0: Double, toleranceHz: Double = 10.0) = SonicConfig(f0 - toleranceHz, f0 + toleranceHz)
+        /** Oscillating-rotating brushes (e.g. Oral-B): lower motor frequency. */
+        val OSCILLATING = SonicConfig(60.0, 200.0)
     }
 }
 
@@ -149,7 +160,11 @@ class SonicDetector(val cfg: SonicConfig = SonicConfig()) {
 
         fun describe(f0Hz: Double): String {
             val moves = (f0Hz * 120).roundToInt()
-            val kind = if (f0Hz in 220.0..300.0) tr("szónikus fogkefe (Sonicare-típusú)") else tr("elektromos fogkefe")
+            val kind = when {
+                f0Hz in 220.0..300.0 -> tr("szónikus fogkefe (Sonicare-típusú)")
+                f0Hz < 200.0 -> tr("forgófejes fogkefe (Oral-B-típusú)")
+                else -> tr("elektromos fogkefe")
+            }
             return tr("{0}: {1} Hz-es zúgás, kb. {2} mozdulat/perc", kind, f0Hz.roundToInt(), Formatting.grouped(moves))
         }
     }
@@ -164,6 +179,9 @@ class SonicDetector(val cfg: SonicConfig = SonicConfig()) {
     private val nb: Int
     private val tol: Int
     private var floor: DoubleArray? = null
+    private var lockedF0: Double? = null
+    private var lockedUntil = -1.0
+    private var windowIndex = 0
 
     init {
         val df = SAMPLE_RATE.toDouble() / NPERSEG
@@ -182,7 +200,7 @@ class SonicDetector(val cfg: SonicConfig = SonicConfig()) {
         densityScale = 1.0 / (SAMPLE_RATE * w2)
     }
 
-    fun reset() { floor = null }
+    fun reset() { floor = null; lockedF0 = null; lockedUntil = -1.0; windowIndex = 0 }
 
     private fun welchDb(x: DoubleArray, offset: Int, length: Int): DoubleArray {
         val n = NPERSEG
@@ -242,7 +260,18 @@ class SonicDetector(val cfg: SonicConfig = SonicConfig()) {
         for (i in max(k2 - tol, 0) until min(k2 + tol + 1, m)) hmax = max(hmax, prom[i])
         val harmonic = hmax >= cfg.harmonicMinDb
         val novelty = spec[k] - fl[k]
-        val score = Stats.ramp(prom[k], 8.0, 16.0) * Stats.ramp(novelty, 3.0, 9.0) * (if (stable && harmonic) 1.0 else 0.0)
+        var score = Stats.ramp(prom[k], 8.0, 16.0) * Stats.ramp(novelty, 3.0, 9.0) * (if (stable && harmonic) 1.0 else 0.0)
+        val t = windowIndex * cfg.hopS + WINDOW_SAMPLES / 2.0 / SAMPLE_RATE
+        windowIndex++
+        if (cfg.lockOn) {
+            val lf = lockedF0
+            if (score >= 0.9) {
+                lockedF0 = freqs[k]; lockedUntil = t + cfg.lockHoldS
+            } else if (lf != null && t <= lockedUntil && abs(freqs[k] - lf) <= 2 * cfg.stabilityHz) {
+                score = max(score, Stats.ramp(prom[k], 6.0, 12.0) * Stats.ramp(novelty, 2.0, 6.0))
+                if (score >= 0.5) lockedUntil = t + cfg.lockHoldS
+            }
+        }
         return SonicResult(score, freqs[k], prom[k], novelty)
     }
 }

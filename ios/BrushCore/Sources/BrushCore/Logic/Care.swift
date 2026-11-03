@@ -314,7 +314,7 @@ public func dentistReport(profile: Profile, records: [BrushRecord], entries: [Ca
         symptoms.append(tr("Fogkrém: ") + sorted.map { tr("{0} ({1} nap)", Toothpastes.title($0.key), $0.value) }.joined(separator: ", "))
     }
 
-    var other = ["Fogkefe: " + (profile.brushType == .electric ? "elektromos" : tr("kézi"))]
+    var other = [tr("Fogkefe: {0}", profile.brushType.title)]
     if profile.orthodontic { other.append(tr("Fogszabályzó: igen")) }
     if let d = profile.lastCheckup { other.append(tr("Utolsó fogorvosi kontroll: {0}", huDate(d, calendar: cal))) }
     if let d = profile.lastCleaning { other.append(tr("Utolsó fogkőeltávolítás: {0}", huDate(d, calendar: cal))) }

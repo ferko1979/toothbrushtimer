@@ -140,7 +140,7 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
     var step by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf("") }
     var flow by remember { mutableStateOf(OnboardingFlow()) }
-    var electric by remember { mutableStateOf(false) }
+    var brushType by remember { mutableStateOf("manual") }
     var goals by remember { mutableStateOf(Goals()) }
 
     // Re-read texts when the language is switched on the first screen.
@@ -169,12 +169,14 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
         1 -> QuestionFlow(flow) { step = 2 }
         2 -> FormPage {
             Text(tr("Milyen fogkefét használsz?"), fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                SegmentedButton(!electric, { electric = false }, SegmentedButtonDefaults.itemShape(0, 2)) { Text(tr("Kézi")) }
-                SegmentedButton(electric, { electric = true }, SegmentedButtonDefaults.itemShape(1, 2)) { Text(tr("Elektromos")) }
+            val kinds = hu.fogmosas.core.BrushTypes.all
+            kinds.forEach { k ->
+                OutlinedButton(onClick = { brushType = k.id }, modifier = Modifier.fillMaxWidth(),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, if (brushType == k.id) C.brand else Color.LightGray)) {
+                    Text(k.title, fontSize = 17.sp)
+                }
             }
-            Text(if (electric) tr("Elektromos fogkefénél a motor zúgását is figyeljük, és az első 3 fogmosásból megtanuljuk a fogkeféd hangját.")
-                 else tr("Kézi fogkefénél a súrolás ritmusát figyeljük. Más zúgását figyelmen kívül hagyjuk."), color = C.muted)
+            Text(kinds.first { it.id == brushType }.info, color = C.muted)
             Spacer(Modifier.height(8.dp))
             Button(onClick = { step = 3 }, Modifier.fillMaxWidth().height(52.dp)) { Text(tr("Tovább")) }
         }
@@ -198,7 +200,7 @@ fun OnboardingScreen(activity: MainActivity, store: AppStore) {
             Spacer(Modifier.height(8.dp))
             Button(onClick = {
                 val ps = flow.profiles().toMutableList()
-                ps[0] = ps[0].copy(brushType = if (electric) "electric" else "manual", goals = goals)
+                ps[0] = ps[0].copy(brushType = brushType, goals = goals)
                 store.update { it.copy(profiles = ps, activeProfileId = "me", onboarded = true) }
                 ReminderScheduler.reschedule(activity)
                 WearSync.pushGoals(activity, goals)

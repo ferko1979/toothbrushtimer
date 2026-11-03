@@ -248,7 +248,7 @@ fun dentistReport(
     if (pastes.isNotEmpty()) symptoms += tr("Fogkrém: ") + pastes.joinToString(", ") { tr("{0} ({1} nap)", Toothpastes.title(it.key), it.value) }
 
     val other = mutableListOf<String>()
-    other += "Fogkefe: " + (if (profile.electric) "elektromos" else tr("kézi"))
+    other += tr("Fogkefe: {0}", BrushTypes.title(profile.brushType))
     if (profile.orthodontic) other += tr("Fogszabályzó: igen")
     profile.lastCheckup?.let { other += tr("Utolsó fogorvosi kontroll: {0}", I18n.date(LocalDate.parse(it))) }
     profile.lastCleaning?.let { other += tr("Utolsó fogkőeltávolítás: {0}", I18n.date(LocalDate.parse(it))) }
