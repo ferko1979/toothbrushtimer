@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 /** Wet cue, quiet-water rinse rule and motor-stop watch (from real test recordings). Mirrored in SessionCuesTests.swift. */
 class SessionCuesTest {
     private val cfg = SessionConfig(holdUntilS = 120.0, sonicSuppressesWater = true, runHysteresis = true,
-        quietWaterRinseS = 3.5, wetCue = true, sonicStopWatch = true)
+        quietWaterRinseS = 6.0, wetCue = true, sonicStopWatch = true)
 
     /** Steps of 0.5 s: (seconds, water, brush, sonic, rmsDb, f0). */
     private fun run(d: SessionDetector, segs: List<List<Double>>, t0: Double = 0.0): Double {

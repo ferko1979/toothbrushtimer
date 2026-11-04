@@ -25,6 +25,13 @@ class MainActivity : FragmentActivity() {
     val parentUnlocked = mutableStateOf(false)
     /** "Not linked to DentHub yet" banner: shown again every time the app is opened. */
     val linkReminder = mutableStateOf(true)
+    /** Bumped on every return to the app, at midnight and on pull-to-refresh: the pages are rebuilt for "today". */
+    val refreshTick = androidx.compose.runtime.mutableIntStateOf(0)
+    /** Pull-to-refresh / back to the app: reread today's numbers and replan the reminders. */
+    fun refresh() {
+        refreshTick.intValue++
+        ReminderScheduler.reschedule(this)
+    }
     /** Full-screen page over the tabs: "symptom", "visit", "visit:<symptomId>" (null: none). */
     val overlay = mutableStateOf<String?>(null)
     /** A clinic link code opened from a QR / link, waiting for the user's confirmation. */
@@ -81,6 +88,7 @@ class MainActivity : FragmentActivity() {
     override fun onStart() {
         super.onStart()
         linkReminder.value = true
+        refresh()
         BrushingEngine.appForeground()
     }
 

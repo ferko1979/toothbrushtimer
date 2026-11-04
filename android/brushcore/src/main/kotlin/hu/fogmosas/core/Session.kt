@@ -20,7 +20,7 @@ data class SessionConfig(
      * App: while brushing, "water" that is not clearly louder than the brushing itself (scrubbing
      * without the motor can sound like water) must run this long before it counts as a rinse. null = off.
      */
-    val quietWaterRinseS: Double? = null, val loudWaterDb: Double = 6.0,
+    val quietWaterRinseS: Double? = null, val loudWaterDb: Double = 3.0,
     /** App: a short loud splash before brushing (wetting the brush head) arms the session like the water cue. */
     val wetCue: Boolean = false,
     /** App, electric brush: notice when the motor stops mid-session (flat battery) and the user goes on by hand. */
@@ -171,7 +171,8 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
             State.BRUSHING -> {
                 val s = sessions.last()
                 if (brushing >= c.off) { lastBrush = time; quietRun = 0.0 } else quietRun += dt
-                if (isWater) s.waterRunningS += dt
+                // Quiet "water" while scrubbing is usually the scrubbing itself: not a running tap.
+                if (isWater && (c.quietWaterRinseS == null || !level || brushLevelDb == null || waterLoud)) s.waterRunningS += dt
                 val early = c.holdUntilS != null && time - s.start < c.holdUntilS
                 var rinseMin = if (early) maxOf(c.rinseMinS, c.rinseMinEarlyS) else c.rinseMinS
                 if (c.quietWaterRinseS != null && level && brushLevelDb != null && !waterLoud) rinseMin = maxOf(rinseMin, c.quietWaterRinseS)

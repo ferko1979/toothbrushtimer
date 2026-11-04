@@ -85,6 +85,8 @@ object BrushingEngine {
 
     /** Near-sound filter threshold above the background level (tuned from test recordings). */
     const val NEAR_GATE_DB = 10.0
+    /** Manual brush: extra silence before the measurement stops after the goal. */
+    const val MANUAL_EXTRA_QUIET_S = 10.0
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state
@@ -157,9 +159,10 @@ object BrushingEngine {
         }
         // Until the goal is reached, stop only after a long silence or a clear rinse.
         val sc = policy.sessionConfig.let {
-            it.copy(holdUntilS = cfg.targetS, endQuietS = it.endQuietS + cfg.quietExtraS, holdQuietS = it.holdQuietS + cfg.quietExtraS,
+            // Manual scrubbing has quieter stretches (up to ~15 s in the test recordings): wait longer.
+            it.copy(holdUntilS = cfg.targetS, endQuietS = it.endQuietS + cfg.quietExtraS + (if (cfg.useSonic) 0.0 else MANUAL_EXTRA_QUIET_S), holdQuietS = it.holdQuietS + cfg.quietExtraS,
                 sonicSuppressesWater = cfg.useSonic, runHysteresis = true,
-                quietWaterRinseS = 3.5, wetCue = true, sonicStopWatch = cfg.useSonic)
+                quietWaterRinseS = 6.0, wetCue = true, sonicStopWatch = cfg.useSonic)
         }
         userStop = false
         val det = StreamingDetector(heads, sc, cfg.sonicConfig, cfg.useSonic, cfg.batterySaver,

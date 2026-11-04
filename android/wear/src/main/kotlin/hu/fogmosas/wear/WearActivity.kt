@@ -71,7 +71,16 @@ class WearActivity : ComponentActivity() {
             }
         }
         requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1)
-        setContent { MaterialTheme { WearRoot(this, store) } }
+        setContent { MaterialTheme { androidx.compose.runtime.key(refreshTick.intValue) { WearRoot(this, store) } } }
+    }
+
+    /** Bumped on every return to the watch app: today's count is reread (e.g. the next morning). */
+    val refreshTick = androidx.compose.runtime.mutableIntStateOf(0)
+
+    override fun onResume() {
+        super.onResume()
+        val st = BrushingEngine.state.value
+        if (!st.active && st.result == null) refreshTick.intValue++
     }
 
     // Watch on the brushing hand: the wrist rhythm (linear acceleration) is brushing evidence.

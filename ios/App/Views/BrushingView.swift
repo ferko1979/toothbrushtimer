@@ -185,10 +185,12 @@ struct BrushingView: View {
         var sc = policy.sessionConfig
         sc.holdUntilS = profile.goals.targetS
         sc.endQuietS += profile.quietExtraS
+        // Manual scrubbing has quieter stretches (up to ~15 s in the test recordings): wait longer.
+        if !profile.brushType.powered { sc.endQuietS += 10 }
         sc.holdQuietS += profile.quietExtraS
         sc.sonicSuppressesWater = profile.brushType.powered
         sc.runHysteresis = true
-        sc.quietWaterRinseS = 3.5
+        sc.quietWaterRinseS = 6.0
         sc.wetCue = true
         sc.sonicStopWatch = profile.brushType.powered
         controller.f0History = profile.calibration.f0s

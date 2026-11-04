@@ -8,7 +8,7 @@ final class SessionCuesTests: XCTestCase {
         c.holdUntilS = 120
         c.sonicSuppressesWater = true
         c.runHysteresis = true
-        c.quietWaterRinseS = 3.5
+        c.quietWaterRinseS = 6.0
         c.wetCue = true
         c.sonicStopWatch = true
         return c

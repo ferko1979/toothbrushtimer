@@ -29,7 +29,7 @@ public struct SessionConfig: Equatable {
     /// App: while brushing, "water" that is not clearly louder than the brushing itself (scrubbing
     /// without the motor can sound like water) must run this long before it counts as a rinse. nil = off.
     public var quietWaterRinseS: Double? = nil
-    public var loudWaterDb = 6.0
+    public var loudWaterDb = 3.0
     /// App: a short loud splash before brushing (wetting the brush head) arms the session like the water cue.
     public var wetCue = false
     /// App, electric brush: notice when the motor stops mid-session (flat battery) and the user goes on by hand.
@@ -230,7 +230,8 @@ public final class SessionDetector {
             } else {
                 quietRun += dt
             }
-            if isWater { sessions[idx].waterRunningS += dt }
+            // Quiet "water" while scrubbing is usually the scrubbing itself: not a running tap.
+            if isWater && (c.quietWaterRinseS == nil || !level || brushLevelDb == nil || waterLoud) { sessions[idx].waterRunningS += dt }
             let early = c.holdUntilS.map { time - sessions[idx].start < $0 } ?? false
             var rinseMin = early ? Swift.max(c.rinseMinS, c.rinseMinEarlyS) : c.rinseMinS
             if let q = c.quietWaterRinseS, level, brushLevelDb != nil, !waterLoud { rinseMin = Swift.max(rinseMin, q) }

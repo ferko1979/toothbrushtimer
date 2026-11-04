@@ -5,10 +5,14 @@ import WatchKit
 @main
 struct ToothbrushTimerWatchApp: App {
     @StateObject private var model = WatchModel()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             WatchHomeView().environmentObject(model)
+                // Back on the wrist the next morning: today's count is reread (a model change redraws the
+                // pages; no .id here, so a brushing in progress is never torn down).
+                .onChange(of: scenePhase) { _, phase in if phase == .active { model.refreshTick += 1 } }
         }
     }
 }
@@ -19,6 +23,7 @@ final class WatchModel: ObservableObject {
     @Published var ownerName = "" { didSet { save() } }
     @Published var brushHand = "right" { didSet { save() } }
     @Published var records: [BrushRecord] = [] { didSet { save() } }
+    @Published var refreshTick = 0
     let heads: ModelHeads?
     let coach = Coach()
     private let url: URL

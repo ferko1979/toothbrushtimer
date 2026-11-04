@@ -77,6 +77,21 @@ final class AppModel: ObservableObject {
     @Published var splashShown = false
     /// Onboarding: "Szeretnék időpontot kérni" — the home page opens the visit request once.
     @Published var pendingVisit = false
+    /// Bumped on every return to the app, at midnight and on pull-to-refresh: the pages are rebuilt for "today".
+    @Published var refreshTick = 0
+    private var lastDay = Calendar.current.startOfDay(for: Date())
+
+    /// Pull-to-refresh / back to the app: reread today's numbers and replan the reminders.
+    func refresh() {
+        lastDay = Calendar.current.startOfDay(for: Date())
+        refreshTick += 1
+        NotificationScheduler.reschedule(model: self)
+    }
+
+    /// Called every half minute while open: a new day rebuilds the pages.
+    func checkDay() {
+        if Calendar.current.startOfDay(for: Date()) != lastDay { refresh() }
+    }
     /// Care instructions from the clinic (denthub://care link / QR), waiting for confirmation.
     @Published var pendingCare: CareInstruction?
     let heads: ModelHeads?

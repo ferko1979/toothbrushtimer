@@ -46,6 +46,7 @@ struct StatsView: View {
                     }
                 }
             }
+            .refreshable { model.refresh() }
             .navigationTitle(tr("Statisztika"))
         }
     }

@@ -31,7 +31,9 @@ import hu.fogmosas.core.SonicConfig
 import hu.fogmosas.shared.AppStore
 import hu.fogmosas.shared.BrushingEngine
 import hu.fogmosas.core.tr
+import kotlinx.coroutines.launch
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun AppRoot(activity: MainActivity, store: AppStore) {
     FogmosasTheme {
@@ -67,6 +69,16 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                     "quietExtraS" to p.quietExtraS, "language" to hu.fogmosas.core.I18n.lang),
             ))
             showBrushing = true
+        }
+
+        // A new day while the app stays open (e.g. overnight): rebuild the pages for today.
+        LaunchedEffect(Unit) {
+            var day = java.time.LocalDate.now()
+            while (true) {
+                kotlinx.coroutines.delay(30_000)
+                val now = java.time.LocalDate.now()
+                if (now != day) { day = now; activity.refresh() }
+            }
         }
 
         LaunchedEffect(activity.armRequest.value, data.onboarded) {
@@ -113,7 +125,18 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                         NavigationBarItem(tab == 3, { tab = 3 }, { Icon(Icons.Filled.Settings, null) }, label = { Text(tr("Beállítások")) })
                     }
                 }) { pad ->
-                    Box(Modifier.padding(pad).imePadding()) {
+                    var refreshing by remember { mutableStateOf(false) }
+                    val scope = androidx.compose.runtime.rememberCoroutineScope()
+                    // Pull down to refresh (today's count, reminders, data from the watch).
+                    androidx.compose.material3.pulltorefresh.PullToRefreshBox(
+                        isRefreshing = refreshing,
+                        onRefresh = {
+                            refreshing = true
+                            activity.refresh()
+                            scope.launch { kotlinx.coroutines.delay(500); refreshing = false }
+                        },
+                        modifier = Modifier.padding(pad).imePadding(),
+                    ) { androidx.compose.runtime.key(activity.refreshTick.intValue) {
                         when (tab) {
                             0 -> Column {
                                 LinkReminderBanner(activity, store) { tab = 1 }
@@ -123,7 +146,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                             2 -> AchievementsScreen(store)
                             else -> SettingsScreen(activity, store)
                         }
-                    }
+                    } }
                 }
             }
         }

@@ -26,11 +26,14 @@ struct RootView: View {
                 TourView { model.data.tourSeen = true }
             } else if model.data.onboarded {
                 TabView(selection: $router.selectedTab) {
+                    // .id(refreshTick): rebuilt for "today" after a night, a pull-to-refresh or a return to the app.
                     HomeView().tabItem { Label(tr("Főoldal"), systemImage: "house") }.tag(0)
                     StatsView().tabItem { Label(tr("Statisztika"), systemImage: "chart.bar") }.tag(1)
                     AchievementsView().tabItem { Label(tr("Kitüntetések"), systemImage: "rosette") }.tag(2)
                     SettingsView().tabItem { Label(tr("Beállítások"), systemImage: "gearshape") }.tag(3)
                 }
+                .id(model.refreshTick)
+                .onReceive(Timer.publish(every: 30, on: .main, in: .common).autoconnect()) { _ in model.checkDay() }
             } else {
                 OnboardingView()
             }
@@ -65,7 +68,10 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             // Lock again in the background, but never in the middle of a brushing.
             if phase == .background && brushing == nil { lock.lock() }
-            if phase == .active { model.linkReminder = true }
+            if phase == .active {
+                model.linkReminder = true
+                model.refresh()
+            }
         }
     }
 }
