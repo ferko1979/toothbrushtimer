@@ -25,6 +25,8 @@ data class SessionConfig(
     val wetCue: Boolean = false,
     /** App, electric brush: notice when the motor stops mid-session (flat battery) and the user goes on by hand. */
     val sonicStopWatch: Boolean = false,
+    /** App: after the water cue the brushing starts when the brushing itself starts (toothpaste comes first). */
+    val startAtBrushing: Boolean = false,
 ) {
     companion object {
         /** Opened from a reminder: start sooner, wait longer for the water cue. */
@@ -75,14 +77,14 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
     private var t = 0.0
     private var brushLevelDb: Double? = null; private var waterLoud = false
     private var floorDb: Double? = null; private var loudRun = 0.0; private var wetArmed = false; private var wetAt = -1e9
-    private var sonicRun = 0.0; private var sonicGap = 0.0; private var sonicBack = 0.0
+    private var sonicRun = 0.0; private var sonicGap = 0.0; private var sonicBack = 0.0; private var humRun = 0.0
 
     private fun resetRuns() {
         waterRun = 0.0; dryRun = 0.0; brushRun = 0.0; quietRun = 0.0
         waterEnd = 0.0; rinseStart = 0.0; lastBrush = 0.0; rinseWater = 0.0
         dryBeforeWater = 0.0; sinceWater = 0.0
         brushLevelDb = null; waterLoud = false; loudRun = 0.0; wetArmed = false
-        sonicRun = 0.0; sonicGap = 0.0; sonicBack = 0.0
+        sonicRun = 0.0; sonicGap = 0.0; sonicBack = 0.0; humRun = 0.0
     }
 
     private val hasCurrent get() = state == State.BRUSHING || state == State.RINSE
@@ -114,12 +116,22 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
     }
 
     /** [rmsDb]: loudness of this step (dBFS), NaN if unknown; [sonicF0]: motor frequency, 0 if none. */
-    fun update(time: Double, water: Double, brush: Double, sonic: Double, dt: Double,
+    fun update(time: Double, water: Double, brush: Double, sonicIn: Double, dt: Double,
                rmsDb: Double = Double.NaN, sonicF0: Double = 0.0) {
         val c = cfg
         t = time
+        val app = c.quietWaterRinseS != null
+        val level = !rmsDb.isNaN()
+        val ref = brushLevelDb
+        // A hum much quieter than the brushing is a background tone (fan), not the brush; water clearly
+        // louder than the brushing is the tap even while something hums.
+        val humAudible = !level || ref == null || rmsDb >= ref - 10.0
+        val sonic = if (app && !humAudible) 0.0 else sonicIn
         val brushing = max(brush, sonic)
-        val humming = c.sonicSuppressesWater && sonic >= c.off && (state == State.BRUSHING || state == State.RINSE)
+        val loudWaterNow = level && ref != null && rmsDb >= ref + c.loudWaterDb && water >= c.waterOn
+        val humming = c.sonicSuppressesWater && sonic >= c.off && (state == State.BRUSHING || state == State.RINSE) &&
+            (!app || !loudWaterNow)
+        humRun = if (humming) humRun + dt else 0.0
         if (humming) waterOn = false
         else if (water >= c.waterOn) waterOn = true else if (water < c.waterOff) waterOn = false
         val isWater = waterOn
@@ -129,7 +141,6 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
         waterRun = if (isWater) waterRun + dt else 0.0
         dryRun = if (noWater) dryRun + dt else 0.0
         brushRun = if (brushing >= c.on) brushRun + dt else if (c.runHysteresis && brushing >= c.off) brushRun else 0.0
-        val level = !rmsDb.isNaN()
         if (!isWater) waterLoud = false
         else if (level && brushLevelDb != null && rmsDb >= brushLevelDb!! + c.loudWaterDb) waterLoud = true
         if (level && state == State.BRUSHING && brushing >= c.on && !isWater)
@@ -162,7 +173,7 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
                     state = State.WATER
                 } else if (brushRun >= c.brushConfirmS) {
                     // After wetting, toothpaste comes first: brushing starts with the brushing itself.
-                    startSession(time, if (wetArmed) time - brushRun else waterEnd, "water")
+                    startSession(time, if (wetArmed || c.startAtBrushing) maxOf(waterEnd, time - brushRun) else waterEnd, "water")
                 } else if (time - waterEnd > c.armS) {
                     state = State.LISTENING
                     wetArmed = false
@@ -196,7 +207,8 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
             State.RINSE -> {
                 val s = sessions.last()
                 if (isWater) { rinseWater += dt; s.waterRunningS += dt }
-                if (humming || (dryRun > 0 && brushRun >= c.resumeS && dryRun >= c.resumeS)) {
+                // App: the hum must last 2 s to bring the rinse back to brushing (a tone in the rinse water is not enough).
+                if ((humming && (!app || humRun >= 2.0)) || (dryRun > 0 && brushRun >= c.resumeS && dryRun >= c.resumeS)) {
                     state = State.BRUSHING
                     event(time, SessionEvent.BRUSHING_RESUMED)
                 } else if (dryRun >= c.rinseDoneS) {

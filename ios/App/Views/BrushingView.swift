@@ -192,6 +192,7 @@ struct BrushingView: View {
         sc.runHysteresis = true
         sc.quietWaterRinseS = 6.0
         sc.wetCue = true
+        sc.startAtBrushing = true
         sc.sonicStopWatch = profile.brushType.powered
         controller.f0History = profile.calibration.f0s
         controller.scrubHistory = model.records(for: profile.id).sorted { $0.start < $1.start }.compactMap(\.brushDb)

@@ -34,6 +34,8 @@ public struct SessionConfig: Equatable {
     public var wetCue = false
     /// App, electric brush: notice when the motor stops mid-session (flat battery) and the user goes on by hand.
     public var sonicStopWatch = false
+    /// App: after the water cue the brushing starts when the brushing itself starts (toothpaste comes first).
+    public var startAtBrushing = false
 
     public init() {}
 
@@ -104,7 +106,7 @@ public final class SessionDetector {
     private var t = 0.0
     private var brushLevelDb: Double? = nil, waterLoud = false
     private var floorDb: Double? = nil, loudRun = 0.0, wetArmed = false, wetAt = -1e9
-    private var sonicRun = 0.0, sonicGap = 0.0, sonicBack = 0.0
+    private var sonicRun = 0.0, sonicGap = 0.0, sonicBack = 0.0, humRun = 0.0
 
     public init(cfg: SessionConfig = SessionConfig()) {
         self.cfg = cfg
@@ -115,7 +117,7 @@ public final class SessionDetector {
         waterEnd = 0; rinseStart = 0; lastBrush = 0; rinseWater = 0
         dryBeforeWater = 0; sinceWater = 0
         brushLevelDb = nil; waterLoud = false; loudRun = 0; wetArmed = false
-        sonicRun = 0; sonicGap = 0; sonicBack = 0
+        sonicRun = 0; sonicGap = 0; sonicBack = 0; humRun = 0
     }
 
     private var hasCurrent: Bool { state == .brushing || state == .rinse }
@@ -154,12 +156,20 @@ public final class SessionDetector {
     }
 
     /// `rmsDb`: loudness of this step (dBFS), NaN if unknown; `sonicF0`: motor frequency, 0 if none.
-    public func update(t time: Double, water: Double, brush: Double, sonic: Double, dt: Double,
+    public func update(t time: Double, water: Double, brush: Double, sonic sonicIn: Double, dt: Double,
                        rmsDb: Double = .nan, sonicF0: Double = 0) {
         let c = cfg
         t = time
+        let app = c.quietWaterRinseS != nil
+        let level = !rmsDb.isNaN
+        // A hum much quieter than the brushing is a background tone (fan), not the brush; water clearly
+        // louder than the brushing is the tap even while something hums.
+        let humAudible = !level || brushLevelDb == nil || rmsDb >= brushLevelDb! - 10
+        let sonic = (app && !humAudible) ? 0 : sonicIn
         let brushing = Swift.max(brush, sonic)
-        let humming = c.sonicSuppressesWater && sonic >= c.off && (state == .brushing || state == .rinse)
+        let loudWaterNow = level && brushLevelDb != nil && rmsDb >= brushLevelDb! + c.loudWaterDb && water >= c.waterOn
+        let humming = c.sonicSuppressesWater && sonic >= c.off && (state == .brushing || state == .rinse) && (!app || !loudWaterNow)
+        humRun = humming ? humRun + dt : 0
         if humming {
             waterOn = false
         } else if water >= c.waterOn {
@@ -174,7 +184,6 @@ public final class SessionDetector {
         waterRun = isWater ? waterRun + dt : 0
         dryRun = noWater ? dryRun + dt : 0
         brushRun = brushing >= c.on ? brushRun + dt : ((c.runHysteresis && brushing >= c.off) ? brushRun : 0)
-        let level = !rmsDb.isNaN
         if !isWater {
             waterLoud = false
         } else if level, let b = brushLevelDb, rmsDb >= b + c.loudWaterDb {
@@ -216,7 +225,7 @@ public final class SessionDetector {
                 state = .water
             } else if brushRun >= c.brushConfirmS {
                 // After wetting, toothpaste comes first: brushing starts with the brushing itself.
-                startSession(time, start: wetArmed ? time - brushRun : waterEnd, cue: "water")
+                startSession(time, start: (wetArmed || c.startAtBrushing) ? Swift.max(waterEnd, time - brushRun) : waterEnd, cue: "water")
             } else if time - waterEnd > c.armS {
                 state = .listening
                 wetArmed = false
@@ -259,7 +268,8 @@ public final class SessionDetector {
                 rinseWater += dt
                 sessions[idx].waterRunningS += dt
             }
-            if humming || (dryRun > 0 && brushRun >= c.resumeS && dryRun >= c.resumeS) {
+            // App: the hum must last 2 s to bring the rinse back to brushing (a tone in the rinse water is not enough).
+            if (humming && (!app || humRun >= 2)) || (dryRun > 0 && brushRun >= c.resumeS && dryRun >= c.resumeS) {
                 state = .brushing
                 event(time, .brushingResumed)
             } else if dryRun >= c.rinseDoneS {

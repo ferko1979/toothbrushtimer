@@ -162,7 +162,7 @@ object BrushingEngine {
             // Manual scrubbing has quieter stretches (up to ~15 s in the test recordings): wait longer.
             it.copy(holdUntilS = cfg.targetS, endQuietS = it.endQuietS + cfg.quietExtraS + (if (cfg.useSonic) 0.0 else MANUAL_EXTRA_QUIET_S), holdQuietS = it.holdQuietS + cfg.quietExtraS,
                 sonicSuppressesWater = cfg.useSonic, runHysteresis = true,
-                quietWaterRinseS = 6.0, wetCue = true, sonicStopWatch = cfg.useSonic)
+                quietWaterRinseS = 6.0, wetCue = true, startAtBrushing = true, sonicStopWatch = cfg.useSonic)
         }
         userStop = false
         val det = StreamingDetector(heads, sc, cfg.sonicConfig, cfg.useSonic, cfg.batterySaver,

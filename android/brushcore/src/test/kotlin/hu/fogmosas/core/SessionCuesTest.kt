@@ -67,4 +67,20 @@ class SessionCuesTest {
         assertEquals(1, notes.size)
         assertTrue(brushPowerNotes(s, listOf(248.0, 248.5, 247.8)).isEmpty())
     }
+
+    @Test
+    fun loudRinseWinsOverAHumAndAQuietBackgroundToneIsNotTheBrush() {
+        val d = SessionDetector(cfg.copy(startAtBrushing = true))
+        val t = run(d, listOf(
+            listOf(5.0, 0.9, 0.2, 0.0, -48.0, 0.0),     // wetting with the tap
+            listOf(8.0, 0.0, 0.1, 0.0, -70.0, 0.0),     // toothpaste
+            listOf(100.0, 0.0, 0.95, 1.0, -44.0, 123.0), // oscillating brush
+            listOf(9.0, 0.95, 0.3, 1.0, -36.0, 123.0),  // rinse: loud water, something still hums
+            listOf(8.0, 0.0, 0.1, 1.0, -60.0, 121.0),   // quiet room with a fan tone
+        ))
+        val s = d.sessions.single()
+        assertTrue(s.start in 13.0..15.5, "start ${s.start}")
+        assertEquals("rinse", s.endReason)
+        assertTrue(s.end in 112.5..114.0, "end ${s.end} (t=$t)")
+    }
 }

@@ -60,4 +60,17 @@ final class SessionCuesTests: XCTestCase {
         XCTAssertEqual(brushPowerNotes(s, history: [256, 255.9, 256.1]).count, 1)
         XCTAssertTrue(brushPowerNotes(s, history: [248, 248.5, 247.8]).isEmpty)
     }
+
+    func testLoudRinseWinsOverAHumAndAQuietBackgroundToneIsNotTheBrush() {
+        var c = cfg
+        c.startAtBrushing = true
+        let d = SessionDetector(cfg: c)
+        run(d, [[5, 0.9, 0.2, 0, -48, 0], [8, 0, 0.1, 0, -70, 0], [100, 0, 0.95, 1, -44, 123],
+                [9, 0.95, 0.3, 1, -36, 123], [8, 0, 0.1, 1, -60, 121]])
+        XCTAssertEqual(d.sessions.count, 1)
+        let s = d.sessions[0]
+        XCTAssertTrue((13.0...15.5).contains(s.start), "start \(s.start)")
+        XCTAssertEqual(s.endReason, "rinse")
+        XCTAssertTrue((112.5...114.0).contains(s.end), "end \(s.end)")
+    }
 }
