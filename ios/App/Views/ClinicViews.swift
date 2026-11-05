@@ -469,6 +469,7 @@ struct DentistCard: View {
                     Button(tr("🩺 Panaszom van")) { symptom = true }.buttonStyle(.borderedProminent)
                     Button(tr("📅 Időpontot kérek")) { visit = true }.buttonStyle(.bordered)
                 }
+                Button(tr("💬 Üzenetek, időpontok")) { AppRouter.shared.messagesRequest = UUID() }.buttonStyle(.bordered)
                 if st.checkupOverdue {
                     Button(tr("Ma voltam kontrollon")) { var q = p; q.lastCheckup = Date(); model.updateProfile(q) }.font(.caption)
                 }

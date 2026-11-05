@@ -99,7 +99,6 @@ fun sendClinicMessage(ctx: Context, store: AppStore, text: String, to: String, a
 fun MessagesButton(activity: MainActivity, store: AppStore) {
     val data by store.data.collectAsStateWithLifecycle()
     val p = data.activeProfile
-    if (data.clinic == null && !Messaging.hasConversation(data.messages, p.id)) return
     val unread = Messaging.unread(data.messages, p.id)
     Box {
         TextButton(onClick = { activity.overlay.value = "messages" }) { Text("💬 " + tr("Üzenetek"), fontSize = 15.sp) }
@@ -197,7 +196,10 @@ fun MessengerScreen(activity: MainActivity, store: AppStore, onClose: () -> Unit
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp)) {
             item {
-                if (thread.isEmpty()) InfoCard {
+                if (clinic == null) InfoCard {
+                    Text(tr("Még nincs összekötött rendelő"), fontWeight = FontWeight.Bold)
+                    Text(tr("A rendelőd a DentHubon ad egy összekötő QR-kódot vagy linket (Beállítások › Rendelőm). Utána itt írhatsz az orvosnak vagy a recepciónak, és itt jönnek az időpont-ajánlatok. A telefonon kapott időpontot már most felveheted: „Időpontot kaptam”."), fontSize = 13.sp, color = C.muted)
+                } else if (thread.isEmpty()) InfoCard {
                     Text(tr("Írj a rendelődnek"), fontWeight = FontWeight.Bold)
                     Text(tr("Kérdés, panasz vagy időpontkérés – az orvosnak vagy a recepciónak. A sürgős panaszt a „Panaszom van” kérdéseivel küldd, fotóval."), fontSize = 13.sp, color = C.muted)
                 }

@@ -49,7 +49,7 @@ struct MessagesButton: View {
 
     var body: some View {
         let p = model.activeProfile
-        if model.data.clinic != nil || Messaging.hasConversation(model.data.messages, profileId: p.id) {
+        Group {
             let unread = Messaging.unread(model.data.messages, profileId: p.id)
             Button { router.messagesRequest = UUID() } label: {
                 Image(systemName: unread > 0 ? "bubble.left.and.bubble.right.fill" : "bubble.left.and.bubble.right")
@@ -158,7 +158,13 @@ struct MessengerView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 10) {
-                            if thread.isEmpty {
+                            if clinic == nil {
+                                Card {
+                                    Text(tr("Még nincs összekötött rendelő")).font(.headline)
+                                    Text(tr("A rendelőd a DentHubon ad egy összekötő QR-kódot vagy linket (Beállítások › Rendelőm). Utána itt írhatsz az orvosnak vagy a recepciónak, és itt jönnek az időpont-ajánlatok. A telefonon kapott időpontot már most felveheted: „Időpontot kaptam”."))
+                                        .font(.caption).foregroundStyle(.secondary)
+                                }
+                            } else if thread.isEmpty {
                                 Card {
                                     Text(tr("Írj a rendelődnek")).font(.headline)
                                     Text(tr("Kérdés, panasz vagy időpontkérés – az orvosnak vagy a recepciónak. A sürgős panaszt a „Panaszom van” kérdéseivel küldd, fotóval."))

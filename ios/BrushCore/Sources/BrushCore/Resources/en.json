@@ -88,6 +88,7 @@
  "A rendelő egyelőre e-mailben fogad üzenetet; az appban is megmarad minden.": "The clinic takes messages by e-mail for now; everything is also kept in the app.",
  "A rendelő fogad üzenetet az appban (DentHub üzenetküldő).": "The clinic takes messages in the app (DentHub messenger).",
  "A rendelő még nem fogad üzenetet": "The clinic does not take messages yet",
+ "A rendelőd a DentHubon ad egy összekötő QR-kódot vagy linket (Beállítások › Rendelőm). Utána itt írhatsz az orvosnak vagy a recepciónak, és itt jönnek az időpont-ajánlatok. A telefonon kapott időpontot már most felveheted: „Időpontot kaptam”.": "Your clinic gives you a link QR code or link on DentHub (Settings › My clinic). After that you can write to the doctor or the reception here, and appointment offers arrive here. You can already add an appointment you got by phone: \"I got an appointment\".",
  "A rendelőd a DentHubon ad egy összekötő QR-kódot vagy linket. Ezzel a rendelő logója megjelenik indításkor, és nekik küldheted a panaszaidat és időpontkéréseidet.": "Your clinic gives you a link QR code or link on DentHub. With it the clinic's logo appears at start, and you can send them your complaints and appointment requests.",
  "A rendelődnek csak akkor megy adat, ha te küldöd el (üzenet, e-mail, jelentés).": "Your clinic only gets data when you send it (message, e-mail, report).",
  "A rendelőnek nincs e-mail címe, és még nem fogad üzenetet az appban.": "The clinic has no e-mail address and does not take messages in the app yet.",
@@ -650,6 +651,7 @@
  "Még nincs mért fogmosás.": "No timed brushing yet.",
  "Még nincs rögzített panasz.": "No complaints recorded yet.",
  "Még nincs tesztfelvétel.": "No test recording yet.",
+ "Még nincs összekötött rendelő": "No clinic linked yet",
  "Még semmit.": "Nothing yet.",
  "Még {0} fogmosás van hátra mára.": {
   "one": "{0} more brushing to go today.",
@@ -1048,6 +1050,7 @@
  "💧 Öblítés…": "💧 Rinsing…",
  "💧 öblítés": "💧 rinsing",
  "💬 Üzenetek": "💬 Messages",
+ "💬 Üzenetek, időpontok": "💬 Messages, appointments",
  "💾 Mentés és átvitel": "💾 Backup and transfer",
  "📅 Fogorvosi időpont": "📅 Dentist appointment",
  "📅 Holnap {0}-kor fogorvos{1}.": "📅 Dentist tomorrow at {0}{1}.",

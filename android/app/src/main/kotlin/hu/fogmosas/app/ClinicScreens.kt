@@ -423,6 +423,7 @@ fun DentistCard(activity: MainActivity, store: AppStore) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { activity.overlay.value = "symptom" }) { Text(tr("🩺 Panaszom van")) }
             OutlinedButton(onClick = { activity.overlay.value = "visit" }) { Text(tr("📅 Időpontot kérek")) }
+            OutlinedButton(onClick = { activity.overlay.value = "messages" }) { Text(tr("💬 Üzenetek, időpontok")) }
             if (st.checkupOverdue) TextButton(onClick = { store.updateProfile(p.copy(lastCheckup = LocalDate.now().toString())) }) { Text(tr("Ma voltam kontrollon")) }
         }
     }
