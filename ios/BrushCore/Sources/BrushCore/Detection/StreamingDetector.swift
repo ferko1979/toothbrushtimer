@@ -48,6 +48,7 @@ public final class StreamingDetector {
     private var sonicScores: [SonicResult] = []
     private var pendingWater: [Double] = []  // water probabilities not yet emitted
     private var pendingRms: [Double] = []    // loudness of the same windows
+    private let stutter = StutterDetector()
     private var emitted = 0
     private var gateOpen = true
 
@@ -172,6 +173,9 @@ public final class StreamingDetector {
         for v in sampleSlice(st, len) { e += v * v }
         let db = 10 * log10(e / Double(len) + 1e-12)
         lastRmsDb = db
+        if session.cfg.timerSignalWatch, let sig = stutter.add(Array(sampleSlice(st, len)), endTime: Double(endSample) / Double(Audio.sampleRate)) {
+            session.timerSignal(at: sig)
+        }
         guard let gate = gate else { return }
         let open = gate.update(t: 0.5 * Double(k) + 0.5, rmsDb: db)
         let inSession = session.state == .brushing || session.state == .rinse

@@ -237,6 +237,10 @@ final class TestRecordingTests: XCTestCase {
         let js = try JSONSerialization.jsonObject(with: Data(contentsOf: files[1])) as! [String: Any]
         XCTAssertEqual(js["format"] as? String, "denthub-brush-test-1")
         XCTAssertEqual(TestRecording.latest(in: dir).map(\.lastPathComponent), files.map(\.lastPathComponent))
+        TestRecording.saveRemark("a víz az elején hiányzott", base: rec.base, in: dir)
+        XCTAssertEqual(TestRecording.latest(in: dir).count, 3)
+        TestRecording.prune(in: dir, maxBytes: 0)
+        XCTAssertTrue(TestRecording.all(in: dir).isEmpty)
     }
 }
 

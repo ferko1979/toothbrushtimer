@@ -93,7 +93,7 @@ struct WatchBrushingView: View {
             if model.placement.useMotion, let n = side.note() {
                 Text(n).font(.caption2).multilineTextAlignment(.center).foregroundStyle(.secondary)
             }
-            if let n = r.notes.first { Text(n).font(.caption2).multilineTextAlignment(.center).foregroundStyle(.orange) }
+            if let n = r.notes.first ?? r.timerNote { Text(n).font(.caption2).multilineTextAlignment(.center).foregroundStyle(.orange) }
             // Quick journal: floss, bleeding gums, sensitivity (saved on the phone).
             HStack(spacing: 4) {
                 toggle("🧵", $floss, tr("Fogselyem"))

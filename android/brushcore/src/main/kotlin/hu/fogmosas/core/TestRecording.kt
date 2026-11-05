@@ -20,17 +20,56 @@ class TestRecording(dir: File, private val meta: Map<String, Any?>) {
         const val MAX_SECONDS = 8 * 60
         private const val RATE = 16000
 
-        /** Newest recording (wav + json) in the folder, if any. */
+        /** Newest recording (wav + json + remark) in the folder, if any. */
         fun latest(dir: File): List<File> {
-            val json = dir.listFiles { f -> f.name.endsWith(".json") }?.maxByOrNull { it.name } ?: return emptyList()
-            val wav = File(dir, json.name.removeSuffix(".json") + ".wav")
-            return listOfNotNull(wav.takeIf { it.exists() }, json)
+            val base = bases(dir).lastOrNull() ?: return emptyList()
+            return filesOf(dir, base)
         }
 
-        /** Keeps the newest few recordings. */
-        fun prune(dir: File, keep: Int = 5) {
-            val jsons = dir.listFiles { f -> f.name.endsWith(".json") }?.sortedByDescending { it.name } ?: return
-            for (j in jsons.drop(keep)) { j.delete(); File(dir, j.name.removeSuffix(".json") + ".wav").delete() }
+        /** Recording names (oldest first): one per WAV or JSON timeline. */
+        fun bases(dir: File): List<String> = (dir.listFiles()?.map { it.name } ?: emptyList())
+            .filter { it.startsWith("denthub-brush-") && (it.endsWith(".wav") || (it.endsWith(".json"))) }
+            .map { it.substringBeforeLast('.') }.distinct().sorted()
+
+        /** The files of one recording that exist: audio, timeline, tester's remark. */
+        fun filesOf(dir: File, base: String): List<File> =
+            listOf("$base.wav", "$base.json", "$base$REMARK").map { File(dir, it) }.filter { it.exists() }
+
+        /** Every recording with its remark (oldest first). */
+        fun all(dir: File): List<File> = bases(dir).flatMap { filesOf(dir, it) }
+
+        const val REMARK = "-remark.txt"
+
+        /** Saves (overwrites) the tester's remark next to the recording, as they type it. */
+        fun saveRemark(dir: File, base: String, text: String) {
+            if (!File(dir, "$base.wav").exists()) return
+            File(dir, "$base$REMARK").writeText(text)
+        }
+
+        /** Keeps every recording; only when they take more than maxBytes are the oldest dropped. */
+        fun prune(dir: File, maxBytes: Long = 2_000_000_000L) {
+            val groups = bases(dir).map { filesOf(dir, it) }
+            var total = groups.sumOf { g -> g.sumOf { it.length() } }
+            for (g in groups) {
+                if (total <= maxBytes) break
+                total -= g.sumOf { it.length() }
+                g.forEach { it.delete() }
+            }
+        }
+
+        /** Packs every recording and remark into one ZIP (for Drive / e-mail). */
+        fun zipAll(dir: File, out: File): File? {
+            val files = all(dir)
+            if (files.isEmpty()) return null
+            out.parentFile?.mkdirs()
+            java.util.zip.ZipOutputStream(out.outputStream().buffered()).use { z ->
+                for (f in files) {
+                    z.putNextEntry(java.util.zip.ZipEntry(f.name))
+                    f.inputStream().use { it.copyTo(z) }
+                    z.closeEntry()
+                }
+            }
+            return out
         }
     }
 

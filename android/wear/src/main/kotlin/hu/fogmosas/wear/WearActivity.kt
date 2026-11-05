@@ -160,7 +160,7 @@ fun WearRoot(activity: WearActivity, store: AppStore) {
                     fontSize = 12.sp, color = Color.LightGray)
                 Text(if (r.waterRunningS >= 5) tr("🚰 folyt a csap") else tr("💧 elzárt csap"), fontSize = 12.sp)
                 if (placement.useMotion) activity.side.note()?.let { Text(it, fontSize = 11.sp, color = Color.LightGray, textAlign = TextAlign.Center) }
-                r.notes.firstOrNull()?.let { Text(it, fontSize = 11.sp, color = Color(0xFFE8833A), textAlign = TextAlign.Center) }
+                (r.notes.firstOrNull() ?: r.timerNote)?.let { Text(it, fontSize = 11.sp, color = Color(0xFFE8833A), textAlign = TextAlign.Center) }
                 // Quick journal: floss, bleeding gums, sensitivity (saved on the phone).
                 var floss by remember(r) { mutableStateOf(false) }
                 var bleed by remember(r) { mutableStateOf(false) }

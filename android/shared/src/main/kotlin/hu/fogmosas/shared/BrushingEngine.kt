@@ -34,7 +34,11 @@ object BrushingEngine {
                       /** Electric brush: battery notes (motor stopped / slowed down). */
                       val notes: List<String> = emptyList(),
                       /** Typical scrubbing loudness and the "too hard" note (manual brush). */
-                      val brushDb: Double? = null, val scrubNote: String? = null)
+                      val brushDb: Double? = null, val scrubNote: String? = null,
+                      /** Electric brush: how long the motor ran before it stopped, and the manual brushing after it. */
+                      val motorS: Double? = null, val afterMotorS: Double? = null,
+                      /** The brush's own timer stopped the motor or signalled (not a battery problem). */
+                      val timerNote: String? = null)
 
     data class State(
         val phase: Phase = Phase.IDLE,
@@ -78,6 +82,8 @@ object BrushingEngine {
         val testRecording: Boolean = false,
         /** Earlier sessions' motor frequencies (battery trend). */
         val f0History: List<Double> = emptyList(),
+        /** Recent brushings where the brush's own timer stopped the motor and the user went on by hand. */
+        val timerStopsRecent: Int = 0,
         /** Earlier brushings' scrubbing loudness (manual brush: "too hard" note). */
         val scrubHistory: List<Double> = emptyList(),
         val meta: Map<String, Any?> = emptyMap(),
@@ -103,6 +109,7 @@ object BrushingEngine {
     private var cuesOn = true
     private var targetS = 120.0
     private var f0History: List<Double> = emptyList()
+    private var timerStopsRecent = 0
     private var scrubHistory: List<Double> = emptyList()
     private var manualBrush = false
     /** Goal of the running brushing (for the ongoing notification). */
@@ -117,7 +124,20 @@ object BrushingEngine {
     private var policyUsesMotion = false
     private var directional = false
 
-    fun recordingsDir(ctx: Context) = java.io.File(ctx.cacheDir, "recordings")
+    /** Test recordings are kept (app files, not the cache the system may clear); older ones from the cache are moved over. */
+    fun recordingsDir(ctx: Context): java.io.File {
+        val dir = java.io.File(ctx.filesDir, "recordings")
+        java.io.File(ctx.cacheDir, "recordings").takeIf { it.isDirectory }?.let { old ->
+            dir.mkdirs()
+            old.listFiles()?.forEach { f -> if (!f.renameTo(java.io.File(dir, f.name))) { f.copyTo(java.io.File(dir, f.name), true); f.delete() } }
+            old.delete()
+        }
+        return dir
+    }
+
+    /** Name of the newest test recording (the tester's remark is saved next to it). */
+    @Volatile var lastRecordingBase: String? = null
+        private set
 
     /** Closes the test recording (if any) on a background thread. */
     private fun closeRecording(r: Result?) {
@@ -140,6 +160,7 @@ object BrushingEngine {
         appContext = ctx
         targetS = cfg.targetS
         f0History = cfg.f0History
+        timerStopsRecent = cfg.timerStopsRecent
         scrubHistory = cfg.scrubHistory
         manualBrush = !cfg.useSonic
         cuesOn = cfg.cues
@@ -162,7 +183,8 @@ object BrushingEngine {
             // Manual scrubbing has quieter stretches (up to ~15 s in the test recordings): wait longer.
             it.copy(holdUntilS = cfg.targetS, endQuietS = it.endQuietS + cfg.quietExtraS + (if (cfg.useSonic) 0.0 else MANUAL_EXTRA_QUIET_S), holdQuietS = it.holdQuietS + cfg.quietExtraS,
                 sonicSuppressesWater = cfg.useSonic, runHysteresis = true,
-                quietWaterRinseS = 6.0, wetCue = true, startAtBrushing = true, sonicStopWatch = cfg.useSonic)
+                quietWaterRinseS = 6.0, wetCue = true, startAtBrushing = true, sonicStopWatch = cfg.useSonic,
+                timerSignalWatch = cfg.useSonic && cfg.sonicConfig.bandHighHz <= 200.0)
         }
         userStop = false
         val det = StreamingDetector(heads, sc, cfg.sonicConfig, cfg.useSonic, cfg.batterySaver,
@@ -170,6 +192,7 @@ object BrushingEngine {
         recording = if (cfg.testRecording) runCatching {
             hu.fogmosas.core.TestRecording(recordingsDir(ctx), cfg.meta + mapOf("sessionConfig" to sc.toString(), "useSonic" to cfg.useSonic))
         }.getOrNull() else null
+        recording?.let { lastRecordingBase = it.base }
         det.onRow = { row -> recording?.row(row, det.session.state.name, det.lastRmsDb); onRow(row, det) }
         det.session.onEvent = { t, e -> recording?.event(t, e.id); onEvent(t, e, det) }
         detector = det
@@ -328,8 +351,17 @@ object BrushingEngine {
         SessionEvent.BRUSH_WET -> tr("💦 fogkefe nedvesítése")
         SessionEvent.SONIC_STOPPED -> tr("🔋 a fogkefe motorja leállt")
         SessionEvent.SONIC_RESUMED -> tr("🔋 a motor újra zúg")
+        SessionEvent.TIMER_SIGNAL -> tr("⏱ a fogkefe jelzett")
         else -> null
     }
+
+    private fun resultOf(session: hu.fogmosas.core.BrushingSession, f0: Double?, reason: String) = Result(
+        listenStartMs + (session.start * 1000).toLong(), session.durationS, session.waterRunningS,
+        session.cue, f0, false, reason,
+        hu.fogmosas.core.brushPowerNotes(session, f0History),
+        session.brushLevelDb, hu.fogmosas.core.scrubNote(session.brushLevelDb, scrubHistory, manualBrush),
+        hu.fogmosas.core.motorRunS(session), session.manualAfterSonicS.takeIf { hu.fogmosas.core.motorRunS(session) != null },
+        hu.fogmosas.core.brushTimerNote(session, timerStopsRecent))
 
     private fun onEvent(t: Double, e: SessionEvent, det: StreamingDetector) {
         if (testMode) {
@@ -337,9 +369,7 @@ object BrushingEngine {
             if (e == SessionEvent.SESSION_END) {
                 val session = det.session.sessions.last()
                 val reason = if (session.endReason == "finish" && userStop) "user" else session.endReason
-                val r = Result(listenStartMs + (session.start * 1000).toLong(), session.durationS, session.waterRunningS,
-                    session.cue, null, false, reason, hu.fogmosas.core.brushPowerNotes(session, f0History), session.brushLevelDb,
-                    hu.fogmosas.core.scrubNote(session.brushLevelDb, scrubHistory, manualBrush))
+                val r = resultOf(session, null, reason)
                 // Keep the longest session the detector found.
                 if (testResult == null || r.durationS > testResult!!.durationS) testResult = r
                 val line = "$clock " + tr("🏁 vége – mért idő: {0}", Formatting.clock(r.durationS))
@@ -364,9 +394,7 @@ object BrushingEngine {
                 val session = det.session.sessions.last()
                 val f0 = synchronized(f0s) { if (f0s.size >= 4) f0s.sorted()[f0s.size / 2] else null }
                 val reason = if (session.endReason == "finish" && userStop) "user" else session.endReason
-                val r = Result(listenStartMs + (session.start * 1000).toLong(), session.durationS, session.waterRunningS,
-                    session.cue, f0, false, reason, hu.fogmosas.core.brushPowerNotes(session, f0History), session.brushLevelDb,
-                    hu.fogmosas.core.scrubNote(session.brushLevelDb, scrubHistory, manualBrush))
+                val r = resultOf(session, f0, reason)
                 scope.launch {
                     stopAudio()
                     detector = null

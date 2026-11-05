@@ -5,6 +5,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.time.LocalDate
 import java.time.ZoneId
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -238,6 +239,13 @@ class TestRecordingTest {
         val js = Json.parseToJsonElement(files[1].readText()).jsonObject
         assertEquals("denthub-brush-test-1", js["format"]!!.jsonPrimitive.content)
         assertEquals(listOf(files[0], files[1]), TestRecording.latest(dir))
+        TestRecording.saveRemark(dir, rec.base, "a víz az elején hiányzott")
+        assertEquals(3, TestRecording.latest(dir).size)
+        val zip = TestRecording.zipAll(dir, File(dir, "out/all.zip"))!!
+        val names = java.util.zip.ZipFile(zip).use { z -> z.entries().toList().map { it.name } }
+        assertEquals(listOf("${rec.base}.wav", "${rec.base}.json", "${rec.base}-remark.txt"), names)
+        TestRecording.prune(dir, maxBytes = 0)
+        assertTrue(TestRecording.all(dir).isEmpty())
     }
 }
 

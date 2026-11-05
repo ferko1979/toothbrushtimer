@@ -41,9 +41,13 @@ public struct BrushRecord: Codable, Equatable, Identifiable {
     public var brushF0: Double? = nil
     /// Loudness of the scrubbing (dBFS, median while brushing); for the "too hard" note.
     public var brushDb: Double? = nil
+    /// Electric brush: how long the motor hummed before it stopped, and brushing by hand after it.
+    public var motorS: Double? = nil
+    public var afterMotorS: Double? = nil
 
     public init(profileId: String, start: Date, durationS: Double, waterRunningS: Double = 0,
-                source: String = "phone", brushF0: Double? = nil, brushDb: Double? = nil) {
+                source: String = "phone", brushF0: Double? = nil, brushDb: Double? = nil,
+                motorS: Double? = nil, afterMotorS: Double? = nil) {
         self.profileId = profileId
         self.start = start
         self.durationS = durationS
@@ -51,6 +55,8 @@ public struct BrushRecord: Codable, Equatable, Identifiable {
         self.source = source
         self.brushF0 = brushF0
         self.brushDb = brushDb
+        self.motorS = motorS
+        self.afterMotorS = afterMotorS
     }
 
     public var tapOff: Bool { waterRunningS < 5 }

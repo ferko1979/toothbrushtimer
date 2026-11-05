@@ -373,18 +373,21 @@ struct MeasurementFeedbackCard: View {
     let endReason: String
     let manual: Bool
     var notes: [String] = []
+    var recordingBase: String? = nil
     let onResume: () -> Void
     @State private var answer: Bool?
     @State private var reason: String?
     @State private var note = ""
     @State private var saved: FeedbackEntry?
     @State private var sharing = false
+    @State private var remarkSaved = false
 
     var body: some View {
         if profile.canRead {
             Card {
                 if !manual { Text(endReasonText(endReason)).font(.caption).foregroundStyle(.secondary) }
                 ForEach(notes, id: \.self) { Text($0).font(.caption).foregroundStyle(Theme.warn) }
+                if remarkSaved { Text(tr("✓ Az észrevételt a felvétel mellé mentettem.")).font(.caption).foregroundStyle(Theme.ok) }
                 if !manual && endReason != "user" && record.durationS < profile.goals.targetS {
                     Button(tr("↩️ Még mostam – folytatás"), action: onResume).buttonStyle(.bordered)
                 }
@@ -406,6 +409,8 @@ struct MeasurementFeedbackCard: View {
                             ChoiceChip(title: r.title, selected: reason == r.id) { reason = r.id }
                         }
                         TextField(tr("Mi történt? (nem kötelező)"), text: $note, axis: .vertical).textFieldStyle(.roundedBorder)
+                    } else if recordingBase != nil {
+                        TextField(tr("Észrevétel a felvételhez"), text: $note, axis: .vertical).textFieldStyle(.roundedBorder)
                     }
                     if answer != nil {
                         Button(tr("Mentés"), action: save).buttonStyle(.borderedProminent)
@@ -413,7 +418,26 @@ struct MeasurementFeedbackCard: View {
                     }
                 }
             }
+            .onChange(of: note) { _, _ in saveRemark() }
+            .onChange(of: answer) { _, _ in saveRemark() }
+            .onChange(of: reason) { _, _ in saveRemark() }
         }
+    }
+
+    /// Test mode: the remark is saved next to the recording as it is typed, even if never sent.
+    private func saveRemark() {
+        guard let base = recordingBase, answer != nil || !note.isEmpty else { return }
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        var lines = ["saved: " + f.string(from: Date()),
+                     "accurate: " + (answer.map { $0 ? "yes" : "no" } ?? "-")]
+        if let r = reason { lines.append("reason: " + r) }
+        lines.append("measuredS: \(Int(record.durationS.rounded()))  endReason: \(endReason)")
+        lines += notes.map { "appNote: " + $0 }
+        let text = lines.joined(separator: "\n") + "\n\n" + note.trimmingCharacters(in: .whitespacesAndNewlines)
+        DispatchQueue.global(qos: .utility).async { TestRecording.saveRemark(text, base: base, in: AppModel.recordingsDir) }
+        remarkSaved = true
     }
 
     private func save() {
@@ -447,6 +471,41 @@ struct TestLogCard: View {
             ForEach(Array(lines.suffix(8).enumerated()), id: \.offset) { item in
                 Text(item.element).font(.caption.monospacedDigit())
             }
+        }
+    }
+}
+
+/// "📦 Összes felvétel beküldése": every recording and remark as one ZIP through the share sheet (Drive, e-mail …).
+struct TestRecordingsSendAllButton: View {
+    @State private var zip: URL?
+    @State private var busy = false
+
+    var body: some View {
+        let count = TestRecording.bases(in: AppModel.recordingsDir).count
+        if let z = zip {
+            ShareLink(item: z) { Label(tr("Felvételek beküldése (pl. Google Drive)"), systemImage: "square.and.arrow.up") }
+                .buttonStyle(.borderedProminent)
+        } else {
+            Button(busy ? tr("Csomagolás…") : tr("📦 Összes felvétel beküldése ({0})", count)) { pack() }
+                .buttonStyle(.bordered).disabled(busy || count == 0)
+        }
+    }
+
+    /// Zips the recordings folder (the system makes the archive when reading a folder "for uploading").
+    private func pack() {
+        busy = true
+        DispatchQueue.global(qos: .userInitiated).async {
+            let f = DateFormatter()
+            f.locale = Locale(identifier: "en_US_POSIX")
+            f.dateFormat = "yyyyMMdd-HHmm"
+            let out = FileManager.default.temporaryDirectory.appendingPathComponent("denthub-brush-tests-\(f.string(from: Date())).zip")
+            var result: URL?
+            var err: NSError?
+            NSFileCoordinator().coordinate(readingItemAt: AppModel.recordingsDir, options: .forUploading, error: &err) { tmp in
+                try? FileManager.default.removeItem(at: out)
+                if (try? FileManager.default.copyItem(at: tmp, to: out)) != nil { result = out }
+            }
+            DispatchQueue.main.async { zip = result; busy = false }
         }
     }
 }

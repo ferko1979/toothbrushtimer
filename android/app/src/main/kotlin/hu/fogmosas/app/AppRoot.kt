@@ -61,6 +61,8 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 quietExtraS = p.quietExtraS,
                 testRecording = s.isOn("test_recording", "android"),
                 f0History = p.calibration.f0s,
+                timerStopsRecent = d.records(p.id).sortedByDescending { it.startMs }.take(10)
+                    .count { hu.fogmosas.core.wasTimerStop(it.motorS, it.afterMotorS) },
                 scrubHistory = d.records(p.id).sortedBy { it.startMs }.mapNotNull { it.brushDb },
                 nearOnly = s.isOn("near_only", "android"),
                 directional = s.isOn("mic_direction", "android"),

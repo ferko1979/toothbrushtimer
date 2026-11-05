@@ -36,6 +36,8 @@ public struct SessionConfig: Equatable {
     public var sonicStopWatch = false
     /// App: after the water cue the brushing starts when the brushing itself starts (toothpaste comes first).
     public var startAtBrushing = false
+    /// App, oscillating brush (Oral-B): listen for the brush's own timer signal (motor stutter). Sonic brushes just stop.
+    public var timerSignalWatch = false
 
     public init() {}
 
@@ -60,6 +62,7 @@ public enum SessionEvent: String, Codable {
     case brushWet = "brush_wet"
     case sonicStopped = "sonic_stopped"
     case sonicResumed = "sonic_resumed"
+    case timerSignal = "timer_signal"
 }
 
 public struct BrushingSession: Equatable {
@@ -78,6 +81,10 @@ public struct BrushingSession: Equatable {
     public var manualAfterSonicS = 0.0
     /// Motor frequency while humming, one value per 0.5 s.
     public var sonicF0s: [Double] = []
+    /// Session time when the motor hum was first heard.
+    public var sonicStartAt: Double? = nil
+    /// Session time of the brush's own timer signal (short stutter of the motor, e.g. Oral-B at 2 min).
+    public var timerSignalAt: Double? = nil
     /// Typical loudness while brushing (dBFS), when the loudness was known.
     public var brushLevelDb: Double? = nil
 
@@ -146,6 +153,10 @@ public final class SessionDetector {
         sessions[sessions.count - 1].end = end
         sessions[sessions.count - 1].endReason = reason
         sessions[sessions.count - 1].brushLevelDb = brushLevelDb
+        // A "signal" in the last seconds is the brush being switched off before rinsing.
+        if let sig = sessions[sessions.count - 1].timerSignalAt, sessions[sessions.count - 1].durationS - sig < 5 {
+            sessions[sessions.count - 1].timerSignalAt = nil
+        }
         if wasteIcon {
             wasteIcon = false
             event(time, .wasteIconOff)
@@ -288,7 +299,7 @@ public final class SessionDetector {
             loudRun += dt
             return
         }
-        if loudRun >= 1 && loudRun <= 3 {
+        if loudRun >= 0.5 && loudRun <= 3 {
             wetArmed = true
             wetAt = time
             brushRun = 0
@@ -300,6 +311,11 @@ public final class SessionDetector {
     private func watchSonic(_ time: Double, idx: Int, brush: Double, sonic: Double, f0: Double, dt: Double) {
         let c = cfg
         if sonic >= c.on && f0 > 0 { sessions[idx].sonicF0s.append(f0) }
+        // A hum heard in the first seconds was already there when the brushing was recognised.
+        if sonic >= c.on && sessions[idx].sonicStartAt == nil {
+            let at = time - sessions[idx].start
+            sessions[idx].sonicStartAt = at < 10 ? 0 : at
+        }
         if sonic >= c.off {
             sonicGap = 0
             if sonic >= c.on { sonicRun += dt }
@@ -323,6 +339,13 @@ public final class SessionDetector {
         }
     }
 
+    /// The brush's own timer signal (motor stutter) heard at `time`; kept once per session while brushing.
+    public func timerSignal(at time: Double) {
+        guard state == .brushing, let idx = sessions.indices.last, sessions[idx].timerSignalAt == nil else { return }
+        sessions[idx].timerSignalAt = time - sessions[idx].start
+        event(time, .timerSignal)
+    }
+
     /// Close an open session (end of listening).
     @discardableResult
     public func finish() -> [BrushingSession] {
@@ -334,5 +357,54 @@ public final class SessionDetector {
             endSession(t, end: rinseStart)
         }
         return sessions
+    }
+}
+
+/// The brush's own timer signal: the motor stutters (several 0.1 s drops of 8 dB or more within
+/// 1.5 s) and then hums on at the same level, e.g. Oral-B at 2 minutes. A motor that stops does not
+/// come back, so it is not a signal. Same as StutterDetector in Session.kt.
+public final class StutterDetector {
+    private var blocks: [Double] = []   // last 2 s of 0.1 s levels (dBFS), drops left out
+    private var dips: [Double] = []     // times of recent drops
+    private var lowRun = 0
+    private var lastSignal = -1e9
+
+    public init() {}
+
+    /// Feed one stretch (normally 0.5 s) ending at `endTime` s; returns the signal time when one is complete.
+    public func add(_ x: [Double], endTime: Double) -> Double? {
+        let b = Audio.sampleRate / 10
+        var found: Double?
+        var i = 0
+        while i + b <= x.count {
+            var e = 0.0
+            for j in i..<(i + b) { e += x[j] * x[j] }
+            let db = 10 * log10(e / Double(b) + 1e-12)
+            let t = endTime - Double(x.count - i - b) / Double(Audio.sampleRate)
+            i += b
+            if blocks.count < 10 { blocks.append(db); continue }
+            let ref = Stats.median(blocks)
+            while let f = dips.first, t - f > 1.5 { dips.removeFirst() }
+            if ref > -60 && ref - db >= 8 {
+                dips.append(t)
+                // A level that stays down (motor off, silence) is the new normal, not a stutter.
+                lowRun += 1
+                if lowRun >= 15 { blocks.removeAll(); dips.removeAll(); lowRun = 0 }
+                continue
+            }
+            lowRun = 0
+            // Back at the same level after a few short drops (not a long gap, not louder water), from a
+            // steady hum (an oscillating motor is steady within ~1 dB; scrubbing noise is not).
+            let mean = blocks.reduce(0, +) / Double(blocks.count)
+            let sd = (blocks.reduce(0) { $0 + ($1 - mean) * ($1 - mean) } / Double(blocks.count)).squareRoot()
+            if ref > -60 && abs(ref - db) < 3 && (3...8).contains(dips.count) && sd <= 2.5 && t - lastSignal > 10 {
+                found = dips[0]
+                lastSignal = t
+                dips.removeAll()
+            }
+            blocks.append(db)
+            if blocks.count > 20 { blocks.removeFirst(blocks.count - 20) }
+        }
+        return found
     }
 }

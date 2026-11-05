@@ -20,6 +20,11 @@ final class BrushingController: ObservableObject {
         /// Typical scrubbing loudness and the "too hard" note (manual brush).
         var brushDb: Double? = nil
         var scrubNote: String? = nil
+        /// Electric brush: how long the motor ran before it stopped, the manual brushing after it, and
+        /// the brush's own timer note (stopped the motor / signalled; not a battery problem).
+        var motorS: Double? = nil
+        var afterMotorS: Double? = nil
+        var timerNote: String? = nil
     }
 
     @Published private(set) var phase: Phase = .idle
@@ -33,12 +38,16 @@ final class BrushingController: ObservableObject {
     @Published private(set) var testMode = false
     @Published private(set) var testLog: [String] = []
     @Published private(set) var testResult: Result?
+    /// Name of the newest test recording (the tester's remark is saved next to it).
+    private(set) var lastRecordingBase: String?
 
     var targetS: Double = 120
     /// Earlier sessions' motor frequencies (battery trend); set before start().
     var f0History: [Double] = []
     /// Earlier brushings' scrubbing loudness and whether the brush is manual; set before start().
     var scrubHistory: [Double] = []
+    /// Recent brushings where the brush's own timer stopped the motor and the user went on by hand.
+    var timerStopsRecent = 0
     var manualBrush = false
     var cuesEnabled = true
     var onCue: ((Cue) -> Void)?
@@ -70,6 +79,7 @@ final class BrushingController: ObservableObject {
         recordDir = testRecordTo
         testMode = testRecordTo != nil
         recording = testRecordTo.flatMap { try? TestRecording(directory: $0, meta: testMeta.merging(["useSonic": useSonic]) { a, _ in a }) }
+        if let r = recording { lastRecordingBase = r.base }
         #if os(iOS)
         capture.towardsScreen = towardsScreen
         #endif
@@ -181,6 +191,16 @@ final class BrushingController: ObservableObject {
         for c in tracker.update(elapsedS: elapsedS) { onCue?(c) }
     }
 
+    private func result(of session: BrushingSession, brushF0: Double?, reason: String) -> Result {
+        let motor = motorRunS(session)
+        return Result(start: listenStarted.addingTimeInterval(session.start), durationS: session.durationS,
+                      waterRunningS: session.waterRunningS, cue: session.cue, brushF0: brushF0, manual: false, endReason: reason,
+                      notes: brushPowerNotes(session, history: f0History), brushDb: session.brushLevelDb,
+                      scrubNote: scrubNote(brushDb: session.brushLevelDb, history: scrubHistory, manual: manualBrush),
+                      motorS: motor, afterMotorS: motor == nil ? nil : session.manualAfterSonicS,
+                      timerNote: brushTimerNote(session, earlierTimerStops: timerStopsRecent))
+    }
+
     // Called on the detector queue.
     private func handle(row: ScoreRow, detector det: StreamingDetector) {
         let s = det.session
@@ -210,16 +230,23 @@ final class BrushingController: ObservableObject {
         }
     }
 
+    private func result(of session: BrushingSession, brushF0: Double?, reason: String) -> Result {
+        let motor = motorRunS(session)
+        return Result(start: listenStarted.addingTimeInterval(session.start), durationS: session.durationS,
+                      waterRunningS: session.waterRunningS, cue: session.cue, brushF0: brushF0, manual: false, endReason: reason,
+                      notes: brushPowerNotes(session, history: f0History), brushDb: session.brushLevelDb,
+                      scrubNote: scrubNote(brushDb: session.brushLevelDb, history: scrubHistory, manual: manualBrush),
+                      motorS: motor, afterMotorS: motor == nil ? nil : session.manualAfterSonicS,
+                      timerNote: brushTimerNote(session, earlierTimerStops: timerStopsRecent))
+    }
+
     // Called on the detector queue.
     private func handle(event: SessionEvent, at t: Double, detector det: StreamingDetector) {
         if testMode {
             let clock = formatClock(t)
             if event == .sessionEnd, let session = det.session.sessions.last {
                 let reason = session.endReason == "finish" && userStop ? "user" : session.endReason
-                let r = Result(start: listenStarted.addingTimeInterval(session.start), durationS: session.durationS,
-                               waterRunningS: session.waterRunningS, cue: session.cue, brushF0: nil, manual: false, endReason: reason,
-                               notes: brushPowerNotes(session, history: f0History), brushDb: session.brushLevelDb,
-                           scrubNote: scrubNote(brushDb: session.brushLevelDb, history: scrubHistory, manual: manualBrush))
+                let r = result(of: session, brushF0: nil, reason: reason)
                 DispatchQueue.main.async {
                     if self.testResult == nil || r.durationS > self.testResult!.durationS { self.testResult = r }
                     self.testLog.append(clock + " " + tr("🏁 vége – mért idő: {0}", formatClock(r.durationS)))
@@ -241,12 +268,8 @@ final class BrushingController: ObservableObject {
         case .sessionEnd:
             guard let session = det.session.sessions.last else { return }
             let f0 = f0s.count >= 4 ? f0s.sorted()[f0s.count / 2] : nil
-            let start = listenStarted.addingTimeInterval(session.start)
             let reason = session.endReason == "finish" && userStop ? "user" : session.endReason
-            let r = Result(start: start, durationS: session.durationS, waterRunningS: session.waterRunningS,
-                           cue: session.cue, brushF0: f0, manual: false, endReason: reason,
-                           notes: brushPowerNotes(session, history: f0History), brushDb: session.brushLevelDb,
-                           scrubNote: scrubNote(brushDb: session.brushLevelDb, history: scrubHistory, manual: manualBrush))
+            let r = result(of: session, brushF0: f0, reason: reason)
             DispatchQueue.main.async {
                 self.capture.stop()
                 self.finish(with: r)
@@ -279,6 +302,7 @@ final class BrushingController: ObservableObject {
         case .brushWet: return tr("💦 fogkefe nedvesítése")
         case .sonicStopped: return tr("🔋 a fogkefe motorja leállt")
         case .sonicResumed: return tr("🔋 a motor újra zúg")
+        case .timerSignal: return tr("⏱ a fogkefe jelzett")
         default: return nil
         }
     }

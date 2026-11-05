@@ -183,8 +183,9 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
 
         if (data.settings.isOn("test_recording", "android")) InfoCard {
             Text(tr("Tesztfelvétel"), fontWeight = FontWeight.Bold)
-            Text(tr("Az utolsó fogmosás (vagy próbálkozás) hangja és a felismerés adatai. Küldd el Google Drive-ra vagy e-mailben, és töltsd fel a fejlesztőnek."), fontSize = 13.sp, color = C.muted)
+            Text(tr("Minden felvételt és észrevételt megtartok (az észrevételt gépelés közben mentem). Egyben, ZIP-ként elküldheted Google Drive-ra vagy e-mailben."), fontSize = 13.sp, color = C.muted)
             TestRecordingShareButton()
+            TestRecordingsSendAllButton()
         }
 
         Section(tr("Víz"))

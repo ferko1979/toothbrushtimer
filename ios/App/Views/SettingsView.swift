@@ -42,9 +42,10 @@ struct SettingsView: View {
                 }
                 if model.settings.isOn("test_recording", platform: .ios) {
                     Section(tr("Tesztfelvétel")) {
-                        Text(tr("Az utolsó fogmosás (vagy próbálkozás) hangja és a felismerés adatai. Küldd el Google Drive-ra vagy e-mailben, és töltsd fel a fejlesztőnek."))
+                        Text(tr("Minden felvételt és észrevételt megtartok (az észrevételt gépelés közben mentem). Egyben, ZIP-ként elküldheted Google Drive-ra vagy e-mailben."))
                             .font(.caption).foregroundStyle(.secondary)
                         TestRecordingShareButton()
+                        TestRecordingsSendAllButton()
                     }
                 }
                 waterSection

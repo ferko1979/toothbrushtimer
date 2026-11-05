@@ -29,7 +29,8 @@ struct BrushingView: View {
                 if let rec = record {
                     ResultView(profile: profile, record: rec, achievements: achievements, testLog: controller.testLog,
                                endReason: lastResult?.endReason ?? "finish", manual: lastResult?.manual ?? false,
-                               notes: (lastResult?.notes ?? []) + [lastResult?.scrubNote].compactMap { $0 },
+                               notes: (lastResult?.notes ?? []) + [lastResult?.scrubNote, lastResult?.timerNote].compactMap { $0 },
+                               recordingBase: settings.isOn("test_recording", platform: .ios) ? controller.lastRecordingBase : nil,
                                onResume: { resume(rec) }) { dismiss() }
                 } else {
                     listening
@@ -193,8 +194,11 @@ struct BrushingView: View {
         sc.quietWaterRinseS = 6.0
         sc.wetCue = true
         sc.startAtBrushing = true
+        sc.timerSignalWatch = profile.brushType == .oscillating
         sc.sonicStopWatch = profile.brushType.powered
         controller.f0History = profile.calibration.f0s
+        controller.timerStopsRecent = model.records(for: profile.id).sorted { $0.start > $1.start }.prefix(10)
+            .filter { wasTimerStop(motorS: $0.motorS, afterMotorS: $0.afterMotorS) }.count
         controller.scrubHistory = model.records(for: profile.id).sorted { $0.start < $1.start }.compactMap(\.brushDb)
         controller.manualBrush = !profile.brushType.powered
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
@@ -247,7 +251,8 @@ struct BrushingView: View {
         }
         lastResult = r
         let rec = BrushRecord(profileId: profile.id, start: r.start, durationS: r.durationS,
-                              waterRunningS: r.waterRunningS, source: r.manual ? "manual" : "phone", brushF0: r.brushF0, brushDb: r.brushDb)
+                              waterRunningS: r.waterRunningS, source: r.manual ? "manual" : "phone", brushF0: r.brushF0, brushDb: r.brushDb,
+                              motorS: r.motorS, afterMotorS: r.afterMotorS)
         achievements = model.add(record: rec)
         record = rec
         model.noteBattery(r.notes, manual: r.manual, brushF0: r.brushF0)

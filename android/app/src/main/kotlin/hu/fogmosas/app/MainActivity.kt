@@ -50,7 +50,8 @@ class MainActivity : FragmentActivity() {
             if (r.durationS >= 5) {
                 val d = store.data.value
                 val rec = BrushRecord(profileId = d.activeProfileId, startMs = r.startMs, durationS = r.durationS,
-                    waterRunningS = r.waterRunningS, source = if (r.manual) "manual" else "phone", brushF0 = r.brushF0, brushDb = r.brushDb)
+                    waterRunningS = r.waterRunningS, source = if (r.manual) "manual" else "phone", brushF0 = r.brushF0, brushDb = r.brushDb,
+                    motorS = r.motorS, afterMotorS = r.afterMotorS)
                 lastRecordId = rec.id
                 newAchievements.value = store.addRecord(rec)
                 // Battery running low: remember it and suggest charging until the user charges it

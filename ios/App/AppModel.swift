@@ -96,7 +96,7 @@ final class AppModel: ObservableObject {
     @Published var pendingCare: CareInstruction?
     let heads: ModelHeads?
 
-    /// Test mode recordings (WAV + JSON), newest kept.
+    /// Test mode recordings (WAV + JSON + remark), all kept.
     static var recordingsDir: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("recordings")
     }

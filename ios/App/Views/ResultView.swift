@@ -10,6 +10,8 @@ struct ResultView: View {
     var endReason = "finish"
     var manual = false
     var notes: [String] = []
+    /// Test mode: the recording the tester's remark is saved next to.
+    var recordingBase: String? = nil
     var onResume: () -> Void = {}
     let onDone: () -> Void
 
@@ -55,7 +57,8 @@ struct ResultView: View {
                     TestLogCard(lines: testLog)
                     TestRecordingShareButton()
                 }
-                MeasurementFeedbackCard(profile: profile, record: record, endReason: endReason, manual: manual, notes: notes, onResume: onResume)
+                MeasurementFeedbackCard(profile: profile, record: record, endReason: endReason, manual: manual, notes: notes,
+                                        recordingBase: recordingBase, onResume: onResume)
                 if profile.canRead { BrushingExtrasView(profile: profile, record: record) }
                 CareCheckInCard(profile: profile)
                 Button(tr("Kész"), action: onDone).buttonStyle(.borderedProminent).controlSize(.large).padding(.top)

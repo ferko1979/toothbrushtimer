@@ -30,20 +30,46 @@ public final class TestRecording {
         self.meta = meta
     }
 
-    /// Newest recording (wav + json) in the folder.
-    public static func latest(in directory: URL) -> [URL] {
-        let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
-        guard let json = files.filter({ $0.pathExtension == "json" }).max(by: { $0.lastPathComponent < $1.lastPathComponent }) else { return [] }
-        let wav = json.deletingPathExtension().appendingPathExtension("wav")
-        return (FileManager.default.fileExists(atPath: wav.path) ? [wav] : []) + [json]
+    public static let remarkSuffix = "-remark.txt"
+    public var base: String { wavURL.deletingPathExtension().lastPathComponent }
+
+    /// Recording names (oldest first): one per WAV or JSON timeline.
+    public static func bases(in directory: URL) -> [String] {
+        let names = ((try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? [])
+            .filter { $0.hasPrefix("denthub-brush-") && ($0.hasSuffix(".wav") || $0.hasSuffix(".json")) }
+            .map { ($0 as NSString).deletingPathExtension }
+        return Array(Set(names)).sorted()
     }
 
-    /// Keeps the newest few recordings.
-    public static func prune(in directory: URL, keep: Int = 5) {
-        let files = (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
-        for json in files.filter({ $0.pathExtension == "json" }).sorted(by: { $0.lastPathComponent > $1.lastPathComponent }).dropFirst(keep) {
-            try? FileManager.default.removeItem(at: json)
-            try? FileManager.default.removeItem(at: json.deletingPathExtension().appendingPathExtension("wav"))
+    /// The files of one recording that exist: audio, timeline, tester's remark.
+    public static func files(of base: String, in directory: URL) -> [URL] {
+        [base + ".wav", base + ".json", base + remarkSuffix].map { directory.appendingPathComponent($0) }
+            .filter { FileManager.default.fileExists(atPath: $0.path) }
+    }
+
+    /// Newest recording (wav + json + remark) in the folder.
+    public static func latest(in directory: URL) -> [URL] {
+        guard let base = bases(in: directory).last else { return [] }
+        return files(of: base, in: directory)
+    }
+
+    /// Every recording with its remark (oldest first).
+    public static func all(in directory: URL) -> [URL] { bases(in: directory).flatMap { files(of: $0, in: directory) } }
+
+    /// Saves (overwrites) the tester's remark next to the recording, as they type it.
+    public static func saveRemark(_ text: String, base: String, in directory: URL) {
+        guard FileManager.default.fileExists(atPath: directory.appendingPathComponent(base + ".wav").path) else { return }
+        try? Data(text.utf8).write(to: directory.appendingPathComponent(base + remarkSuffix))
+    }
+
+    /// Keeps every recording; only when they take more than maxBytes are the oldest dropped.
+    public static func prune(in directory: URL, maxBytes: Int = 2_000_000_000) {
+        func size(_ u: URL) -> Int { ((try? FileManager.default.attributesOfItem(atPath: u.path))?[.size] as? NSNumber)?.intValue ?? 0 }
+        let groups = bases(in: directory).map { files(of: $0, in: directory) }
+        var total = groups.reduce(0) { $0 + $1.reduce(0) { $0 + size($1) } }
+        for g in groups where total > maxBytes {
+            total -= g.reduce(0) { $0 + size($1) }
+            g.forEach { try? FileManager.default.removeItem(at: $0) }
         }
     }
 

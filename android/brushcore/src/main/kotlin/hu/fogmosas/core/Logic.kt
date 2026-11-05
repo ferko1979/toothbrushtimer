@@ -66,6 +66,9 @@ data class BrushRecord(
     val brushF0: Double? = null,
     /** Loudness of the scrubbing (dBFS, median while brushing); for the "too hard" note. */
     val brushDb: Double? = null,
+    /** Electric brush: how long the motor hummed before it stopped, and brushing by hand after it. */
+    val motorS: Double? = null,
+    val afterMotorS: Double? = null,
 ) {
     val tapOff get() = waterRunningS < 5.0
     fun start(zone: ZoneId): LocalDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(startMs), zone)

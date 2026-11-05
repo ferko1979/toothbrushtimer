@@ -27,6 +27,8 @@ data class SessionConfig(
     val sonicStopWatch: Boolean = false,
     /** App: after the water cue the brushing starts when the brushing itself starts (toothpaste comes first). */
     val startAtBrushing: Boolean = false,
+    /** App, oscillating brush (Oral-B): listen for the brush's own timer signal (motor stutter). Sonic brushes just stop. */
+    val timerSignalWatch: Boolean = false,
 ) {
     companion object {
         /** Opened from a reminder: start sooner, wait longer for the water cue. */
@@ -39,6 +41,7 @@ enum class SessionEvent(val id: String) {
     RINSE_START("rinse_start"), BRUSHING_RESUMED("brushing_resumed"), WASTE_ICON_ON("waste_icon_on"),
     WASTE_ICON_OFF("waste_icon_off"), SESSION_END("session_end"),
     BRUSH_WET("brush_wet"), SONIC_STOPPED("sonic_stopped"), SONIC_RESUMED("sonic_resumed"),
+    TIMER_SIGNAL("timer_signal"),
 }
 
 class BrushingSession(var start: Double, var cue: String = "water") {
@@ -54,6 +57,10 @@ class BrushingSession(var start: Double, var cue: String = "water") {
     var manualAfterSonicS = 0.0
     /** Motor frequency while humming, one value per 0.5 s. */
     val sonicF0s = ArrayList<Double>()
+    /** Session time when the motor hum was first heard. */
+    var sonicStartAt: Double? = null
+    /** Session time of the brush's own timer signal (short stutter of the motor, e.g. Oral-B at 2 min). */
+    var timerSignalAt: Double? = null
     /** Typical loudness while brushing (dBFS), when the loudness was known. */
     var brushLevelDb: Double? = null
     val events = ArrayList<Pair<Double, SessionEvent>>()
@@ -108,6 +115,8 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
     private fun endSession(time: Double, end: Double, reason: String = "finish") {
         sessions.last().end = end
         sessions.last().brushLevelDb = brushLevelDb
+        // A "signal" in the last seconds is the brush being switched off before rinsing.
+        sessions.last().let { s -> s.timerSignalAt?.let { if (s.durationS - it < 5.0) s.timerSignalAt = null } }
         sessions.last().endReason = reason
         if (wasteIcon) { wasteIcon = false; event(time, SessionEvent.WASTE_ICON_OFF) }
         event(time, SessionEvent.SESSION_END)
@@ -224,7 +233,7 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
         val f = floorDb
         floorDb = if (f == null || rmsDb < f) rmsDb else f + 0.04 * dt
         if (rmsDb >= floorDb!! + 10 && sonic < cfg.off) { loudRun += dt; return }
-        if (loudRun in 1.0..3.0) {
+        if (loudRun in 0.5..3.0) {
             wetArmed = true
             wetAt = time
             brushRun = 0.0
@@ -236,6 +245,8 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
     private fun watchSonic(time: Double, s: BrushingSession, brush: Double, sonic: Double, f0: Double, dt: Double) {
         val c = cfg
         if (sonic >= c.on && f0 > 0) s.sonicF0s.add(f0)
+        // A hum heard in the first seconds was already there when the brushing was recognised.
+        if (sonic >= c.on && s.sonicStartAt == null) s.sonicStartAt = (time - s.start).let { if (it < 10.0) 0.0 else it }
         if (sonic >= c.off) { sonicGap = 0.0; if (sonic >= c.on) sonicRun += dt } else sonicGap += dt
         val stopped = s.sonicStoppedAt != null
         if (!stopped && sonicGap >= 3.0 && sonicRun >= 30.0) {
@@ -252,6 +263,15 @@ class SessionDetector(val cfg: SessionConfig = SessionConfig()) {
                 event(time, SessionEvent.SONIC_RESUMED)
             }
         }
+    }
+
+    /** The brush's own timer signal (motor stutter) heard at [time]; kept once per session while brushing. */
+    fun timerSignal(time: Double) {
+        if (state != State.BRUSHING) return
+        val s = sessions.last()
+        if (s.timerSignalAt != null) return
+        s.timerSignalAt = time - s.start
+        event(time, SessionEvent.TIMER_SIGNAL)
     }
 
     fun finish(): List<BrushingSession> {
@@ -334,6 +354,7 @@ class StreamingDetector(
     private val sonicScores = ArrayList<SonicResult>()
     private val pendingWater = ArrayList<Double>()
     private val pendingRms = ArrayList<Double>()
+    private val stutter = StutterDetector()
     private var emitted = 0
     private var gateOpen = true
 
@@ -412,6 +433,7 @@ class StreamingDetector(
         var e = 0.0
         for (i in rel(st) until rel(st) + len) e += samples[i] * samples[i]
         lastRmsDb = 10 * kotlin.math.log10(e / len + 1e-12)
+        if (session.cfg.timerSignalWatch) stutter.add(samples, rel(st), len, end.toDouble() / SAMPLE_RATE)?.let { session.timerSignal(it) }
         val g = gate ?: return
         val open = g.update(0.5 * k + 0.5, lastRmsDb)
         val inSession = session.state == SessionDetector.State.BRUSHING || session.state == SessionDetector.State.RINSE
@@ -439,5 +461,51 @@ class StreamingDetector(
     fun finish(): List<BrushingSession> {
         emitRows(true)
         return session.finish()
+    }
+}
+
+/**
+ * The brush's own timer signal: the motor stutters (several 0.1 s drops of 8 dB or more within
+ * 1.5 s) and then hums on at the same level, e.g. Oral-B at 2 minutes. A motor that stops does not
+ * come back, so it is not a signal.
+ */
+class StutterDetector {
+    private val blocks = ArrayDeque<Double>()   // last 2 s of 0.1 s levels (dBFS), drops left out
+    private val dips = ArrayDeque<Double>()     // times of recent drops
+    private var lowRun = 0                      // consecutive dropped blocks
+    private var lastSignal = -1e9
+
+    /** Feed one 0.5 s stretch ending at [endTime] s; returns the signal time when one is complete. */
+    fun add(x: DoubleArray, offset: Int, length: Int, endTime: Double): Double? {
+        val b = SAMPLE_RATE / 10
+        var found: Double? = null
+        var i = 0
+        while (i + b <= length) {
+            var e = 0.0
+            for (j in offset + i until offset + i + b) e += x[j] * x[j]
+            val db = 10 * kotlin.math.log10(e / b + 1e-12)
+            val t = endTime - (length - i - b).toDouble() / SAMPLE_RATE
+            i += b
+            if (blocks.size < 10) { blocks.addLast(db); continue }
+            val ref = Stats.median(blocks.toList())
+            while (dips.isNotEmpty() && t - dips.first() > 1.5) dips.removeFirst()
+            if (ref > -60.0 && ref - db >= 8.0) {
+                dips.addLast(t)
+                // A level that stays down (motor off, silence) is the new normal, not a stutter.
+                if (++lowRun >= 15) { blocks.clear(); dips.clear(); lowRun = 0 }
+                continue
+            }
+            lowRun = 0
+            // Back at the same level after a few short drops (not a long gap, not louder water), from a
+            // steady hum (an oscillating motor is steady within ~1 dB; scrubbing noise is not).
+            val mean = blocks.average()
+            val sd = kotlin.math.sqrt(blocks.sumOf { (it - mean) * (it - mean) } / blocks.size)
+            if (ref > -60.0 && kotlin.math.abs(ref - db) < 3.0 && dips.size in 3..8 && sd <= 2.5 && t - lastSignal > 10.0) {
+                found = dips.first(); lastSignal = t; dips.clear()
+            }
+            blocks.addLast(db)
+            while (blocks.size > 20) blocks.removeFirst()
+        }
+        return found
     }
 }

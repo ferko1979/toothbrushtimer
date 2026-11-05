@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -61,6 +62,7 @@ import hu.fogmosas.core.stickers
 import hu.fogmosas.shared.AppData
 import hu.fogmosas.shared.AppStore
 import kotlinx.coroutines.launch
+import java.io.File
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -366,18 +368,32 @@ fun MeasurementFeedbackCard(activity: MainActivity, store: AppStore, onResume: (
     var note by remember(r) { mutableStateOf("") }
     var saved by remember(r) { mutableStateOf<hu.fogmosas.core.FeedbackEntry?>(null) }
     val ctx = LocalContext.current
+    val testing = data.settings.isOn("test_recording", "android")
+    // Test mode: the remark is saved next to the recording as it is typed, even if never sent.
+    if (testing) LaunchedEffect(answer, reason, note) {
+        if (answer == null && note.isBlank()) return@LaunchedEffect
+        kotlinx.coroutines.delay(500)
+        val base = hu.fogmosas.shared.BrushingEngine.lastRecordingBase ?: return@LaunchedEffect
+        val text = remarkText(answer, reason, note, r)
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { hu.fogmosas.core.TestRecording.saveRemark(hu.fogmosas.shared.BrushingEngine.recordingsDir(ctx), base, text) }
+        }
+    }
 
     InfoCard {
         if (!r.manual) Text(hu.fogmosas.core.endReasonText(r.endReason), fontSize = 13.sp, color = C.muted)
         r.notes.forEach { Text(it, fontSize = 13.sp, color = C.warn) }
         r.scrubNote?.let { Text(it, fontSize = 13.sp, color = C.warn) }
+        r.timerNote?.let { Text(it, fontSize = 13.sp, color = C.muted) }
         val log = hu.fogmosas.shared.BrushingEngine.state.collectAsStateWithLifecycle().value.testLog
         if (log.isNotEmpty()) {
             Text(tr("Mit észlel az app"), fontWeight = FontWeight.Bold)
             log.forEach { Text(it, fontSize = 12.sp, color = C.muted) }
         }
-        if (data.settings.isOn("test_recording", "android")) TestRecordingShareButton(saved?.let { s ->
-            hu.fogmosas.core.feedbackReport(s, "android", "", p.quietExtraS) } ?: "")
+        if (testing) {
+            if (answer != null || note.isNotBlank()) Text(tr("✓ Az észrevételt a felvétel mellé mentettem."), fontSize = 12.sp, color = C.ok)
+            TestRecordingShareButton(saved?.let { s -> hu.fogmosas.core.feedbackReport(s, "android", "", p.quietExtraS) } ?: "")
+        }
         if (!r.manual && r.endReason != "user" && r.durationS < p.goals.targetS) {
             OutlinedButton(onClick = {
                 activity.lastRecordId?.let { store.removeRecord(it) }
@@ -412,6 +428,9 @@ fun MeasurementFeedbackCard(activity: MainActivity, store: AppStore, onResume: (
                 }
                 OutlinedTextField(value = note, onValueChange = { note = it }, label = { Text(tr("Mi történt? (nem kötelező)")) }, modifier = Modifier.fillMaxWidth())
             }
+            // Test mode: a remark field even when the measurement was right.
+            if (testing && answer != false) OutlinedTextField(value = note, onValueChange = { note = it },
+                label = { Text(tr("Észrevétel a felvételhez")) }, modifier = Modifier.fillMaxWidth())
             if (answer != null) Button(onClick = {
                 val e = hu.fogmosas.core.FeedbackEntry(dateMs = System.currentTimeMillis(), profileId = p.id, ok = answer == true,
                     reason = if (answer == true) null else reason, note = note.trim(), durationS = r.durationS, endReason = r.endReason,
@@ -424,6 +443,45 @@ fun MeasurementFeedbackCard(activity: MainActivity, store: AppStore, onResume: (
 }
 
 // ------------------------------------------------------------------ test recordings
+
+/** The tester's remark as saved next to the recording. */
+private fun remarkText(answer: Boolean?, reason: String?, note: String, r: hu.fogmosas.shared.BrushingEngine.Result) = buildString {
+    appendLine("saved: " + java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date()))
+    appendLine("accurate: " + when (answer) { true -> "yes"; false -> "no"; null -> "-" })
+    reason?.let { appendLine("reason: $it") }
+    appendLine("measuredS: ${Math.round(r.durationS)}  endReason: ${r.endReason}  cue: ${r.cue}")
+    (r.notes + listOfNotNull(r.scrubNote, r.timerNote)).forEach { appendLine("appNote: $it") }
+    appendLine()
+    append(note.trim())
+}
+
+/** "📦 Összes felvétel beküldése": every recording and remark in one ZIP through the share sheet (Drive, e-mail …). */
+@Composable
+fun TestRecordingsSendAllButton() {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    val dir = hu.fogmosas.shared.BrushingEngine.recordingsDir(ctx)
+    val count = remember(busy) { hu.fogmosas.core.TestRecording.bases(dir).size }
+    OutlinedButton(enabled = !busy && count > 0, onClick = {
+        busy = true
+        scope.launch {
+            val zip = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                File(ctx.cacheDir, "reports").listFiles { f -> f.name.endsWith(".zip") }?.forEach { it.delete() }
+                val name = "denthub-brush-tests-" + java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US).format(java.util.Date()) + ".zip"
+                runCatching { hu.fogmosas.core.TestRecording.zipAll(dir, File(File(ctx.cacheDir, "reports"), name)) }.getOrNull()
+            }
+            busy = false
+            if (zip == null) { toast(ctx, tr("Még nincs tesztfelvétel.")); return@launch }
+            val uri = androidx.core.content.FileProvider.getUriForFile(ctx, ctx.packageName + ".files", zip)
+            val i = android.content.Intent(android.content.Intent.ACTION_SEND).setType("application/zip")
+                .putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                .putExtra(android.content.Intent.EXTRA_SUBJECT, zip.nameWithoutExtension)
+                .addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            ctx.startActivity(android.content.Intent.createChooser(i, tr("Felvételek beküldése (pl. Google Drive)")))
+        }
+    }) { Text(if (busy) tr("Csomagolás…") else tr("📦 Összes felvétel beküldése ({0})", count)) }
+}
 
 /** "📤 Tesztfelvétel küldése": shares the newest recording (WAV + JSON timeline) through the share sheet. */
 @Composable
