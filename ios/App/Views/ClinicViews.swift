@@ -277,7 +277,7 @@ struct SymptomResultView: View {
                             Button(tr("📨 Üzenet a rendelőnek")) {
                                 let r = save(via: "message")
                                 model.data.messages.append(ClinicMessage(profileId: p.id, date: Date(), text: symptomSummary(r).joined(separator: "\n"),
-                                                                         photos: r.photos, symptomId: r.id))
+                                                                         photos: r.photos, symptomId: r.id, via: ["app"]))
                             }
                             .buttonStyle(.borderedProminent)
                         }
@@ -285,6 +285,8 @@ struct SymptomResultView: View {
                             let r = save(via: "email")
                             let m = clinicEmail(patientName: p.name, symptom: r, visit: nil)
                             mail = OutgoingMail(to: clinic?.email, subject: m.subject, body: m.body, photos: r.photos)
+                            model.data.messages.append(ClinicMessage(profileId: p.id, date: Date(), text: symptomSummary(r).joined(separator: "\n"),
+                                                                     photos: r.photos, symptomId: r.id, status: "emailed", via: ["email"]))
                         }
                         .buttonStyle(.bordered)
                     }
@@ -400,13 +402,17 @@ struct VisitRequestView: View {
                     Button(tr("📨 Kérés üzenetben")) {
                         let v = request(via: "message", reason: reasonNow, timing: timingNow, symptom: symptom)
                         model.data.messages.append(ClinicMessage(profileId: p.id, date: Date(), text: visitText(v, patientName: p.name, symptom: symptom),
-                                                                 photos: symptom?.photos ?? [], symptomId: symptom?.id, visitId: v.id))
+                                                                 photos: symptom?.photos ?? [], symptomId: symptom?.id, visitId: v.id,
+                                                                 to: "admin", via: ["app"]))
                     }
                 }
                 Button(tr("✉️ Kérés e-mailben")) {
                     let v = request(via: "email", reason: reasonNow, timing: timingNow, symptom: symptom)
                     let m = clinicEmail(patientName: p.name, symptom: symptom, visit: v)
                     mail = OutgoingMail(to: clinic?.email, subject: m.subject, body: m.body, photos: symptom?.photos ?? [])
+                    model.data.messages.append(ClinicMessage(profileId: p.id, date: Date(), text: visitText(v, patientName: p.name, symptom: symptom),
+                                                             photos: symptom?.photos ?? [], symptomId: symptom?.id, visitId: v.id,
+                                                             status: "emailed", to: "admin", via: ["email"]))
                 }
                 if let ph = clinic?.phone, let u = URL(string: "tel://" + ph.filter { $0.isNumber || $0 == "+" }) {
                     Button(tr("📞 Hívás: {0}", ph)) {
@@ -535,6 +541,8 @@ struct SymptomHistoryCard: View {
                             s.sentVia = "email"
                             s.sentAt = Date()
                             model.addSymptom(s)
+                            model.data.messages.append(ClinicMessage(profileId: p.id, date: Date(), text: symptomSummary(s).joined(separator: "\n"),
+                                                                     photos: s.photos, symptomId: s.id, status: "emailed", via: ["email"]))
                             open = nil
                             let out = OutgoingMail(to: model.data.clinic?.email, subject: m.subject, body: m.body, photos: s.photos)
                             // Present the mail once this sheet is gone.
@@ -565,6 +573,9 @@ struct ClinicLinkSection: View {
                 ForEach([c.address, c.phone, c.email].compactMap { $0 }, id: \.self) { Text($0).font(.caption).foregroundStyle(.secondary) }
                 let queued = model.data.messages.filter { $0.status == "queued" }.count
                 if queued > 0 { Text(tr("{0} üzenet vár kézbesítésre a DentHubon keresztül.", queued)).font(.caption).foregroundStyle(.secondary) }
+                Text(c.allowsMessaging ? tr("A rendelő fogad üzenetet az appban (DentHub üzenetküldő).") : tr("A rendelő egyelőre e-mailben fogad üzenetet; az appban is megmarad minden."))
+                    .font(.caption).foregroundStyle(.secondary)
+                Button(tr("💬 Üzenetek")) { AppRouter.shared.messagesRequest = UUID() }
                 Button(tr("Összekötés megszüntetése"), role: .destructive) { model.data.clinic = nil }
             } else {
                 Text(tr("A rendelőd a DentHubon ad egy összekötő QR-kódot vagy linket. Ezzel a rendelő logója megjelenik indításkor, és nekik küldheted a panaszaidat és időpontkéréseidet."))

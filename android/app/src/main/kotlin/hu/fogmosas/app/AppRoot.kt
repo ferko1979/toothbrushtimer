@@ -109,6 +109,7 @@ fun AppRoot(activity: MainActivity, store: AppStore) {
                 val o = activity.overlay.value!!
                 val close = { activity.overlay.value = null }
                 if (o == "symptom") SymptomWizard(activity, store, close)
+                else if (o == "messages") MessengerScreen(activity, store, close)
                 else VisitRequestScreen(store, o.removePrefix("visit").removePrefix(":").ifEmpty { null }, close)
             }
             showBrushing || engine.active || engine.result != null -> Box(safe) {

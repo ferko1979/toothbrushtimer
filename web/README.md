@@ -46,3 +46,21 @@ docker run -p 8080:8080 fogmosas-web
 
 Https-t a tárhely vagy egy elé tett proxy (pl. Caddy, nginx) adja. Több példány esetén mindegyik
 kérésnek ugyanarra a példányra kell érkeznie (egy példány bőven elég).
+
+## Tesztfelvételek fogadása
+
+Az appok teszt módja (jelszóval védve, minden verzióban benne van) a felvételeket, az idővonalat és a
+tesztelő észrevételeit magától feltölti ide: `POST /api/test-upload/<fájlnév>`. Bekapcsolás a
+szerveren környezeti változókkal:
+
+| Változó | Jelentés |
+|---|---|
+| `TEST_UPLOAD_CODE` | a tesztelői jelszó (ugyanaz, amit az app kér). Nélküle a végpont ki van kapcsolva. |
+| `TEST_UPLOAD_DIR` | ide ment (alapból `./test-uploads/<készülék>/`) |
+| `GOOGLE_SERVICE_ACCOUNT` | szolgáltatásfiók JSON-kulcsa (Google Cloud → IAM → Service accounts) |
+| `DRIVE_FOLDER_ID` | Google Drive mappa azonosítója egy *megosztott meghajtón*, amelynek a szolgáltatásfiók tagja |
+
+Ha a két Google-változó meg van adva, a fájl a Drive-mappába kerül (`<készülék>_<fájlnév>`), és a
+szerverről törlődik. Ingyenes Render-csomagon a lemez nem tartós, ezért ott a Drive-beállítás kell.
+Az app a felvételt a Statisztikánál összekötött webcímre, annak hiányában a
+`https://fogmosas-web.onrender.com` címre tölti fel.

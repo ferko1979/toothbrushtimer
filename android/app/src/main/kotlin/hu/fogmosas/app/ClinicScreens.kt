@@ -153,7 +153,7 @@ object ClinicSend {
 
 /** Full-screen page with a top bar (back / progress / close). */
 @Composable
-private fun OverlayPage(title: String, progress: Float?, onBack: (() -> Unit)?, onClose: () -> Unit, content: @Composable () -> Unit) {
+internal fun OverlayPage(title: String, progress: Float?, onBack: (() -> Unit)?, onClose: () -> Unit, content: @Composable () -> Unit) {
     Column(Modifier.fillMaxSize().background(C.bg)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = { onBack?.invoke() }, enabled = onBack != null) { Text(if (onBack != null) tr("‹ Vissza") else "") }
@@ -299,13 +299,15 @@ private fun SymptomResult(activity: MainActivity, store: AppStore, flow: Symptom
                 if (clinic != null) Button(onClick = {
                     val r = save("message")
                     store.addMessage(ClinicMessage(profileId = p.id, dateMs = System.currentTimeMillis(),
-                        text = symptomSummary(r).joinToString("\n"), photos = r.photos, symptomId = r.id))
+                        text = symptomSummary(r).joinToString("\n"), photos = r.photos, symptomId = r.id, via = listOf("app")))
                     Toast.makeText(ctx, tr("Az üzenet a rendelő postafiókjába került."), Toast.LENGTH_LONG).show()
                 }) { Text(tr("📨 Üzenet a rendelőnek")) }
                 OutlinedButton(onClick = {
                     val r = save("email")
                     val (subject, body) = clinicEmail(p.name, r, null)
                     ClinicSend.email(ctx, clinic, subject, body, r.photos)
+                    store.addMessage(ClinicMessage(profileId = p.id, dateMs = System.currentTimeMillis(), text = symptomSummary(r).joinToString("\n"),
+                        photos = r.photos, symptomId = r.id, via = listOf("email"), status = "emailed"))
                 }) { Text(tr("✉️ E-mail")) }
             }
             saved?.sentVia?.let { Text(if (it == "message") tr("✔︎ Elküldve a rendelőnek") else tr("✔︎ E-mail előkészítve"), color = C.ok, fontSize = 13.sp) }
@@ -381,13 +383,15 @@ fun VisitRequestScreen(store: AppStore, symptomId: String?, onClose: () -> Unit)
         if (clinic != null) OutlinedButton(onClick = {
             val v = request("message")
             store.addMessage(ClinicMessage(profileId = p.id, dateMs = System.currentTimeMillis(), text = visitText(v, p.name, symptom),
-                photos = symptom?.photos.orEmpty(), symptomId = symptom?.id, visitId = v.id))
+                photos = symptom?.photos.orEmpty(), symptomId = symptom?.id, visitId = v.id, to = "admin", via = listOf("app")))
             Toast.makeText(ctx, tr("Az időpontkérés a rendelő postafiókjába került."), Toast.LENGTH_LONG).show()
         }, Modifier.fillMaxWidth()) { Text(tr("📨 Kérés üzenetben")) }
         OutlinedButton(onClick = {
             val v = request("email")
             val (subject, body) = clinicEmail(p.name, symptom, v)
             ClinicSend.email(ctx, clinic, subject, body, symptom?.photos.orEmpty())
+            store.addMessage(ClinicMessage(profileId = p.id, dateMs = System.currentTimeMillis(), text = visitText(v, p.name, symptom),
+                photos = symptom?.photos.orEmpty(), symptomId = symptom?.id, visitId = v.id, to = "admin", via = listOf("email"), status = "emailed"))
         }, Modifier.fillMaxWidth()) { Text(tr("✉️ Kérés e-mailben")) }
         clinic?.phone?.let { ph -> OutlinedButton(onClick = { request("phone"); ClinicSend.dial(ctx, ph) }, Modifier.fillMaxWidth()) { Text(tr("📞 Hívás: {0}", ph)) } }
         if (clinic == null) Text(tr("Ha a DentHubon összekötöd a fiókod a rendelőddel, innen közvetlenül foglalhatsz időpontot."), fontSize = 13.sp, color = C.muted)
@@ -459,6 +463,8 @@ fun SymptomHistoryCard(activity: MainActivity, store: AppStore) {
                     val (subject, body) = clinicEmail(p.name, r, null)
                     ClinicSend.email(ctx, data.clinic, subject, body, r.photos)
                     store.addSymptom(r.copy(sentMs = System.currentTimeMillis(), sentVia = "email"))
+                    store.addMessage(ClinicMessage(profileId = p.id, dateMs = System.currentTimeMillis(), text = symptomSummary(r).joinToString("\n"),
+                        photos = r.photos, symptomId = r.id, via = listOf("email"), status = "emailed"))
                     open = null
                 }) { Text(tr("✉️ Küldés")) }
             },
@@ -481,6 +487,9 @@ fun ClinicLinkCard(activity: MainActivity, store: AppStore) {
             listOfNotNull(c.address, c.phone, c.email).forEach { Text(it, fontSize = 13.sp, color = C.muted) }
             val queued = data.messages.count { it.status == "queued" }
             if (queued > 0) Text(tr("{0} üzenet vár kézbesítésre a DentHubon keresztül.", queued), fontSize = 13.sp, color = C.muted)
+            Text(if (c.messaging) tr("A rendelő fogad üzenetet az appban (DentHub üzenetküldő).") else tr("A rendelő egyelőre e-mailben fogad üzenetet; az appban is megmarad minden."),
+                fontSize = 13.sp, color = C.muted)
+            OutlinedButton(onClick = { activity.overlay.value = "messages" }) { Text(tr("💬 Üzenetek")) }
             TextButton(onClick = { store.setClinic(null); ClinicFiles.logoFile(ctx).delete() }) { Text(tr("Összekötés megszüntetése")) }
         } else {
             Text(tr("A rendelőd a DentHubon ad egy összekötő QR-kódot vagy linket. Ezzel a rendelő logója megjelenik indításkor, és nekik küldheted a panaszaidat és időpontkéréseidet."),

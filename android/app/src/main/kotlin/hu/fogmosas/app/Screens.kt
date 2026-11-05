@@ -271,7 +271,10 @@ fun HomeScreen(activity: MainActivity, store: AppStore, onStart: () -> Unit) {
     Column(Modifier.fillMaxSize().background(C.bg).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         val h = java.time.LocalTime.now().hour
         val part = if (h < 10) tr("Jó reggelt") else if (h < 18) tr("Szia") else tr("Jó estét")
-        Text(if (p.canRead) "$part, ${p.name}!" else p.avatarEmoji, fontSize = 30.sp, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(if (p.canRead) "$part, ${p.name}!" else p.avatarEmoji, Modifier.weight(1f), fontSize = 30.sp, fontWeight = FontWeight.Bold)
+            if (p.canRead) MessagesButton(activity, store)
+        }
         if (data.profiles.size > 1) {
             Text(tr("Ki mos most fogat?"), color = C.muted)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -309,6 +312,7 @@ fun HomeScreen(activity: MainActivity, store: AppStore, onStart: () -> Unit) {
         }
         if (p.child) RewardCard(store, p)
         ChargeReminderCard(store)
+        if (p.canRead) UpcomingAppointmentCard(activity, store)
         FollowUpCard(activity, store)
         CareTasksCard(store)
         DentistCard(activity, store)

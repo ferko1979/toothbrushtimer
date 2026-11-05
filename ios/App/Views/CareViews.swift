@@ -381,6 +381,7 @@ struct MeasurementFeedbackCard: View {
     @State private var saved: FeedbackEntry?
     @State private var sharing = false
     @State private var remarkSaved = false
+    @State private var remarkUpload: DispatchWorkItem?
 
     var body: some View {
         if profile.canRead {
@@ -438,6 +439,11 @@ struct MeasurementFeedbackCard: View {
         let text = lines.joined(separator: "\n") + "\n\n" + note.trimmingCharacters(in: .whitespacesAndNewlines)
         DispatchQueue.global(qos: .utility).async { TestRecording.saveRemark(text, base: base, in: AppModel.recordingsDir) }
         remarkSaved = true
+        // Up to the server a little later (the tester may still be typing).
+        remarkUpload?.cancel()
+        let work = DispatchWorkItem { [model] in TestUploader.shared.uploadPending(model: model) }
+        remarkUpload = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4, execute: work)
     }
 
     private func save() {

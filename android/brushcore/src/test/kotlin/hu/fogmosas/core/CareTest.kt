@@ -244,6 +244,11 @@ class TestRecordingTest {
         val zip = TestRecording.zipAll(dir, File(dir, "out/all.zip"))!!
         val names = java.util.zip.ZipFile(zip).use { z -> z.entries().toList().map { it.name } }
         assertEquals(listOf("${rec.base}.wav", "${rec.base}.json", "${rec.base}-remark.txt"), names)
+        assertTrue(TestAccess.check(" fogteszt2026 "))
+        assertFalse(TestAccess.check("fogteszt"))
+        val pend = TestAccess.pending(dir, emptySet())
+        assertEquals(3, pend.size)
+        assertEquals(1, TestAccess.pending(dir, pend.take(2).map { TestAccess.key(it) }.toSet()).size)
         TestRecording.prune(dir, maxBytes = 0)
         assertTrue(TestRecording.all(dir).isEmpty())
     }

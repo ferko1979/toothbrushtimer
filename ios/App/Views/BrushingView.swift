@@ -168,6 +168,7 @@ struct BrushingView: View {
         controller.onCue = { cue in Haptics.play(cue.haptic) }
         controller.onActivity = { policy.activity(t: now()) }
         controller.onFinished = { result in finished(result) }
+        controller.onRecordingSaved = { [model] in TestUploader.shared.uploadPending(model: model) }
         ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             policy.tick(t: now())
             if !policy.listening && controller.isListening && !controller.manual && !controller.testMode && controller.phase != .brushing {

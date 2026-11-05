@@ -33,9 +33,10 @@ enum NotificationScheduler {
         let center = UNUserNotificationCenter.current()
         center.getPendingNotificationRequests { pending in
             center.removePendingNotificationRequests(withIdentifiers: pending.map(\.identifier).filter {
-                $0.hasPrefix("rem.") || $0 == "dentist" || $0.hasPrefix("care.")
+                $0.hasPrefix("rem.") || $0 == "dentist" || $0.hasPrefix("care.") || $0.hasPrefix("appt.")
             })
             DispatchQueue.main.async {
+                scheduleAppointments(model: model, center: center)
                 scheduleDentist(model: model, center: center)
                 scheduleCare(model: model, center: center)
                 guard model.settings.isOn("notifications") else { return }
@@ -71,6 +72,21 @@ extension NotificationScheduler {
             content.userInfo = ["arm": false]
             let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: item.0)
             center.add(UNNotificationRequest(identifier: "care.\(i)", content: content,
+                                             trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))
+        }
+    }
+
+    /// A day and two hours before each confirmed appointment.
+    static func scheduleAppointments(model: AppModel, center: UNUserNotificationCenter) {
+        guard model.settings.isOn("appointment_reminders", platform: .ios) else { return }
+        for (i, item) in Messaging.reminders(model.data.appointments, now: Date()).prefix(12).enumerated() {
+            let content = UNMutableNotificationContent()
+            content.title = tr("🦷 Fogorvos")
+            content.body = item.1
+            content.sound = .default
+            content.userInfo = ["arm": false, "messages": true]
+            let comps = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: item.0)
+            center.add(UNNotificationRequest(identifier: "appt.\(i)", content: content,
                                              trigger: UNCalendarNotificationTrigger(dateMatching: comps, repeats: false)))
         }
     }

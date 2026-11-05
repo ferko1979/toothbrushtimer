@@ -135,6 +135,9 @@ object BrushingEngine {
         return dir
     }
 
+    /** Called (on a background thread) once a test recording is written: the app uploads it. */
+    @Volatile var onRecordingSaved: (() -> Unit)? = null
+
     /** Name of the newest test recording (the tester's remark is saved next to it). */
     @Volatile var lastRecordingBase: String? = null
         private set
@@ -148,6 +151,7 @@ object BrushingEngine {
             rec.finish(if (r == null) mapOf("endReason" to "no_session") else mapOf(
                 "durationS" to r.durationS, "endReason" to r.endReason, "cue" to r.cue, "waterRunningS" to r.waterRunningS, "manual" to r.manual))
             ctx?.let { hu.fogmosas.core.TestRecording.prune(recordingsDir(it)) }
+            onRecordingSaved?.invoke()
         }.start()
     }
     private var ticker: Job? = null

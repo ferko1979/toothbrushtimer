@@ -33,6 +33,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="denthub" android:host="link" />
                 <data android:scheme="denthub" android:host="care" />
+                <data android:scheme="denthub" android:host="appt" />
             </intent-filter>
             <intent-filter>
                 <action android:name="hu.fogmosas.action.COMPLAINT" />

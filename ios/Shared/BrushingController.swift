@@ -53,6 +53,8 @@ final class BrushingController: ObservableObject {
     var onCue: ((Cue) -> Void)?
     var onActivity: (() -> Void)?
     var onFinished: ((Result) -> Void)?
+    /// A test recording is written: the app uploads it.
+    var onRecordingSaved: (() -> Void)?
 
     private let queue = DispatchQueue(label: "brushdetect.detector")
     private let capture = AudioCapture()
@@ -288,6 +290,7 @@ final class BrushingController: ObservableObject {
         queue.async {
             rec.finish(result: res)
             if let d = dir { TestRecording.prune(in: d) }
+            DispatchQueue.main.async { self.onRecordingSaved?() }
         }
     }
 

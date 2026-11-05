@@ -13,7 +13,11 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     LinkReminderCard()
-                    Text(greeting).font(.largeTitle.bold())
+                    HStack {
+                        Text(greeting).font(.largeTitle.bold())
+                        Spacer()
+                        if profile.canRead { MessagesButton() }
+                    }
                     if model.data.profiles.count > 1 { picker }
                     BigButton(title: tr("🪥  Fogmosás indítása")) {
                         router.startRequest = AppRouter.StartRequest(armed: false)
@@ -39,6 +43,7 @@ struct HomeView: View {
                     }
                     if profile.child { RewardCard(profile: profile) }
                     ChargeReminderCard()
+                    if profile.canRead { UpcomingAppointmentCard() }
                     FollowUpCard()
                     CareTasksCard()
                     DentistCard()

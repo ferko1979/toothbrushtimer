@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(CryptoKit)
+import CryptoKit
+#endif
 
 /// Test builds only ("Teszt mód"): saves the microphone audio as a 16 kHz mono WAV and the detector's
 /// timeline (scores every 0.5 s, events, result) as JSON, so a tester can send both to the developers.
@@ -123,4 +126,41 @@ public final class TestRecording {
         d.append(contentsOf: Array("data".utf8)); u32(dataBytes)
         return d
     }
+}
+
+/// Test mode is in every build but behind the tester password (shared with testers). The same password
+/// authenticates the uploads (server: TEST_UPLOAD_CODE, web/testupload.mjs). Same as TestAccess in
+/// android/brushcore/.../TestRecording.kt.
+public enum TestAccess {
+    static let hash = "93e113c18ed319edbee0ded459ce64eaee6c333bc9cce128cb47e816a1d0d44f"
+    public static let defaultHost = "https://fogmosas-web.onrender.com"
+
+    public static func check(_ code: String) -> Bool {
+        sha256Hex(Data(code.trimmingCharacters(in: .whitespacesAndNewlines).utf8)) == hash
+    }
+
+    public static func key(_ u: URL) -> String {
+        let size = ((try? FileManager.default.attributesOfItem(atPath: u.path))?[.size] as? NSNumber)?.intValue ?? 0
+        return "\(u.lastPathComponent):\(size)"
+    }
+
+    /// Files not uploaded yet: the uploaded list holds "name:size" (a remark edited later goes up again).
+    public static func pending(in directory: URL, uploaded: Set<String>) -> [URL] {
+        TestRecording.all(in: directory).filter { u in
+            guard !uploaded.contains(key(u)) else { return false }
+            // The recording being made has no timeline yet; its WAV waits until the JSON is written.
+            if u.pathExtension == "wav" {
+                return FileManager.default.fileExists(atPath: u.deletingPathExtension().appendingPathExtension("json").path)
+            }
+            return true
+        }
+    }
+}
+
+func sha256Hex(_ d: Data) -> String {
+    #if canImport(CryptoKit)
+    return SHA256.hash(data: d).map { String(format: "%02x", $0) }.joined()
+    #else
+    return ""
+    #endif
 }

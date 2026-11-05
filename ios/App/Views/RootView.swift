@@ -11,6 +11,7 @@ struct RootView: View {
     @EnvironmentObject var router: AppRouter
     @State private var brushing: BrushingRequest?
     @State private var complaint = false
+    @State private var messages = false
     @ObservedObject private var lock = AppLock.shared
     @Environment(\.scenePhase) private var scenePhase
 
@@ -53,6 +54,11 @@ struct RootView: View {
             if req != nil && model.data.onboarded && brushing == nil { complaint = true }
             router.complaintRequest = nil
         }
+        .onChange(of: router.messagesRequest) { _, req in
+            if req != nil && model.data.onboarded && brushing == nil { messages = true }
+            router.messagesRequest = nil
+        }
+        .sheet(isPresented: $messages) { MessengerView().environmentObject(model).environmentObject(router) }
         .sheet(isPresented: $complaint) {
             SymptomFlowView(profile: model.activeProfile, reports: model.data.symptoms).environmentObject(model)
         }

@@ -25,6 +25,9 @@ struct AppData: Codable {
     var careTasks: [CareTask] = []
     /// When the user agreed to the health data notice (nil: not yet).
     var consentAt: Date?
+    var appointments: [Appointment] = []
+    /// Tester password (unlocks test mode, authenticates the recording uploads).
+    var testerCode: String?
 
     init() {}
 
@@ -49,6 +52,8 @@ struct AppData: Codable {
         followUps = try c.decodeIfPresent([SymptomFollowUp].self, forKey: .followUps) ?? []
         careTasks = try c.decodeIfPresent([CareTask].self, forKey: .careTasks) ?? []
         consentAt = try c.decodeIfPresent(Date.self, forKey: .consentAt)
+        appointments = try c.decodeIfPresent([Appointment].self, forKey: .appointments) ?? []
+        testerCode = try c.decodeIfPresent(String.self, forKey: .testerCode)
     }
 }
 
@@ -86,6 +91,7 @@ final class AppModel: ObservableObject {
         lastDay = Calendar.current.startOfDay(for: Date())
         refreshTick += 1
         NotificationScheduler.reschedule(model: self)
+        TestUploader.shared.uploadPending(model: self)
     }
 
     /// Called every half minute while open: a new day rebuilds the pages.
@@ -206,6 +212,42 @@ final class AppModel: ObservableObject {
     func addFollowUp(_ f: SymptomFollowUp) {
         data.followUps.append(f)
         NotificationScheduler.reschedule(model: self)
+    }
+
+    func putAppointment(_ a: Appointment) {
+        data.appointments.removeAll { $0.id == a.id }
+        data.appointments.append(a)
+        NotificationScheduler.reschedule(model: self)
+    }
+
+    /// The clinic's messages count as seen once the conversation is open.
+    func markRead(_ profileId: String) {
+        guard data.messages.contains(where: { $0.profileId == profileId && !$0.fromPatient && $0.readAt == nil }) else { return }
+        for i in data.messages.indices where data.messages[i].profileId == profileId && !data.messages[i].fromPatient && data.messages[i].readAt == nil {
+            data.messages[i].readAt = Date()
+        }
+    }
+
+    /// Sends a message to the clinic: in the app (when both sides allow it) and/or by e-mail; always kept.
+    /// Returns the e-mail to show when it goes by e-mail.
+    func sendClinicMessage(_ text: String, to: String, alsoEmail: Bool, appointmentId: UUID? = nil, photos: [String] = []) -> OutgoingMail? {
+        let p = activeProfile
+        let via = Messaging.channels(clinic: data.clinic, appToApp: settings.isOn("app_messaging", platform: .ios), alsoEmail: alsoEmail)
+        data.messages.append(ClinicMessage(profileId: p.id, date: Date(), text: text, photos: photos, to: to, via: via,
+                                           appointmentId: appointmentId))
+        data.messages[data.messages.count - 1].status = Messaging.statusAfterSend(via)
+        guard via.contains("email") else { return nil }
+        let subject = tr("DentHub-Brush: üzenet – {0}", p.name) + (to == "admin" ? " (" + Recipients.title(to) + ")" : "")
+        return OutgoingMail(to: data.clinic?.email, subject: subject, body: text + "\n\n" + tr("(A DentHub-Brush appból küldve.)"), photos: photos)
+    }
+
+    /// A clinic's appointment offer from a QR code or link (denthub://appt?d=…): kept as a clinic message with the offer.
+    func receiveOffer(_ a: Appointment) {
+        guard !data.appointments.contains(where: { $0.id == a.id }) else { return }
+        data.appointments.append(a)
+        data.messages.append(ClinicMessage(profileId: a.profileId, date: Date(),
+                                           text: tr("Időpontot ajánlunk: {0}", Messaging.when(a)) + (a.doctor.map { " – " + $0 } ?? ""),
+                                           fromPatient: false, status: "received", to: "admin", appointmentId: a.id))
     }
 
     func addVisit(_ v: VisitRequest) {

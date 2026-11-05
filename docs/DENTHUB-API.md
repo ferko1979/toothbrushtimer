@@ -27,9 +27,14 @@ denthub://link?d=<base64url(JSON)>
   "phone": "+36…",
   "bookingUrl": "https://…/foglalas",
   "address": "…",
-  "linkToken": "egyszer-hasznalatos-token"
+  "linkToken": "egyszer-hasznalatos-token",
+  "messaging": true
 }
 ```
+
+A `messaging` mező jelzi, hogy a rendelő fogad-e üzenetet az appból (app–app, app–web). Ha `false`
+vagy hiányzik, az app e-mailt küld, de minden üzenetet a saját üzenetlistájában is megőriz. A páciens
+oldalon a „Üzenetek a rendelővel az appban” kapcsoló dönt; mindkettőnek engedélyeznie kell.
 
 A `linkToken` mező javaslat: a mostani app még figyelmen kívül hagyja (a kód így is beolvasható).
 Az API bekötésekor tároljuk, és visszaküldjük az alábbi hívásban.
@@ -90,6 +95,12 @@ Megjegyzések:
 - A fogak FDI számozásúak.
 - Az app az üzenetet `queued` állapotban tárolja, amíg a küldés sikeres nem lesz; ezért az `id` alapján idempotensnek kell lennie.
 
+Az üzenetek címzettje: `"to": "doctor"` (orvos) vagy `"admin"` (recepció / asszisztens, pl. időpontkérés).
+Az app jelenleg így tárolja (`ClinicMessage`): `id`, `text`, `photos`, `to`, `via` (`["app"]`,
+`["email"]`, vagy mindkettő), `status` (`queued` → `delivered` → `read`; e-mailnél `emailed`),
+`appointmentId`. A szerver a `status`-t a 3. pont válaszaiban frissítheti
+(`{ "id": "…", "status": "read" }`).
+
 ## 3. Válaszok és időpont-ajánlat a rendelőtől
 
 ```http
@@ -109,9 +120,39 @@ GET /api/brush/v1/messages?since=<ISO>
 ]
 ```
 
-Push értesítés új üzenetnél: FCM és APNs, a `pushToken` alapján.
+### Push értesítés
+
+Új rendelői üzenetnél, időpont-ajánlatnál és -visszaigazolásnál a szerver push értesítést küld a
+`pushToken` alapján (Android: FCM HTTP v1, iOS: APNs, token alapú hitelesítés). Tartalom: csak
+általános szöveg, egészségügyi adat nélkül:
+
+```json
+{
+  "title": "Mosoly Fogászat",
+  "body": "Új üzeneted érkezett",
+  "data": { "type": "message|offer|confirmed|cancelled", "messageId": "…" }
+}
+```
+
+Az app a push hatására lekéri a `GET /api/brush/v1/messages?since=` végpontot, és megnyitja az
+Üzenetek képernyőt. A `pushToken` frissítése: `PUT /api/brush/v1/device { "pushToken": "…" }`.
+(Az apphoz ehhez Firebase-projekt és APNs-kulcs kell; a mostani verzió push nélkül, a megnyitáskor
+frissít.)
 
 ## 4. Időpontfoglalás
+
+Folyamat: a páciens kér (üzenet `to: "admin"`) → a rendelő ajánl (`offer`) → a páciens elfogadja vagy
+másikat kér → visszaigazolt időpont. Elfogadáskor az app felveszi a telefon naptárába (Android:
+naptár-alkalmazás, iOS: Naptár), és helyi emlékeztetőt ad egy nappal és két órával előtte.
+
+Amíg az API nincs kész, az ajánlat QR-ként vagy linkként is átadható (az app már kezeli):
+
+```
+denthub://appt?d=<base64url({"id":"uuid","start":"2026-11-10T10:30","durationMin":30,"doctor":"Dr. Kiss","clinicName":"Mosoly Fogászat","address":"…","reason":"pain","note":""})>
+```
+
+A `start` helyi idő. A páciens a telefonon vagy a recepción kapott időpontot kézzel is felveheti
+(„Időpontot kaptam”).
 
 ```http
 GET /api/brush/v1/slots?reason=pain&from=…&to=…
@@ -143,6 +184,13 @@ denthub://care?d=<base64url({"title":"Szájöblítés klórhexidinnel","times":[
 ```
 
 ## 6. Orvosi oldal (DentHub web)
+
+- **Üzenetküldő (messenger):** beszélgetésenként a páciens üzenetei, fotói, panaszai; válasz az orvos vagy
+  a recepció nevében; „Időpont ajánlása” gomb (naptárból választott szabad idő → `offer`). Minden
+  e-mailben érkezett üzenet is ide kerül.
+- **Karton és ügyféllap:** a páciens adatai, panaszai, kontrollválaszai, fotói, időpontjai és a
+  fogmosási összefoglaló egy helyen; „Mentés a kartonhoz” bármely üzenetből.
+- **Időpontok:** kérések listája → ajánlat → visszaigazolás → a rendelő naptárába kerül.
 
 - **Beérkező lista:** sürgősség szerint rendezve (`level`); szűrők: panasz, dátum, megválaszolatlan.
 - **Részletek:** válaszok, fogtérkép, fotók, kontrollválaszok, 30 napos fogmosási összefoglaló.

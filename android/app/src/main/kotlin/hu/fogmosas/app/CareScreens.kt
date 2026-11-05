@@ -378,6 +378,9 @@ fun MeasurementFeedbackCard(activity: MainActivity, store: AppStore, onResume: (
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching { hu.fogmosas.core.TestRecording.saveRemark(hu.fogmosas.shared.BrushingEngine.recordingsDir(ctx), base, text) }
         }
+        // Up to the server a little later (the tester may still be typing).
+        kotlinx.coroutines.delay(4000)
+        TestUploader.uploadPending(ctx)
     }
 
     InfoCard {

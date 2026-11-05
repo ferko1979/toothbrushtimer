@@ -10,6 +10,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { testUpload } from './testupload.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const PORT = Number(process.env.PORT || 8080);
@@ -132,6 +133,8 @@ export function createServer() {
       relay(req, res, m[1]).catch(() => send(res, 500, 'Error'));
       return;
     }
+    const up = url.pathname.match(/^\/api\/test-upload\/([^/]+)$/);
+    if (up) return testUpload(req, res, decodeURIComponent(up[1]), send);
     if (url.pathname === '/healthz') return send(res, 200, 'ok');
     if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed');
     serveStatic(req, res, url.pathname);

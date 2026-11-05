@@ -147,3 +147,26 @@ class TestRecording(dir: File, private val meta: Map<String, Any?>) {
         return b.array()
     }
 }
+
+/**
+ * Test mode is in every build but behind the tester password (shared with testers). The same password
+ * authenticates the uploads (server: TEST_UPLOAD_CODE, web/testupload.mjs). Same as TestAccess in
+ * ios/BrushCore/.../TestRecording.swift.
+ */
+object TestAccess {
+    private const val HASH = "93e113c18ed319edbee0ded459ce64eaee6c333bc9cce128cb47e816a1d0d44f"
+    const val DEFAULT_HOST = "https://fogmosas-web.onrender.com"
+
+    fun check(code: String): Boolean {
+        val d = java.security.MessageDigest.getInstance("SHA-256").digest(code.trim().toByteArray())
+        return d.joinToString("") { "%02x".format(it) } == HASH
+    }
+
+    /** Files not uploaded yet: the uploaded list holds "name:size" (a remark edited later goes up again). */
+    fun pending(dir: File, uploaded: Set<String>): List<File> =
+        TestRecording.all(dir).filter { "${it.name}:${it.length()}" !in uploaded }
+            // The recording being made has no timeline yet; its WAV waits until the JSON is written.
+            .filter { !it.name.endsWith(".wav") || File(dir, it.name.removeSuffix(".wav") + ".json").exists() }
+
+    fun key(f: File) = "${f.name}:${f.length()}"
+}

@@ -13,7 +13,7 @@ import hu.fogmosas.shared.BrushingEngine
 import hu.fogmosas.shared.WearSync
 
 class MainActivity : FragmentActivity() {
-    companion object { const val EXTRA_ARM = "arm" }
+    companion object { const val EXTRA_ARM = "arm"; const val EXTRA_MESSAGES = "open_messages" }
 
     /** Set when opened from a reminder: start listening right away, brushing is expected. */
     val armRequest = mutableStateOf(false)
@@ -31,6 +31,7 @@ class MainActivity : FragmentActivity() {
     fun refresh() {
         refreshTick.intValue++
         ReminderScheduler.reschedule(this)
+        TestUploader.uploadPending(this)
     }
     /** Full-screen page over the tabs: "symptom", "visit", "visit:<symptomId>" (null: none). */
     val overlay = mutableStateOf<String?>(null)
@@ -46,6 +47,7 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         speaker = Speaker(this)
         val store = AppStore.get(this)
+        BrushingEngine.onRecordingSaved = { TestUploader.uploadPending(applicationContext) }
         BrushingEngine.onFinished = { r ->
             if (r.durationS >= 5) {
                 val d = store.data.value
@@ -81,7 +83,14 @@ class MainActivity : FragmentActivity() {
         if (i?.action == Intent.ACTION_VIEW) i.dataString?.let { s ->
             hu.fogmosas.core.parseClinicLink(s)?.let { pendingClinic.value = it }
             hu.fogmosas.core.parseCareLink(s)?.let { pendingCare.value = it }
+            val store = AppStore.get(this)
+            hu.fogmosas.core.Messaging.parseOffer(s, store.data.value.activeProfileId)?.let {
+                receiveAppointmentOffer(store, it)
+                overlay.value = "messages"
+            }
         }
+        // Notification about a clinic reply or an appointment.
+        if (i?.getBooleanExtra(EXTRA_MESSAGES, false) == true) overlay.value = "messages"
         // "Panaszom van" launcher shortcut.
         if (i?.action == "hu.fogmosas.action.COMPLAINT") overlay.value = "symptom"
     }

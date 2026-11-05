@@ -78,3 +78,24 @@ test('serves the page with a strict CSP', async () => {
     }
   });
 });
+
+test('test upload: needs the tester code and a recording file name, then stores the file', async () => {
+  const dir = (await import('node:fs')).mkdtempSync((await import('node:os')).tmpdir() + '/up-');
+  process.env.TEST_UPLOAD_DIR = dir;
+  process.env.TEST_UPLOAD_CODE = 'titok';
+  try {
+    await withServer(async (base) => {
+      const name = 'denthub-brush-20261105-113029-remark.txt';
+      const post = (n, code) => fetch(`${base}/api/test-upload/${n}`, {
+        method: 'POST', body: 'jó volt', headers: { 'X-Tester-Code': code, 'X-Tester-Device': 'pixel-1' } });
+      assert.equal((await post(name, 'rossz')).status, 401);
+      assert.notEqual((await post('..%2Fetc%2Fpasswd', 'titok')).status, 201);
+      assert.equal((await post('x.txt', 'titok')).status, 400);
+      assert.equal((await post(name, 'titok')).status, 201);
+      assert.equal(readFileSync(`${dir}/pixel-1/${name}`, 'utf8'), 'jó volt');
+    });
+  } finally {
+    delete process.env.TEST_UPLOAD_CODE;
+    delete process.env.TEST_UPLOAD_DIR;
+  }
+});

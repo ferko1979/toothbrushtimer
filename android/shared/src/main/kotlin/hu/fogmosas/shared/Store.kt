@@ -41,6 +41,9 @@ data class AppData(
     val careTasks: List<hu.fogmosas.core.CareTask> = emptyList(),
     /** When the user agreed to the health data notice (null: not yet). */
     val consentMs: Long? = null,
+    val appointments: List<hu.fogmosas.core.Appointment> = emptyList(),
+    /** Tester password (unlocks test mode, authenticates the recording uploads). */
+    val testerCode: String? = null,
 ) {
     val activeProfile get() = profiles.firstOrNull { it.id == activeProfileId } ?: profiles.first()
     fun profile(id: String) = profiles.firstOrNull { it.id == id }
@@ -131,7 +134,13 @@ class AppStore private constructor(context: Context) {
 
     fun addSymptom(r: hu.fogmosas.core.SymptomReport) = update { d -> d.copy(symptoms = d.symptoms.filter { it.id != r.id } + r) }
     fun addVisit(v: hu.fogmosas.core.VisitRequest) = update { d -> d.copy(visits = d.visits.filter { it.id != v.id } + v) }
-    fun addMessage(m: hu.fogmosas.core.ClinicMessage) = update { d -> d.copy(messages = d.messages + m) }
+    fun addMessage(m: hu.fogmosas.core.ClinicMessage) = update { d -> d.copy(messages = d.messages.filter { it.id != m.id } + m) }
+    fun putAppointment(a: hu.fogmosas.core.Appointment) = update { d -> d.copy(appointments = d.appointments.filter { it.id != a.id } + a) }
+    /** The clinic's messages count as seen once the conversation is open. */
+    fun markRead(profileId: String) = update { d ->
+        val now = System.currentTimeMillis()
+        d.copy(messages = d.messages.map { if (it.profileId == profileId && !it.fromPatient && it.readMs == null) it.copy(readMs = now) else it })
+    }
     fun addFollowUp(f: hu.fogmosas.core.SymptomFollowUp) = update { d -> d.copy(followUps = d.followUps + f) }
     fun putCareTask(t: hu.fogmosas.core.CareTask) = update { d -> d.copy(careTasks = d.careTasks.filter { it.id != t.id } + t) }
     fun removeCareTask(id: String) = update { d -> d.copy(careTasks = d.careTasks.filter { it.id != id }) }

@@ -40,7 +40,12 @@ object ReminderScheduler {
             PendingIntent.getBroadcast(ctx, EXTRA_CODE + i, Intent(ctx, ReminderReceiver::class.java),
                 PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)?.let { am.cancel(it) }
         }
+        for (i in 0 until APPT_MAX) {
+            PendingIntent.getBroadcast(ctx, APPT_CODE + i, Intent(ctx, ReminderReceiver::class.java),
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)?.let { am.cancel(it) }
+        }
         val d = AppStore.get(ctx).data.value
+        if (d.onboarded) scheduleAppointments(ctx, am, d)
         if (d.onboarded) scheduleDentist(ctx, am, d)
         if (d.onboarded) scheduleCare(ctx, am, d)
         if (!d.onboarded || !d.settings.isOn("notifications")) return
@@ -58,6 +63,19 @@ object ReminderScheduler {
     private const val DENTIST_CODE = 1100
     private const val EXTRA_CODE = 1200
     private const val EXTRA_MAX = 60
+    private const val APPT_CODE = 1300
+    private const val APPT_MAX = 12
+
+    /** A day and two hours before each confirmed appointment. */
+    private fun scheduleAppointments(ctx: Context, am: AlarmManager, d: hu.fogmosas.shared.AppData) {
+        if (!d.settings.isOn("appointment_reminders", "android")) return
+        val zone = ZoneId.systemDefault()
+        hu.fogmosas.core.Messaging.reminders(d.appointments, LocalDateTime.now()).take(APPT_MAX).forEachIndexed { i, (at, text) ->
+            val intent = Intent(ctx, ReminderReceiver::class.java).putExtra("text", text).putExtra("arm", false).putExtra("messages", true)
+            val pi = PendingIntent.getBroadcast(ctx, APPT_CODE + i, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            am.setWindow(AlarmManager.RTC_WAKEUP, at.atZone(zone).toInstant().toEpochMilli(), 5 * 60_000L, pi)
+        }
+    }
 
     /** Medicine / care task reminders and complaint follow-ups ("Hogy van most?"). */
     private fun scheduleCare(ctx: Context, am: AlarmManager, d: hu.fogmosas.shared.AppData) {
@@ -86,15 +104,16 @@ object ReminderScheduler {
         am.setWindow(AlarmManager.RTC_WAKEUP, at, 30 * 60_000L, pi)
     }
 
-    fun show(ctx: Context, text: String, arm: Boolean = true) {
+    fun show(ctx: Context, text: String, arm: Boolean = true, messages: Boolean = false) {
         val nm = ctx.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CHANNEL, tr("Emlékeztetők"), NotificationManager.IMPORTANCE_DEFAULT))
         val open = Intent(ctx, MainActivity::class.java).putExtra(MainActivity.EXTRA_ARM, arm)
+            .putExtra(MainActivity.EXTRA_MESSAGES, messages)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        val pi = PendingIntent.getActivity(ctx, if (arm) 7 else 8, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val pi = PendingIntent.getActivity(ctx, if (messages) 9 else if (arm) 7 else 8, open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val n = NotificationCompat.Builder(ctx, CHANNEL)
             .setSmallIcon(hu.fogmosas.shared.R.drawable.ic_stat_brush)
-            .setContentTitle(tr("🪥 Fogmosás"))
+            .setContentTitle(if (messages) tr("🦷 Fogorvos") else tr("🪥 Fogmosás"))
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
             .setAutoCancel(true)
@@ -106,7 +125,8 @@ object ReminderScheduler {
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
-        ReminderScheduler.show(ctx, intent.getStringExtra("text") ?: tr("Ideje fogat mosni! 🪥"), intent.getBooleanExtra("arm", true))
+        ReminderScheduler.show(ctx, intent.getStringExtra("text") ?: tr("Ideje fogat mosni! 🪥"), intent.getBooleanExtra("arm", true),
+            intent.getBooleanExtra("messages", false))
     }
 }
 

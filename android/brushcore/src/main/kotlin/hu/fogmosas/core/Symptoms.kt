@@ -437,6 +437,8 @@ data class ClinicInfo(
     val phone: String? = null,
     val bookingUrl: String? = null,
     val address: String? = null,
+    /** The clinic lets patients message it in the app (DentHub app-to-app / web messenger). */
+    val messaging: Boolean = false,
 )
 
 /** A message to the clinic. Delivered by DentHub once the account is linked; until then it waits ("queued"). */
@@ -450,7 +452,16 @@ data class ClinicMessage(
     val symptomId: String? = null,
     val visitId: String? = null,
     val fromPatient: Boolean = true,
+    /** queued (waits for DentHub) / emailed / delivered / read; clinic messages: received. */
     val status: String = "queued",
+    /** Who it is for (patient's message) or from (clinic's): "doctor" or "admin" (reception). */
+    val to: String = "doctor",
+    /** How it went out: "app" (DentHub messenger), "email". */
+    val via: List<String> = emptyList(),
+    /** Clinic messages: when the patient saw it. */
+    val readMs: Long? = null,
+    /** An appointment this message offers, requests or confirms. */
+    val appointmentId: String? = null,
 )
 
 private val linkJson = Json { ignoreUnknownKeys = true }

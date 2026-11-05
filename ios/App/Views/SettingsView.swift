@@ -6,6 +6,10 @@ struct SettingsView: View {
     @State private var addingChild = false
     @State private var confirmDelete = false
     @State private var touring = false
+    @State private var askTesterCode = false
+    @State private var testerCode = ""
+    @State private var wrongCode = false
+    @ObservedObject private var uploader = TestUploader.shared
     @ObservedObject private var lock = AppLock.shared
 
     var body: some View {
@@ -42,8 +46,14 @@ struct SettingsView: View {
                 }
                 if model.settings.isOn("test_recording", platform: .ios) {
                     Section(tr("Tesztfelvétel")) {
-                        Text(tr("Minden felvételt és észrevételt megtartok (az észrevételt gépelés közben mentem). Egyben, ZIP-ként elküldheted Google Drive-ra vagy e-mailben."))
+                        Text(tr("Minden felvételt és észrevételt megtartok (az észrevételt gépelés közben mentem), és magától feltöltöm a fejlesztőknek. Egyben, ZIP-ként is elküldheted Google Drive-ra vagy e-mailben."))
                             .font(.caption).foregroundStyle(.secondary)
+                        if !uploader.status.isEmpty { Text(uploader.status).font(.caption).foregroundStyle(.secondary) }
+                        if model.data.testerCode == nil {
+                            Button(tr("🔑 Tesztelői jelszó a feltöltéshez")) { askTesterCode = true }
+                        } else {
+                            Button(tr("⬆️ Feltöltés most")) { uploader.uploadPending(model: model) }
+                        }
                         TestRecordingShareButton()
                         TestRecordingsSendAllButton()
                     }
@@ -56,6 +66,23 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle(tr("Beállítások"))
+            .alert(tr("Teszt mód"), isPresented: $askTesterCode) {
+                SecureField(tr("Jelszó"), text: $testerCode)
+                Button(tr("Bekapcsolás")) {
+                    if TestAccess.check(testerCode) {
+                        model.data.testerCode = testerCode.trimmingCharacters(in: .whitespacesAndNewlines)
+                        model.data.settings.set("test_recording", true)
+                        uploader.uploadPending(model: model)
+                    } else {
+                        wrongCode = true
+                    }
+                    testerCode = ""
+                }
+                Button(tr("Mégse"), role: .cancel) { testerCode = "" }
+            } message: {
+                Text(tr("A teszt mód a tesztelőknek szól. Add meg a tesztelői jelszót."))
+            }
+            .alert(tr("Hibás jelszó."), isPresented: $wrongCode) { Button("OK") {} }
             .onChange(of: model.data.settings) { _, _ in NotificationScheduler.reschedule(model: model) }
             .sheet(isPresented: $addingChild) { AddChildView().environmentObject(model) }
             .fullScreenCover(isPresented: $touring) { TourView { touring = false } }
@@ -131,6 +158,10 @@ struct SettingsView: View {
                         lock.unlocked = true
                         lock.parentUnlocked = true
                     }
+                    return
+                }
+                if f.id == "test_recording" && on && !(model.data.testerCode.map(TestAccess.check) ?? false) {
+                    askTesterCode = true
                     return
                 }
                 model.data.settings.set(f.id, on)

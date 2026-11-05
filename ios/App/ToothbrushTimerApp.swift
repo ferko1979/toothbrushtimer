@@ -18,6 +18,10 @@ struct ToothbrushTimerApp: App {
                 .onOpenURL { url in
                     if let c = parseClinicLink(url.absoluteString) { model.pendingClinic = c }
                     if let c = parseCareLink(url.absoluteString) { model.pendingCare = c }
+                    if let a = Messaging.parseOffer(url.absoluteString, profileId: model.data.activeProfileId) {
+                        model.receiveOffer(a)
+                        router.messagesRequest = UUID()
+                    }
                 }
         }
     }
@@ -36,6 +40,8 @@ final class AppRouter: ObservableObject {
     @Published var selectedTab = 0
     /// "Panaszom van" shortcut / quick action: open the complaint questions.
     @Published var complaintRequest: UUID?
+    /// Clinic messages (message icon, appointment reminder, offer link).
+    @Published var messagesRequest: UUID?
 }
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
@@ -48,8 +54,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
-        let arm = response.notification.request.content.userInfo["arm"] as? Bool ?? false
-        DispatchQueue.main.async { AppRouter.shared.startRequest = AppRouter.StartRequest(armed: arm) }
+        let info = response.notification.request.content.userInfo
+        let arm = info["arm"] as? Bool ?? false
+        DispatchQueue.main.async {
+            if info["messages"] as? Bool == true { AppRouter.shared.messagesRequest = UUID() }
+            else { AppRouter.shared.startRequest = AppRouter.StartRequest(armed: arm) }
+        }
         completionHandler()
     }
 

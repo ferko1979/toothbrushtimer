@@ -544,11 +544,14 @@ public struct ClinicInfo: Codable, Equatable {
     public var phone: String? = nil
     public var bookingUrl: String? = nil
     public var address: String? = nil
+    /// The clinic lets patients message it in the app (DentHub app-to-app / web messenger).
+    public var messaging: Bool? = nil
+    public var allowsMessaging: Bool { messaging ?? false }
 
     public init(id: String, name: String, logoUrl: String? = nil, email: String? = nil, phone: String? = nil,
-                bookingUrl: String? = nil, address: String? = nil) {
+                bookingUrl: String? = nil, address: String? = nil, messaging: Bool? = nil) {
         self.id = id; self.name = name; self.logoUrl = logoUrl; self.email = email; self.phone = phone
-        self.bookingUrl = bookingUrl; self.address = address
+        self.bookingUrl = bookingUrl; self.address = address; self.messaging = messaging
     }
 }
 
@@ -562,11 +565,25 @@ public struct ClinicMessage: Codable, Equatable, Identifiable {
     public var symptomId: UUID? = nil
     public var visitId: UUID? = nil
     public var fromPatient = true
+    /// queued (waits for DentHub) / emailed / delivered / read; clinic messages: received.
     public var status = "queued"
+    /// Who it is for (patient's message) or from (clinic's): "doctor" or "admin" (reception). nil: doctor.
+    public var to: String? = nil
+    /// How it went out: "app" (DentHub messenger), "email".
+    public var via: [String]? = nil
+    /// Clinic messages: when the patient saw it.
+    public var readAt: Date? = nil
+    /// An appointment this message offers, requests or confirms.
+    public var appointmentId: UUID? = nil
 
-    public init(profileId: String, date: Date, text: String, photos: [String] = [], symptomId: UUID? = nil, visitId: UUID? = nil) {
+    public var recipient: String { to ?? "doctor" }
+
+    public init(profileId: String, date: Date, text: String, photos: [String] = [], symptomId: UUID? = nil, visitId: UUID? = nil,
+                fromPatient: Bool = true, status: String = "queued", to: String? = nil, via: [String]? = nil,
+                appointmentId: UUID? = nil) {
         self.profileId = profileId; self.date = date; self.text = text; self.photos = photos
         self.symptomId = symptomId; self.visitId = visitId
+        self.fromPatient = fromPatient; self.status = status; self.to = to; self.via = via; self.appointmentId = appointmentId
     }
 }
 

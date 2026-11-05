@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +48,7 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
     var addingChild by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var tapStart by remember { mutableStateOf<Long?>(null) }
+    var askTesterCode by remember { mutableStateOf(false) }
     var tapResult by remember { mutableStateOf<String?>(null) }
     var touring by remember { mutableStateOf(false) }
 
@@ -172,7 +174,8 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
                                 if (f.id == "notifications" || f.id == "dentist_reminders") ReminderScheduler.reschedule(activity)
                                 if (lock) { activity.unlocked.value = true; activity.parentUnlocked.value = true }
                             }
-                            if (lock) DeviceAuth.authenticate(activity, f.title) { ok -> if (ok) apply() } else apply()
+                            if (f.id == "test_recording" && on && data.testerCode?.let { hu.fogmosas.core.TestAccess.check(it) } != true) askTesterCode = true
+                            else if (lock) DeviceAuth.authenticate(activity, f.title) { ok -> if (ok) apply() } else apply()
                         }
                     } else {
                         SwitchRow(f.title, "hamarosan", false, enabled = false) {}
@@ -183,9 +186,36 @@ fun SettingsScreen(activity: MainActivity, store: AppStore) {
 
         if (data.settings.isOn("test_recording", "android")) InfoCard {
             Text(tr("Tesztfelvétel"), fontWeight = FontWeight.Bold)
-            Text(tr("Minden felvételt és észrevételt megtartok (az észrevételt gépelés közben mentem). Egyben, ZIP-ként elküldheted Google Drive-ra vagy e-mailben."), fontSize = 13.sp, color = C.muted)
+            Text(tr("Minden felvételt és észrevételt megtartok (az észrevételt gépelés közben mentem), és magától feltöltöm a fejlesztőknek. Egyben, ZIP-ként is elküldheted Google Drive-ra vagy e-mailben."), fontSize = 13.sp, color = C.muted)
+            val up by TestUploader.status
+            if (up.isNotEmpty()) Text(up, fontSize = 13.sp, color = C.muted)
+            if (data.testerCode == null) OutlinedButton(onClick = { askTesterCode = true }) { Text(tr("🔑 Tesztelői jelszó a feltöltéshez")) }
+            else OutlinedButton(onClick = { TestUploader.uploadPending(activity) }) { Text(tr("⬆️ Feltöltés most")) }
             TestRecordingShareButton()
             TestRecordingsSendAllButton()
+        }
+        if (askTesterCode) {
+            var code by remember { mutableStateOf("") }
+            var wrong by remember { mutableStateOf(false) }
+            AlertDialog(onDismissRequest = { askTesterCode = false }, title = { Text(tr("Teszt mód")) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(tr("A teszt mód a tesztelőknek szól. Add meg a tesztelői jelszót."), fontSize = 14.sp)
+                        OutlinedTextField(code, { code = it; wrong = false }, label = { Text(tr("Jelszó")) }, singleLine = true,
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation())
+                        if (wrong) Text(tr("Hibás jelszó."), color = C.danger, fontSize = 13.sp)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        if (hu.fogmosas.core.TestAccess.check(code)) {
+                            store.update { it.copy(testerCode = code.trim(), settings = it.settings.with("test_recording", true)) }
+                            askTesterCode = false
+                            TestUploader.uploadPending(activity)
+                        } else wrong = true
+                    }) { Text(tr("Bekapcsolás")) }
+                },
+                dismissButton = { TextButton(onClick = { askTesterCode = false }) { Text(tr("Mégse")) } })
         }
 
         Section(tr("Víz"))

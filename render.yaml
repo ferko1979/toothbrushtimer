@@ -9,3 +9,11 @@ services:
     plan: free
     healthCheckPath: /healthz
     autoDeploy: true
+    envVars:
+      # Test recordings from the apps (web/README.md, "Tesztfelvételek fogadása"): set in the Render dashboard.
+      - key: TEST_UPLOAD_CODE
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT
+        sync: false
+      - key: DRIVE_FOLDER_ID
+        sync: false

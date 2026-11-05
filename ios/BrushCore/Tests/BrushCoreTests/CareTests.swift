@@ -239,6 +239,13 @@ final class TestRecordingTests: XCTestCase {
         XCTAssertEqual(TestRecording.latest(in: dir).map(\.lastPathComponent), files.map(\.lastPathComponent))
         TestRecording.saveRemark("a víz az elején hiányzott", base: rec.base, in: dir)
         XCTAssertEqual(TestRecording.latest(in: dir).count, 3)
+        #if canImport(CryptoKit)
+        XCTAssertTrue(TestAccess.check(" fogteszt2026 "))
+        XCTAssertFalse(TestAccess.check("fogteszt"))
+        #endif
+        let pend = TestAccess.pending(in: dir, uploaded: [])
+        XCTAssertEqual(pend.count, 3)
+        XCTAssertEqual(TestAccess.pending(in: dir, uploaded: Set(pend.prefix(2).map(TestAccess.key))).count, 1)
         TestRecording.prune(in: dir, maxBytes: 0)
         XCTAssertTrue(TestRecording.all(in: dir).isEmpty)
     }
