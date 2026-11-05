@@ -193,16 +193,6 @@ final class BrushingController: ObservableObject {
         for c in tracker.update(elapsedS: elapsedS) { onCue?(c) }
     }
 
-    private func result(of session: BrushingSession, brushF0: Double?, reason: String) -> Result {
-        let motor = motorRunS(session)
-        return Result(start: listenStarted.addingTimeInterval(session.start), durationS: session.durationS,
-                      waterRunningS: session.waterRunningS, cue: session.cue, brushF0: brushF0, manual: false, endReason: reason,
-                      notes: brushPowerNotes(session, history: f0History), brushDb: session.brushLevelDb,
-                      scrubNote: scrubNote(brushDb: session.brushLevelDb, history: scrubHistory, manual: manualBrush),
-                      motorS: motor, afterMotorS: motor == nil ? nil : session.manualAfterSonicS,
-                      timerNote: brushTimerNote(session, earlierTimerStops: timerStopsRecent))
-    }
-
     // Called on the detector queue.
     private func handle(row: ScoreRow, detector det: StreamingDetector) {
         let s = det.session
@@ -232,7 +222,7 @@ final class BrushingController: ObservableObject {
         }
     }
 
-    private func result(of session: BrushingSession, brushF0: Double?, reason: String) -> Result {
+    private func makeResult(of session: BrushingSession, brushF0: Double?, reason: String) -> Result {
         let motor = motorRunS(session)
         return Result(start: listenStarted.addingTimeInterval(session.start), durationS: session.durationS,
                       waterRunningS: session.waterRunningS, cue: session.cue, brushF0: brushF0, manual: false, endReason: reason,
@@ -248,7 +238,7 @@ final class BrushingController: ObservableObject {
             let clock = formatClock(t)
             if event == .sessionEnd, let session = det.session.sessions.last {
                 let reason = session.endReason == "finish" && userStop ? "user" : session.endReason
-                let r = result(of: session, brushF0: nil, reason: reason)
+                let r = makeResult(of: session, brushF0: nil, reason: reason)
                 DispatchQueue.main.async {
                     if self.testResult == nil || r.durationS > self.testResult!.durationS { self.testResult = r }
                     self.testLog.append(clock + " " + tr("🏁 vége – mért idő: {0}", formatClock(r.durationS)))
@@ -271,7 +261,7 @@ final class BrushingController: ObservableObject {
             guard let session = det.session.sessions.last else { return }
             let f0 = f0s.count >= 4 ? f0s.sorted()[f0s.count / 2] : nil
             let reason = session.endReason == "finish" && userStop ? "user" : session.endReason
-            let r = result(of: session, brushF0: f0, reason: reason)
+            let r = makeResult(of: session, brushF0: f0, reason: reason)
             DispatchQueue.main.async {
                 self.capture.stop()
                 self.finish(with: r)
